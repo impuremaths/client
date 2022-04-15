@@ -1,8 +1,8 @@
-<html>
-<head></head>
+<!DOCTYPE html><html lang="en"><html>
+<head><title>Impuremaths Client</title></head>
 <body>
-Hello world!
-    
+<button>Server time:</button><span id="serverTime">Unknown</span>
+   
 <script>
 var serverURL = 'wss://impuremaths.herokuapp.com';
 var ws = new WebSocket(serverURL);
@@ -25,7 +25,7 @@ function setupWebsocket(restart) {
 		let data;
 		try { data = JSON.parse(event.data); }
 		catch { 
-			console.log("Unrecognized server message.")
+			console.log("Unparseable server message.")
 			console.error(event.data);
 			return false;
 		}			
@@ -37,7 +37,9 @@ function setupWebsocket(restart) {
 	};
 
 	// Custom commands	
-	ws.on('serverPong', function(data) { console.log(data);	});
+	ws.on('serverPong', function(data) { 
+		document.getElementById("serverTime").textContent = data;
+	});
 }
         
 </script>
