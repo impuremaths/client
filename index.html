@@ -1,7 +1,8 @@
 <!DOCTYPE html><html lang="en"><html>
 <head><title>Impuremaths Client</title></head>
 <body>
-<button>Server time:</button><span id="serverTime">Unknown</span>
+<button onclick="ping()">Server time</button> 
+<span id="serverTime">Unknown</span>
    
 <script>
 var serverURL = 'wss://impuremaths.herokuapp.com';
@@ -37,9 +38,13 @@ function setupWebsocket(restart) {
 	};
 
 	// Custom commands	
-	ws.on('serverPong', function(data) { 
+	ws.on('serverPongCue', function(data) { 
 		document.getElementById("serverTime").textContent = data;
 	});
+}
+
+function ping() {
+	if (ws) ws.emit('clientPingCue');
 }
         
 </script>
