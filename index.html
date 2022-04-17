@@ -40,6 +40,14 @@
 			<button onclick="ping()">Server time</button> 
 			<span id="serverTime">Unknown</span>
 		</div>
+		
+		<!-- TESTING CODE -->
+		<div style="margin-top:30px">
+			<input type="text" id="test-input"></input><br />
+			<button onclick="test()">Go!</button><br />
+			<span id="test">Unknown</span>
+		</div>
+		<!-- END TESTING CODE -->
 	</div>
 	</div>
 	
@@ -47,7 +55,8 @@
 
 // Websocket code ///////////////////////////////////////////////////////////////////////
 
-var serverURL = 'wss://impuremaths.herokuapp.com';
+// var serverURL = 'wss://impuremaths.herokuapp.com';
+var serverURL = 'ws://localhost:3000';
 var ws = new WebSocket(serverURL);
 setupWebsocket();
 
@@ -83,10 +92,22 @@ function setupWebsocket(restart) {
 	ws.on('serverPongCue', function(data) { 
 		document.getElementById("serverTime").textContent = data;
 	});
+
+	ws.on('readContentFromUserResponse', function(data) {
+		document.getElementById('test').textContent = data;
+	});
 }
 
 function ping() {
 	if (ws) ws.emit('clientPingCue');
+}
+
+function test() {
+	if (!ws) return;
+	ws.emit(
+		'readContentFromUser',
+		{ userid: document.getElementById('test-input').value },
+	);
 }
 
 
