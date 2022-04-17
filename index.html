@@ -25,7 +25,7 @@
 		<div id="loginPanel" class="accordion objectWrapper" style="max-height:0px; padding-top:0px; padding-bottom:0px; margin-top:0px">
 			<div style="text-align:center;">
 				<button tabindex="-1" style="font-size:0.85em; border-top-right-radius:5px; border-bottom-right-radius:5px;" onclick="generateSeed()">Generate Seed</button>
-				<button tabindex="-1" style="font-size:0.85em; border-radius:5px" onclick="showCurrent()" disabled>Current Seed</button>
+				<button id="current" tabindex="-1" style="font-size:0.85em; border-radius:5px" onclick="showCurrent()" autocomplete="off" disabled>Current Seed</button>
 				<button style="font-size:0.85em; border-top-left-radius:5px; border-bottom-left-radius:5px;" onclick="if (confirm('Clear all data, including the current seed?')) clickClearSeed();">Clear Account</button>
 			</div>
 			<div style="display:flex; justify-content:space-between; margin-top:15px;">
@@ -33,7 +33,19 @@
 				<button  tabindex="-1" class="close-icon" onclick="closeCopy(this.previousElementSibling)"></button>			
 				<button id="show" tabindex="-1" style="font-size:0.85em; margin-right:5px;" onclick="toggleVisibility()">Show</button>
 			</div>
-		</div>		
+		</div>
+		
+		<div style="margin:10px; overflow:hidden; text-overflow:ellipsis">
+			Current address: <span id="address"></span>
+		</div>
+		
+		<div style="margin:10px; overflow:hidden; text-overflow:ellipsis">
+			<button id="postHeaderBut" onclick="makePostHeader()" autocomplete="off" disabled>Make post header</button>
+			
+			<div style="margin-top:10px">Header signature:</div>
+			<span id="postHeader"></span>
+		</div>
+			
 	</div>
 	<div id="secondDiv" class="secondDiv">
 		<div style="margin-top:30px">
@@ -51,7 +63,101 @@
 	</div>
 	</div>
 	
+
+<script src="nacl.js"></script>
+<script src="xno.js"></script>
+<script src="tweetnacl.js"></script>
 <script>
+
+
+
+// Global variables and macros ///////////////////////////////////////////////////////////////////////
+
+const enc = new TextEncoder();
+const dec = new TextDecoder();
+function D(string) { return document.getElementById(string); }
+
+var XNO = {};
+
+// crypto methods ///////////////////////////////////////////////////////////////////////
+
+XNO.checkSeed = function(seed) { return typeof seed === "string" && /^[0-9a-fA-F]{64}$/.test(seed);};
+
+XNO.checkAddress = function(address) { 
+	if (!(typeof address === "string") || !/^(xrb_|nano_)[13][13-9a-km-uw-z]{59}$/.test(address)) return false;
+	let prefixLength = 5;
+	if (address.startsWith('xrb_')) prefixLength = 4;
+
+	const publicKeyBytes = decodeNanoBase32(address.substr(prefixLength, 52));
+	const checksumBytes = decodeNanoBase32(address.substr(prefixLength + 52));
+	const computedChecksumBytes = blake2b(publicKeyBytes, null, 5).reverse();
+	for (let i = 0; i < checksumBytes.length; i++) {
+		if (checksumBytes[i] !== computedChecksumBytes[i]) return false;
+	}
+	return true;
+};
+
+XNO.generateSeed = function() {
+	const seed = new Uint8Array(32);
+	crypto.getRandomValues(seed);
+	return Array.prototype.map.call(seed, (x) => ('00' + x.toString(16)).slice(-2)).join('').toUpperCase();
+};
+
+XNO.addressFromSeed = function(seed) {
+	let privateKey = XNO.derivePrivateKey(seed, 0);
+	let publicKey = XNO.pubFromPriv(privateKey);
+	return XNO.addrFromPub(publicKey);	
+}
+
+XNO.derivePrivateKey = function(seed, index) {
+  const indexBuffer = new ArrayBuffer(4)
+  const indexView = new DataView(indexBuffer)
+  indexView.setUint32(0, index)
+  const indexBytes = new Uint8Array(indexBuffer)
+
+  const context = blake2bInit(32)
+  blake2bUpdate(context, hexToByteArray(seed))
+  blake2bUpdate(context, indexBytes)
+  return byteArrayToHex(blake2bFinal(context))
+}
+
+XNO.pubFromPriv = function(privateKey) { return byteArrayToHex(derivePublicFromSecret(hexToByteArray(privateKey))); };
+XNO.addrFromPub = function(publicKey) { return 'nano_' + encodeNanoBase32(hexToByteArray(publicKey)) + encodeNanoBase32(blake2b(hexToByteArray(publicKey), null, 5).reverse()); }
+XNO.pubFromAddr = function(address) { return byteArrayToHex(decodeNanoBase32(address.substr(5, 52))); };
+
+XNO.sign = function(message) { return byteArrayToHex(signDetached(enc.encode(message), hexToByteArray(XNO.privateKey))); }
+XNO.verify = function(message, signature, address) {
+	try { return verifyDetached(enc.encode(message), hexToByteArray(signature), hexToByteArray(XNO.pubFromAddr(address))); }
+	catch { return false };
+}
+
+XNO.unpackSeed = function(seed, index) {
+	XNO.seed = seed;
+	XNO.privateKey = XNO.derivePrivateKey(seed, index);
+	XNO.publicKey = XNO.pubFromPriv(XNO.privateKey);
+	XNO.address = XNO.addrFromPub(XNO.publicKey);
+	XNO.encryptKey = nacl.box.keyPair.fromSecretKey(hexToByteArray(XNO.privateKey));
+}
+
+function byteArrayToHex(byteArray) {
+  if (!byteArray) return '';
+  let hexStr = '';
+  for (let i = 0; i < byteArray.length; i++) {
+    let hex = (byteArray[i] & 0xff).toString(16)
+    hex = hex.length === 1 ? `0${hex}` : hex;
+    hexStr += hex;
+  }
+  return hexStr.toUpperCase()
+}
+
+function hexToByteArray(hex) {
+  if (!hex) return new Uint8Array();
+  const a = [];
+  for (let i = 0; i < hex.length; i += 2) {
+    a.push(parseInt(hex.substr(i, 2), 16));
+  }
+  return new Uint8Array(a);
+}
 
 // Websocket code ///////////////////////////////////////////////////////////////////////
 
@@ -109,32 +215,76 @@ function test() {
 	);
 }
 
-
 // UI interaction handlers ///////////////////////////////////////////////////////////////////////
 
 var clipboardText;
 
 function generateSeed() {
-	console.error("Generate seed code needed.");
+	if (XNO.address && !confirm('Overwrite the current seed?')) return false;
+	let newSeed = XNO.generateSeed();
+	inputEvent(D("seed"), newSeed);
+	navigator.clipboard.writeText(newSeed);
+	clipboardText = newSeed;
+	console.log("New seed copied to clipboard. Store it safely, elsewhere! (Find it again via 'Account' button.)");
 }
 
 function importSeed() {
-	console.error("Import seed code needed.");
+	let seed = D("seed").value;
+	let index = 0;	
+	if (!XNO.checkSeed(seed)) { if (XNO.checkAddress(seed)) showMsg("Enter a seed, not an address."); }
+	else if (index.length > 0 && (!/^[0-9]+$/.test(index) || index < 0 || index > Math.pow(2, 32) - 1)) showMsg("Invalid account index.");
+	else {
+		let keepAccount = XNO.address;
+		clearSeed();		
+		XNO.unpackSeed(seed, parseInt(index));		
+		D("current").disabled = false;
+		
+		if (!keepAccount && D("loginPanel").style.maxHeight != "0px") toggleAccount();
+		D('address').textContent = XNO.address;
+		D('postHeaderBut').disabled = false;
+	}
+}
+
+function showCurrent() {
+	if (XNO.seed) {
+		D(`seed`).value = XNO.seed;
+		flash(D(`seed`));
+	} else console.log("No seed loaded.");
+}
+
+function clearSeed() {
+	XNO.privateKey = "";
+	XNO.publicKey = "";
+	XNO.address = "";
+	XNO.index = "";
+	XNO.seed = "";
+	XNO.encryptKey = "";
 }
 
 function clickClearSeed() {
-	console.error("Clear seed code needed.");
+	clearSeed();
+	
+	inputEvent(D('seed'), "");
+	D("current").disabled = true;
+	D('postHeaderBut').disabled = true;
+	D('address').textContent = "";
 }
 
-function clickRefresh() {
-	console.error("Click refresh code needed.");
+function makePostHeader() {
+	let header = {userid: XNO.address, ts:Date.now()};
+	header.signature = XNO.sign(header.ts, XNO.address);
+	console.log(header);
+	D('postHeader').textContent = header.signature;
+	return header;
 }
 
 function toggleAccount() {
 	if (D('seed').type != "password") toggleVisibility();
 	
 	let obj = D("loginPanel");
-	if (obj.style.maxHeight == "0px") {			
+	if (obj.style.maxHeight == "0px") {
+		if (XNO.seed) D('seed').value = XNO.seed; 
+		
      	showAccordion(obj);
 		obj.style.padding = "";
 		obj.style.marginTop = "5px";
@@ -161,6 +311,8 @@ function toggleVisibility() {
 		D("show").classList.remove('active');
 	}
 }
+
+function clickRefresh() { console.error("At the moment this button doesn't do anything; might not need it."); }
 
 
 // Global event listeners ///////////////////////////////////////////////////////////////////////
