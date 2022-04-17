@@ -1,10 +1,52 @@
-<!DOCTYPE html><html lang="en"><html>
-<head><title>Impuremaths Client</title></head>
+<!DOCTYPE html><html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>mktplc client</title>	
+	<link rel="stylesheet" type="text/css" href="main.css">
+	<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Source+Sans+Pro:wght@400;700&display=swap"> 
+	
+	<meta content="text/html; charset=utf-8" http-equiv="Content-Type">
+	<meta content="utf-8" http-equiv="encoding">
+	<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+	<meta http-equiv="Pragma" content="no-cache">
+	<meta http-equiv="Expires" content="0">
+	
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">	
+</head>
+
 <body>
-<button onclick="ping()">Server time</button> 
-<span id="serverTime">Unknown</span>
-   
+	<div class="containerDiv">
+	<div id="firstDiv" class="firstDiv">
+		<div style="margin-left:18px; margin-right:18px; margin-bottom:5px; margin-top:5px; text-align:center">	
+			<button id="account" style="font-size:0.85em; border-top-right-radius:5px; border-bottom-right-radius:5px;" onclick="toggleAccount()">Account</button>				
+			<button id="refresh" style="font-size:0.85em; border-top-left-radius:5px; border-bottom-left-radius:5px;" onclick="clickRefresh();">Refresh</button>
+		</div>	
+
+		<div id="loginPanel" class="accordion objectWrapper" style="max-height:0px; padding-top:0px; padding-bottom:0px; margin-top:0px">
+			<div style="text-align:center;">
+				<button tabindex="-1" style="font-size:0.85em; border-top-right-radius:5px; border-bottom-right-radius:5px;" onclick="generateSeed()">Generate Key</button>
+				<button tabindex="-1" style="font-size:0.85em; border-radius:5px" onclick="showCurrent()" disabled>Current Key</button>
+				<button style="font-size:0.85em; border-top-left-radius:5px; border-bottom-left-radius:5px;" onclick="if (confirm('Clear all data, including the current seed?')) clickClearSeed();">Clear Account</button>
+			</div>
+			<div style="display:flex; justify-content:space-between; margin-top:15px;">
+				<input id="seed" placeholder="Private seed (store securely) ..." style="padding-right:30px; flex-grow:1; flex-basis:20px; margin-right:10px;" type="password" autocomplete="off" onclick="this.select()" oninput="importSeed();">
+				<button  tabindex="-1" class="close-icon" onclick="closeCopy(this.previousElementSibling)"></button>			
+				<button id="show" tabindex="-1" style="font-size:0.85em; margin-right:5px;" onclick="toggleVisibility()">Show</button>
+			</div>
+		</div>		
+	</div>
+	<div id="secondDiv" class="secondDiv">
+		<div style="margin-top:30px">
+			<button onclick="ping()">Server time</button> 
+			<span id="serverTime">Unknown</span>
+		</div>
+	</div>
+	</div>
+	
 <script>
+
+// Websocket code ///////////////////////////////////////////////////////////////////////
+
 var serverURL = 'wss://impuremaths.herokuapp.com';
 var ws = new WebSocket(serverURL);
 setupWebsocket();
@@ -46,7 +88,114 @@ function setupWebsocket(restart) {
 function ping() {
 	if (ws) ws.emit('clientPingCue');
 }
-        
+
+
+// UI interaction handlers ///////////////////////////////////////////////////////////////////////
+
+var clipboardText;
+
+function generateSeed() {
+	console.error("Generate seed code needed.");
+}
+
+function importSeed() {
+	console.error("Import seed code needed.");
+}
+
+function clickClearSeed() {
+	console.error("Clear seed code needed.");
+}
+
+function clickRefresh() {
+	console.error("Click refresh code needed.");
+}
+
+function toggleAccount() {
+	if (D('seed').type != "password") toggleVisibility();
+	
+	let obj = D("loginPanel");
+	if (obj.style.maxHeight == "0px") {			
+     	showAccordion(obj);
+		obj.style.padding = "";
+		obj.style.marginTop = "5px";
+		D('account').classList.add('active');
+		setTimeout(function() { if (obj.style.maxHeight != "0px") obj.style.maxHeight = ""; }, 100);
+	} else {	
+		D("seed").value = "";		
+     	showAccordion(obj);
+		setTimeout(function() {
+			hideAccordion(obj);
+			hideAccordionPadding(obj);
+			D('account').classList.remove('active');
+		}, 1);
+	}
+}
+
+function toggleVisibility() {
+	let x = D("seed");
+	if (x.type === "password") {
+		x.type = "text";
+		D("show").classList.add('active');
+	} else {
+		x.type = "password";		
+		D("show").classList.remove('active');
+	}
+}
+
+
+// Global event listeners ///////////////////////////////////////////////////////////////////////
+
+window.addEventListener('copy', function(e) { 
+	if (document.activeElement.tagName.toLowerCase() == 'input') clipboardText = document.activeElement.value.substring(document.activeElement.selectionStart, document.activeElement.selectionEnd);
+	else {
+		if (document.getSelection().toString()) {
+			clipboardText = document.getSelection().toString();	
+			navigator.clipboard.writeText(clipboardText);
+		}
+	}
+});
+
+// UI helper library ///////////////////////////////////////////////////////////////////////
+
+function D(string) { return document.getElementById(string); }
+
+function showAccordion(obj) { obj.style.maxHeight = obj.scrollHeight + "px"; }
+
+function hideAccordion(obj) {
+	obj.style.maxHeight = "0px";
+	obj.style.marginTop = "0px";
+}
+
+function hideAccordionPadding(obj) {
+	obj.style.paddingTop = "0px";
+	obj.style.paddingBottom = "0px";
+}
+
+function flash(elt, str) {
+	if (elt) {
+		if (str != undefined) elt.textContent = str;
+		elt.style.backgroundColor = 'aliceblue';	
+		setTimeout(function() {	elt.style.backgroundColor = "";}, 500);
+	} else console.log("Element disappeared before display.");
+}
+
+function inputEvent(obj, value) {
+	obj.value = value;
+	obj.dispatchEvent(new Event('input', {bubbles:true}));
+	if (value) flash(obj);
+}
+
+function closeCopy(obj) {
+	if (obj.value.length > 0) inputEvent(obj, "");
+	else if (navigator.clipboard.readText) {
+		navigator.clipboard.readText()
+			.then(function(text) { inputEvent(obj, text); })
+			.catch(function() { if (clipboardText) inputEvent(obj, clipboardText); });
+	}
+	else if (clipboardText) inputEvent(obj, clipboardText);
+}
+
 </script>
+
 </body>
 </html>
