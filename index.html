@@ -55,9 +55,27 @@
 		
 		<!-- TESTING CODE -->
 		<div style="margin-top:30px">
-			<input type="text" id="test-input"></input><br />
-			<button onclick="test()">Go!</button><br />
-			<span id="test">Unknown</span>
+			<span id="test-identity">Currently not authenticated.</span>
+		</div>
+
+		<div style="margin-top:30px">
+			<input type="text" id="test-fetch-input"></input><br />
+			<button onclick="testFetch()">Fetch!</button><br />
+			<span id="test-fetch">Unknown</span>
+		</div>
+
+		<div style="margin-top:30px">
+			<input type="text" id="test-post-createdts-input" placeholder="createdts, required if update"></input><br />
+			<input type="text" id="test-post-title-input" placeholder="title"></input><br />
+			<input type="text" id="test-post-content-input" placeholder="content"></input><br />
+			<select name="visibility" id="test-post-visibility-input">
+				<option value="private">Private</option>
+				<option value="subscriber">Subscriber</option>
+				<option value="public">Public</option>
+			</select><br />
+			<button onclick="testPost()">Post!</button><br />
+			<button onclick="testDelete()">Delete!</button><br />
+			<span id="test-post">Unknown</span>
 		</div>
 		<!-- END TESTING CODE -->
 	</div>
@@ -198,8 +216,22 @@ function setupWebsocket(restart) {
 		document.getElementById("serverTime").textContent = data;
 	});
 
+	ws.on('authenticateUserResponse', function(data) {
+		document.getElementById('test-identity').textContent = `Currently authenticated as: ${data}`;
+	});
+
 	ws.on('readContentFromUserResponse', function(data) {
-		document.getElementById('test').textContent = data;
+		document.getElementById('test-fetch').textContent = data;
+	});
+
+	ws.on('writePostResponse', function(data) {
+		dataObj = JSON.parse(data);
+		document.getElementById('test-post-createdts-input').value = dataObj.createdts;
+		document.getElementById('test-post').textContent = data;
+	});
+
+	ws.on('deletePostResponse', function(data) {
+		document.getElementById('test-post').textContent = data;
 	});
 }
 
@@ -207,11 +239,35 @@ function ping() {
 	if (ws) ws.emit('clientPingCue');
 }
 
-function test() {
+function testFetch() {
 	if (!ws) return;
 	ws.emit(
 		'readContentFromUser',
-		{ userid: document.getElementById('test-input').value },
+		{ userid: document.getElementById('test-fetch-input').value },
+	);
+}
+
+function testPost() {
+	if (!ws) return;
+	var post = { 
+		title: document.getElementById('test-post-title-input').value,
+		content: document.getElementById('test-post-content-input').value,
+		visibility: document.getElementById('test-post-visibility-input').value,
+	};
+	if (document.getElementById('test-post-createdts-input').value) {
+		post['createdts'] = Number(document.getElementById('test-post-createdts-input').value);
+	}
+	ws.emit(
+		'writePost',
+		post,
+	);
+}
+
+function testDelete() {
+	if (!ws) return;
+	ws.emit(
+		'deletePost',
+		{ createdts: Number(document.getElementById('test-post-createdts-input').value) },
 	);
 }
 
@@ -242,6 +298,8 @@ function importSeed() {
 		if (!keepAccount && D("loginPanel").style.maxHeight != "0px") toggleAccount();
 		D('address').textContent = XNO.address;
 		D('postHeaderBut').disabled = false;
+
+		if (ws) ws.emit('authenticateUser', makePostHeader() );
 	}
 }
 
