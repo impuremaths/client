@@ -348,6 +348,7 @@ function makePostHeader() {
 }
 
 function toggleAccount() {
+	if (D('profilePanel').style.maxHeight != "0px") toggleProfile();
 	if (D('seed').type != "password") toggleVisibility();
 	
 	let obj = D("accountPanel");
@@ -368,8 +369,6 @@ function toggleAccount() {
 			D('account').classList.remove('active');
 		}, 1);
 	}
-	
-	if (D('profilePanel').style.maxHeight != "0px") toggleProfile();
 }
 
 function toggleVisibility() {
@@ -383,7 +382,8 @@ function toggleVisibility() {
 	}
 }
 
-function toggleProfile() { 	
+function toggleProfile() { 
+	if (D('accountPanel').style.maxHeight != "0px") toggleAccount();
 	let obj = D("profilePanel");
 	if (obj.style.maxHeight == "0px") {
      		showAccordion(obj);
@@ -399,8 +399,6 @@ function toggleProfile() {
 			D('profile').classList.remove('active');
 		}, 1);
 	}
-	
-	if (D('accountPanel').style.maxHeight != "0px") toggleAccount();
 }
 
 
