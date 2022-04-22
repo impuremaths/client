@@ -37,7 +37,7 @@
 		
 		<div class="objectWrapper">
 			<div class="clickFlash" style="display:flex; justify-content:space-between" onclick="toggleEdit();">
-				<strong style="overflow:hidden"><div id="displayName" style="text-overflow:ellipsis; overflow:hidden; font-size:1.2em;" class="flash">✏️ My Account</div></strong>
+				<strong style="overflow:hidden"><div id="displayName" style="text-overflow:ellipsis; overflow:hidden; font-size:1.2em;" class="flash">✏️ Anonymous</div></strong>
 			</div>
 
 			<div id="editpanel" class="accordion" style="max-height:0px">			
@@ -329,7 +329,7 @@ function clickClearSeed() {
 	inputEvent(D('seed'), "");
 	D("current").disabled = true;
 	D('address').textContent = "";
-	D('displayName').textContent = "";
+	D('displayName').textContent = "✏️ Anonymous";
 }
 
 function makePostHeader() {
