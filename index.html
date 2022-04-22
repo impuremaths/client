@@ -47,6 +47,7 @@
 		</div>
 		
 		<div style="margin:10px; overflow:hidden; text-overflow:ellipsis">
+			Current display name: <span id="displayName"></span>
 			Current address: <span id="address"></span>
 		</div>
 		
@@ -337,6 +338,7 @@ function clickClearSeed() {
 	D("current").disabled = true;
 	D('postHeaderBut').disabled = true;
 	D('address').textContent = "";
+	D('displayName').textContent = "";
 }
 
 function makePostHeader() {
