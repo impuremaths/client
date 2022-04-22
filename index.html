@@ -19,7 +19,7 @@
 	<div id="firstDiv" class="firstDiv">
 		<div style="margin-left:18px; margin-right:18px; margin-bottom:5px; margin-top:5px; text-align:center">	
 			<button id="account" class="left" onclick="toggleAccount()">Account</button>				
-			<button id="refresh" class="right" onclick="toggleProfile();">Profile</button>
+			<button id="profile" class="right" onclick="toggleProfile();">Profile</button>
 		</div>	
 
 		<div id="accountPanel" class="accordion objectWrapper" style="max-height:0px; padding-top:0px; padding-bottom:0px; margin-top:0px">
@@ -368,6 +368,8 @@ function toggleAccount() {
 			D('account').classList.remove('active');
 		}, 1);
 	}
+	
+	if (D('profilePanel').style.maxHeight != "0px") toggleProfile();
 }
 
 function toggleVisibility() {
@@ -384,22 +386,21 @@ function toggleVisibility() {
 function toggleProfile() { 	
 	let obj = D("profilePanel");
 	if (obj.style.maxHeight == "0px") {
-		if (XNO.seed) D('seed').value = XNO.seed; 
-		
-     	showAccordion(obj);
+     		showAccordion(obj);
 		obj.style.padding = "";
 		obj.style.marginTop = "5px";
-		D('account').classList.add('active');
+		D('profile').classList.add('active');
 		setTimeout(function() { if (obj.style.maxHeight != "0px") obj.style.maxHeight = ""; }, 100);
-	} else {	
-		D("seed").value = "";		
-     	showAccordion(obj);
+	} else {		
+     		showAccordion(obj);
 		setTimeout(function() {
 			hideAccordion(obj);
 			hideAccordionPadding(obj);
-			D('account').classList.remove('active');
+			D('profile').classList.remove('active');
 		}, 1);
 	}
+	
+	if (D('accountPanel').style.maxHeight != "0px") toggleAccount();
 }
 
 
