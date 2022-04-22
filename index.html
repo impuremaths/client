@@ -15,27 +15,28 @@
 </head>
 
 <body>
+	<strong id="msg" class="msg" style="display:none;"></strong>
 	<div class="containerDiv">
-	<div id="firstDiv" class="firstDiv">
-		<div style="margin-left:18px; margin-right:18px; margin-bottom:5px; margin-top:5px; text-align:center">	
+	<div id="firstDiv" class="firstDiv" style="background-color:steelblue">
+		<div style="margin-left:18px; margin-right:18px; margin-bottom:5px; margin-top:5px; text-align:right">	
 			<button id="account" class="left" onclick="toggleAccount()">Account</button>				
 			<button class="right" onclick="">Post</button>
 		</div>	
 
 		<div id="accountPanel" class="accordion objectWrapper" style="max-height:0px; padding-top:0px; padding-bottom:0px; margin-top:0px">
-			<div style="text-align:center;">
+			<div style="text-align:center; margin-top:5px">
 				<button tabindex="-1" class="left" onclick="generateSeed()">Generate Seed</button>
 				<button id="current" tabindex="-1" style="font-size:0.85em; border-radius:5px" onclick="showCurrent()" autocomplete="off" disabled>Current Seed</button>
 				<button class="right" onclick="if (confirm('Clear all data, including the current seed?')) clickClearSeed();">Clear Account</button>
 			</div>
-			<div style="display:flex; justify-content:space-between; margin-top:15px;">
+			<div style="display:flex; justify-content:space-between; margin-top:15px; margin-bottom:5px">
 				<input id="seed" placeholder="Private seed (store securely) ..." style="padding-right:30px; flex-grow:1; flex-basis:20px; margin-right:10px;" type="password" autocomplete="off" onclick="this.select()" oninput="importSeed();">
 				<button  tabindex="-1" class="close-icon" onclick="closeCopy(this.previousElementSibling)"></button>			
-				<button id="show" tabindex="-1" style="font-size:0.85em; margin-right:5px;" onclick="toggleVisibility()">Show</button>
+				<button id="show" tabindex="-1" style="font-size:0.85em;" onclick="toggleVisibility()">Show</button>
 			</div>
 		</div>
 		
-		<div class="objectWrapper">
+		<div id="profilePanel" class="objectWrapper">
 			<div class="clickFlash" style="display:flex; justify-content:space-between" onclick="toggleEdit();">
 				<strong style="overflow:hidden"><div id="displayName" style="text-overflow:ellipsis; overflow:hidden; font-size:1.2em;" class="flash">✏️ Anonymous</div></strong>
 			</div>
@@ -48,10 +49,33 @@
 					<button  tabindex="-1" class="close-icon" onclick="closeCopy(this.previousElementSibling)"></button>
 					<button style="font-size:0.85em" onclick="setData('name')">Set</button>
 				</div>
-				<div class='address' style="margin-top:10px" id="address" onclick="clickCopy(this, this.textContent)">&nbsp;</div>
+				<div class='address' style="margin-top:15px" id="address" onclick="clickCopy(this, this.textContent)">&nbsp;</div>
 			</div>	
-		</div>			
+		</div>	
+		<div class="objectWrapper" onclick="openSubAccordion(this)">
+			<div class="clickFlash leftRightBase" style="margin-top:0px" onclick="toggleSubAccordion(this)">
+				<strong>Subscriptions</strong>
+			</div>
+			<div class="accordion" style="max-height:0px">
+				<ul><li>Subscription</ul>
+				<strong>Memberships</strong>
+				<ul style="margin-bottom:5px"><li>Membership</ul>
+			</div>
+		</div>
+
+		<div class="objectWrapper" style="margin-top:20px" onclick="openSubAccordion(this)">
+			<div class="clickFlash leftRightBase" style="margin-top:0px" onclick="toggleSubAccordion(this)">
+				<strong>Library</strong>
+			</div>
+			<div class="accordion">
+				<ul style="margin-bottom:5px"><li>Clipping</ul>
+			</div>
+		</div>
+		
+		
 	</div>
+	
+	
 	<div id="secondDiv" class="secondDiv">
 		<div style="margin-top:30px">
 			<button onclick="ping()">Server time</button> 
@@ -324,8 +348,7 @@ function clearSeed() {
 }
 
 function clickClearSeed() {
-	clearSeed();
-	
+	clearSeed();	
 	inputEvent(D('seed'), "");
 	D("current").disabled = true;
 	D('address').textContent = "";
@@ -378,7 +401,6 @@ function toggleEdit() {
 	if (obj.style.maxHeight == "0px") {
 		showAccordion(obj);
 		obj.style.marginTop = "10px";
-		obj.style.marginBottom = "20px";
 	} else {	
 		hideAccordion(obj);
      		obj.style.marginBottom = "0px";
@@ -405,6 +427,25 @@ window.addEventListener('copy', function(e) {
 // UI helper library ///////////////////////////////////////////////////////////////////////
 
 function D(string) { return document.getElementById(string); }
+
+function toggleSubAccordion(but) {
+	let obj = but.parentNode.lastElementChild;
+	if (obj.style.maxHeight == "0px") {
+		showAccordion(obj);	
+		setTimeout(function() { if (obj.style.maxHeight != "0px") obj.style.maxHeight = ""; }, 100);
+	} else {
+		if (obj.style.maxHeight != "0px") showAccordion(obj);
+		setTimeout(function() { hideAccordion(obj); }, 1);
+	}
+}
+
+function openSubAccordion(but) {
+	let obj = but.lastElementChild;	
+	if (obj.style.maxHeight == "0px") {
+		showAccordion(obj);	
+		setTimeout(function() { if (obj.style.maxHeight != "0px") obj.style.maxHeight = ""; }, 100);
+	}
+}
 
 function showAccordion(obj) { obj.style.maxHeight = obj.scrollHeight + "px"; }
 
@@ -450,6 +491,21 @@ function clickCopy(elt, str) {
 		showMsg("Copied to clipboard.");
 	}
 	flash(elt);
+}
+
+var msgTimer;
+function showMsg(str, bold, hold) {
+	let e = new Date();
+	D('msg').style.display = "";
+	D('msg').style.transition = "";
+	if (msgTimer) clearTimeout(msgTimer);
+	D('msg').style.filter = "opacity(0.9)";
+	flash(D('msg'), e.toLocaleTimeString() + ": " + str);
+	if (bold) D('msg').style.backgroundColor = "#F00";
+	if (!hold) msgTimer = setTimeout(function() {
+		D('msg').style.transition = "filter 2s linear 0s";
+		D('msg').style.filter = "opacity(0)";
+	}, 5000);
 }
 
 </script>
