@@ -20,7 +20,7 @@
 	<div id="firstDiv" class="firstDiv" style="background-color:steelblue">
 		<div style="margin-left:18px; margin-right:18px; margin-bottom:5px; margin-top:5px; text-align:right">	
 			<button id="account" class="left" onclick="toggleAccount()">Account</button>				
-			<button class="right" onclick="">Post</button>
+			<button id="postButton" class="right" onclick="" disabled>Post</button>
 		</div>	
 
 		<div id="accountPanel" class="accordion objectWrapper" style="max-height:0px; padding-top:0px; padding-bottom:0px; margin-top:0px">
@@ -36,7 +36,7 @@
 			</div>
 		</div>
 		
-		<div id="profilePanel" class="objectWrapper">
+		<div id="profilePanel" class="objectWrapper" style="display:none">
 			<div class="clickFlash" style="display:flex; justify-content:space-between" onclick="toggleEdit();">
 				<strong style="overflow:hidden"><div id="displayName" style="text-overflow:ellipsis; overflow:hidden; font-size:1.2em;" class="flash">✏️ Anonymous</div></strong>
 			</div>
@@ -52,7 +52,7 @@
 				<div class='address' style="margin-top:15px" id="address" onclick="clickCopy(this, this.textContent)">&nbsp;</div>
 			</div>	
 		</div>	
-		<div class="objectWrapper" onclick="openSubAccordion(this)">
+		<div id="subPanel" class="objectWrapper" onclick="openSubAccordion(this)" style="display:none">
 			<div class="clickFlash leftRightBase" style="margin-top:0px" onclick="toggleSubAccordion(this)">
 				<strong>Subscriptions</strong>
 			</div>
@@ -123,6 +123,11 @@
 const enc = new TextEncoder();
 const dec = new TextDecoder();
 function D(string) { return document.getElementById(string); }
+
+const adj = ["Disillusioned", "Nihilistic", "Disenchanted", "Embittered", "Worldly", "Embattled", "Cynical", "Inured", "Desensitized", "Skeptical", "Contemplative", 
+				"Introspective", "Meditative", "Pensive", "Philosophical", "Stoic", "Apathetic", "Analytical", "Scholarly", "Erudite", "Composed", "Dispassionate", "Detached"];
+const animals = ["Puppy", "Kitten", "Bunny", "Hamster", "Panda", "Otter", "Hedgehog", "Penguin", "Squirrel", "Turtle", "Koala", "Hatchling", "Kit", "Joey", "Fledgling", 
+					"Fawn", "Foal", "Calf", "Cub", "Colt", "Filly", "Piglet", "Eaglet", "Owlet"];
 
 var XNO = {};
 
@@ -321,11 +326,15 @@ function importSeed() {
 	else {
 		let keepAccount = XNO.address;
 		clearSeed();		
-		XNO.unpackSeed(seed, parseInt(index));		
-		D("current").disabled = false;
-		
-		if (!keepAccount && D("accountPanel").style.maxHeight != "0px") toggleAccount();
+		XNO.unpackSeed(seed, parseInt(index));
 		D('address').textContent = XNO.address;
+		
+		D("current").disabled = false;
+		D("postButton").disabled = false;
+		D("profilePanel").style.display = "";
+		D("subPanel").style.display = "";
+		if (!keepAccount && D("accountPanel").style.maxHeight != "0px") toggleAccount();		
+		D('displayName').textContent = "✏️ " + adj[Math.floor(Math.random() * adj.length)] + " " + animals[Math.floor(Math.random() * animals.length)];
 
 		if (ws) ws.emit('authenticateUser', makePostHeader() );
 	}
@@ -350,8 +359,14 @@ function clearSeed() {
 function clickClearSeed() {
 	clearSeed();	
 	inputEvent(D('seed'), "");
-	D("current").disabled = true;
 	D('address').textContent = "";
+	
+	D("current").disabled = true;
+	D("postButton").disabled = true;
+	toggleEdit(true);
+	D("profilePanel").style.display = "none";
+	D("subPanel").style.display = "none";
+	
 	D('displayName').textContent = "✏️ Anonymous";
 }
 
@@ -396,14 +411,14 @@ function toggleVisibility() {
 	}
 }
 
-function toggleEdit() {
+function toggleEdit(close) {
 	let obj = D("editpanel");
-	if (obj.style.maxHeight == "0px") {
+	if (!close && obj.style.maxHeight == "0px") {
 		showAccordion(obj);
 		obj.style.marginTop = "10px";
 	} else {	
 		hideAccordion(obj);
-     		obj.style.marginBottom = "0px";
+     	obj.style.marginBottom = "0px";
 	}
 }
 	
