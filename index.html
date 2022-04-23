@@ -18,7 +18,8 @@
 	<strong id="msg" class="msg" style="display:none;"></strong>
 	<div class="containerDiv">
 	<div id="firstDiv" class="firstDiv" style="background-color:steelblue">
-		<div style="margin-left:18px; margin-right:18px; margin-bottom:5px; margin-top:5px; text-align:right">	
+		<div style="margin-left:18px; margin-right:18px; margin-bottom:5px; margin-top:5px; text-align:right">
+			<button style="float:left; font-size:0.85em" onclick="testFunction()">Test</button> 
 			<button id="account" class="left" onclick="toggleAccount()">Account</button>				
 			<button id="postButton" class="right" onclick="" autocomplete="off" disabled>Post</button>
 		</div>	
@@ -77,10 +78,6 @@
 	
 	
 	<div id="secondDiv" class="secondDiv">
-		<div style="margin-top:30px">
-			<button onclick="ping()">Server time</button> 
-			<span id="serverTime">Unknown</span>
-		</div>
 		
 		<!-- TESTING CODE -->
 		<div style="margin-top:30px">
@@ -127,7 +124,7 @@ function D(string) { return document.getElementById(string); }
 const adj = ["Disillusioned", "Nihilistic", "Disenchanted", "Embittered", "Worldly", "Embattled", "Cynical", "Inured", "Desensitized", "Skeptical", "Contemplative", 
 				"Introspective", "Meditative", "Pensive", "Philosophical", "Stoic", "Apathetic", "Analytical", "Scholarly", "Erudite", "Composed", "Dispassionate", "Detached"];
 const animals = ["Puppy", "Kitten", "Bunny", "Hamster", "Panda", "Otter", "Hedgehog", "Penguin", "Squirrel", "Turtle", "Koala", "Hatchling", "Kit", "Joey", "Fledgling", 
-					"Fawn", "Foal", "Calf", "Cub", "Colt", "Filly", "Piglet", "Eaglet", "Owlet"];
+					"Fawn", "Foal", "Calf", "Cub", "Colt", "Piglet", "Eaglet", "Owlet"];
 
 var XNO = {};
 
@@ -247,7 +244,8 @@ function setupWebsocket(restart) {
 
 	// Custom commands	
 	ws.on('serverPongCue', function(data) { 
-		document.getElementById("serverTime").textContent = data;
+		console.log(data);
+		console.log(new Date(data));
 	});
 
 	ws.on('authenticateUserResponse', function(data) {
@@ -269,7 +267,7 @@ function setupWebsocket(restart) {
 	});
 }
 
-function ping() {
+function testFunction() {
 	if (ws) ws.emit('clientPingCue');
 }
 
