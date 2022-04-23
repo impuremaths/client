@@ -41,6 +41,7 @@ body {
 	padding-top:50px; 
 	display:flex; 
 	flex-direction:column;
+	flex-shrink:0;
 }
 
 .secondDiv {
@@ -48,6 +49,8 @@ body {
 	padding-left:50px;
 	overflow:auto; 
 	flex-grow:1;
+	overflow-wrap: break-word;  
+	word-break: break-word;
 }
 
 .accordion {
@@ -245,7 +248,7 @@ a:hover {
      -khtml-user-select: none; /* Konqueror HTML */
        -moz-user-select: none; /* Old versions of Firefox */
         -ms-user-select: none; /* Internet Explorer/Edge */
-            user-select: none; /* Non-prefixed version, currently
+            user-select: none; /* Non-prefixed version, currently */
 }
 
 .flash {
