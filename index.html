@@ -21,7 +21,7 @@
 		<div style="margin-left:18px; margin-right:18px; margin-bottom:5px; margin-top:5px; text-align:right">
 			<button style="float:left; font-size:0.85em" onclick="testFunction()">Test</button> 
 			<button id="account" class="left" onclick="toggleAccount()">Account</button>				
-			<button id="postButton" class="right" onclick="" autocomplete="off" disabled>Post</button>
+			<button id="postButton" class="right" onclick="togglePost()" autocomplete="off" disabled>Post</button>
 		</div>	
 
 		<div id="accountPanel" class="accordion objectWrapper" style="max-height:0px; padding-top:0px; padding-bottom:0px; margin-top:0px">
@@ -78,29 +78,35 @@
 	
 	
 	<div id="secondDiv" class="secondDiv">
-		
-		<!-- TESTING CODE -->
-		<div style="margin-top:30px">
-			<span id="test-identity">Currently not authenticated.</span>
+	
+		<div id="homepage" style="margin-top:30px">
+			List of all posts:
+			<ul>
+			<li><span>Title</span>, <span>author</span> <button>Save to library</button><button onclick="toggleRead()">Read directly</span>
+			</ul>
+			
+			<div style="margin-top:30px">
+				<span id="test-identity">Currently not authenticated.</span>
+			</div>
+
+			<div style="margin-top:30px">
+				<input type="text" id="test-subscribe-input"></input>
+				<button onclick="testSubscribe()">Subscribe!</button><br />
+			</div>
+
+			<div style="margin-top:30px">
+				<input type="text" id="test-join-input"></input>
+				<button onclick="testJoin()">Join!</button><br />
+			</div>
+
+			<div style="margin-top:30px">
+				<input type="text" id="test-fetch-input"></input>
+				<button onclick="testFetch()">Fetch!</button><br />
+				<span id="test-fetch">Unknown</span>
+			</div>
 		</div>
 
-		<div style="margin-top:30px">
-			<input type="text" id="test-subscribe-input"></input><br />
-			<button onclick="testSubscribe()">Subscribe!</button><br />
-		</div>
-
-		<div style="margin-top:30px">
-			<input type="text" id="test-join-input"></input><br />
-			<button onclick="testJoin()">Join!</button><br />
-		</div>
-
-		<div style="margin-top:30px">
-			<input type="text" id="test-fetch-input"></input><br />
-			<button onclick="testFetch()">Fetch!</button><br />
-			<span id="test-fetch">Unknown</span>
-		</div>
-
-		<div style="margin-top:30px">
+		<div id="post" style="display:none; margin-top:30px">
 			<input type="text" id="test-post-createdts-input" placeholder="createdts, required if update"></input><br />
 			<input type="text" id="test-post-title-input" placeholder="title"></input><br />
 			<input type="text" id="test-post-content-input" placeholder="content"></input><br />
@@ -109,11 +115,19 @@
 				<option value="subscriber">Subscriber</option>
 				<option value="public">Public</option>
 			</select><br />
-			<button onclick="testPost()">Post!</button><br />
-			<button onclick="testDelete()">Delete!</button><br />
-			<span id="test-post">Unknown</span>
+			<button onclick="testPost()">Post!</button> <button onclick="testDelete()">Delete!</button><br />
+			
+			<br><span id="test-post">Unknown</span>
+			
+			<br><br><button onclick="togglePost()">Home</button>
 		</div>
-		<!-- END TESTING CODE -->
+		
+		<div id="read" style="display:none; margin-top:30px">
+			A post
+			
+			<br><br><button onclick="toggleRead()">Home</button>
+		</div>
+		
 	</div>
 	</div>
 	
@@ -391,8 +405,11 @@ function importSeed() {
 		D("postButton").disabled = false;
 		D("profilePanel").style.display = "";
 		D("subPanel").style.display = "";
-		if (!keepAccount && D("accountPanel").style.maxHeight != "0px") toggleAccount();		
-		D('displayName').textContent = "✏️ " + adj[Math.floor(Math.random() * adj.length)] + " " + animals[Math.floor(Math.random() * animals.length)];
+		if (!keepAccount && D("accountPanel").style.maxHeight != "0px") toggleAccount();
+			console.log(XNO.pubFromAddr(XNO.address));
+			console.log();
+		D('displayName').textContent = "✏️ " + adj[parseInt(XNO.pubFromAddr(XNO.address).substring(0, 10), 16) % adj.length] + " " 
+											+ animals[parseInt(XNO.pubFromAddr(XNO.address).substring(0, 10), 16) % animals.length];
 		D('subscriptions').innerHTML = '<li></li>';
 		D('memberships').innerHTML = '<li></li>';
 
@@ -491,6 +508,33 @@ function setData(type) {
 	}
 }
 
+function togglePost() {
+	if (D('post').style.display == "none") {
+		mainPanel('post');
+		D('postButton').classList.add('active');
+	} else {
+		mainPanel('homepage');
+		D('postButton').classList.remove('active');
+	}
+}
+
+function toggleRead() {
+	if (D('read').style.display == "none") {
+		mainPanel('read');
+	} else {
+		mainPanel('homepage');
+	}
+}
+
+function mainPanel(type) {
+	D('post').style.display = 'none';
+	D('read').style.display = 'none';
+	D('homepage').style.display = 'none';
+	
+	if (type == "post") D('post').style.display = "";
+	if (type == "read") D('read').style.display = "";
+	if (type == "homepage") D('homepage').style.display = "";
+}
 
 // Global event listeners ///////////////////////////////////////////////////////////////////////
 
