@@ -298,7 +298,7 @@ function setupWebsocket(restart) {
 	ws.on('joinResponse', function(data) {
 		if (!data) return;
 		const dataObj = JSON.parse(data);
-		if (dataObj.memberships) {
+		if (dataObj && dataObj.memberships) {
 			D('memberships').innerHTML = dataObj.memberships.map(e => `<li>${e.displayname} (exp. ${new Date(e.expiryts).toLocaleDateString('en-US')})</li>`).join("");
 		}
 
@@ -308,7 +308,7 @@ function setupWebsocket(restart) {
 	ws.on('subscribeResponse', function(data) {
 		if (!data) return;
 		const dataObj = JSON.parse(data);
-		if (dataObj.subscriptions) {
+		if (dataObj && dataObj.subscriptions) {
 			D('subscriptions').innerHTML = dataObj.subscriptions.map(e => `<li>${e.displayname}</li>`).join("");
 		}
 
