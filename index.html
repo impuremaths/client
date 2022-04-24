@@ -58,9 +58,9 @@
 				<strong>Subscriptions</strong>
 			</div>
 			<div class="accordion" style="max-height:0px">
-				<ul><li>Subscription</ul>
+				<ul id="subscriptions"><li>-</ul>
 				<strong>Memberships</strong>
-				<ul style="margin-bottom:5px"><li>Membership</ul>
+				<ul id="memberships" style="margin-bottom:5px"><li>-</ul>
 			</div>
 		</div>
 
@@ -82,6 +82,16 @@
 		<!-- TESTING CODE -->
 		<div style="margin-top:30px">
 			<span id="test-identity">Currently not authenticated.</span>
+		</div>
+
+		<div style="margin-top:30px">
+			<input type="text" id="test-subscribe-input"></input><br />
+			<button onclick="testSubscribe()">Subscribe!</button><br />
+		</div>
+
+		<div style="margin-top:30px">
+			<input type="text" id="test-join-input"></input><br />
+			<button onclick="testJoin()">Join!</button><br />
 		</div>
 
 		<div style="margin-top:30px">
@@ -249,6 +259,16 @@ function setupWebsocket(restart) {
 	});
 
 	ws.on('authenticateUserResponse', function(data) {
+		if (!data) return;
+		const dataObj = JSON.parse(data);
+		if (dataObj.displayname) D('displayName').textContent = "✏️ " + dataObj.displayname;
+		if (dataObj.subscriptions) {
+			D('subscriptions').innerHTML = dataObj.subscriptions.map(e => `<li>${e.displayname}</li>`).join("");
+		};
+		if (dataObj.memberships) {
+			D('memberships').innerHTML = dataObj.memberships.map(e => `<li>${e.displayname} (exp. ${new Date(e.expiryts).toLocaleDateString('en-US')})</li>`).join("");
+		}
+
 		document.getElementById('test-identity').textContent = `Currently authenticated as: ${data}`;
 	});
 
@@ -264,6 +284,35 @@ function setupWebsocket(restart) {
 
 	ws.on('deletePostResponse', function(data) {
 		document.getElementById('test-post').textContent = data;
+	});
+
+	ws.on('setDisplayNameResponse', function(data) {
+		if (!data) return;
+		dataObj = JSON.parse(data);
+		D('displayName').textContent = "✏️ " + dataObj.displayname;
+		D('set-name').value = "";
+
+		D('test-identity').textContent = `Currently authenticated as: ${data}`; // TODO rm
+	});
+
+	ws.on('joinResponse', function(data) {
+		if (!data) return;
+		const dataObj = JSON.parse(data);
+		if (dataObj.memberships) {
+			D('memberships').innerHTML = dataObj.memberships.map(e => `<li>${e.displayname} (exp. ${new Date(e.expiryts).toLocaleDateString('en-US')})</li>`).join("");
+		}
+
+		D('test-identity').textContent = `Currently authenticated as: ${data}`; // TODO rm
+	});
+
+	ws.on('subscribeResponse', function(data) {
+		if (!data) return;
+		const dataObj = JSON.parse(data);
+		if (dataObj.subscriptions) {
+			D('subscriptions').innerHTML = dataObj.subscriptions.map(e => `<li>${e.displayname}</li>`).join("");
+		}
+
+		D('test-identity').textContent = `Currently authenticated as: ${data}`; // TODO rm
 	});
 }
 
@@ -301,6 +350,16 @@ function testDelete() {
 		'deletePost',
 		{ createdts: Number(document.getElementById('test-post-createdts-input').value) },
 	);
+}
+
+function testSubscribe() {
+	if (!ws) return;
+	ws.emit('subscribe', { userid: D('test-subscribe-input').value });
+}
+
+function testJoin() {
+	if (!ws) return;
+	ws.emit('join', { userid: D('test-join-input').value });
 }
 
 // UI interaction handlers ///////////////////////////////////////////////////////////////////////
@@ -423,7 +482,11 @@ function toggleEdit(close) {
 }
 	
 function setData(type) {
-	console.error("Need code to set " + type);
+	if (type == 'name') {
+		if (ws) ws.emit('setDisplayName', { displayname: D('set-name').value} );
+	} else {
+		console.error("Need code to set " + type);
+	}
 }
 
 
