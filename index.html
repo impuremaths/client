@@ -393,6 +393,8 @@ function importSeed() {
 		D("subPanel").style.display = "";
 		if (!keepAccount && D("accountPanel").style.maxHeight != "0px") toggleAccount();		
 		D('displayName').textContent = "✏️ " + adj[Math.floor(Math.random() * adj.length)] + " " + animals[Math.floor(Math.random() * animals.length)];
+		D('subscriptions').innerHTML = '<li></li>';
+		D('memberships').innerHTML = '<li></li>';
 
 		if (ws) ws.emit('authenticateUser', makePostHeader() );
 	}
