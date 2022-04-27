@@ -383,10 +383,11 @@ function importSeed() {
 		if (!keepAccount && D("accountPanel").style.maxHeight != "0px") toggleAccount();
 			console.log(XNO.pubFromAddr(XNO.address));
 			console.log();
-		D('displayName').textContent = "✏️ " + adj[parseInt(XNO.pubFromAddr(XNO.address).substring(0, 10), 16) % adj.length] + " " 
+		let mainName = adj[parseInt(XNO.pubFromAddr(XNO.address).substring(0, 10), 16) % adj.length] + " " 
 											+ animals[parseInt(XNO.pubFromAddr(XNO.address).substring(0, 10), 16) % animals.length];
-		D('subscriptions').innerHTML = '<li></li>';
-		D('memberships').innerHTML = '<li></li>';
+		D('displayName').textContent = "✏️ " + mainName;
+		D('subscriptions').innerHTML = '<li>' + mainName + '</li>';
+		D('memberships').innerHTML = '<li>' + mainName + '</li>';
 
 		if (ws) ws.emit('authenticateUser', makePostHeader() );
 	}
