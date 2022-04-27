@@ -274,15 +274,9 @@ function setupWebsocket(restart) {
 
 	ws.on('authenticateUserResponse', function(data) {
 		if (!data) return;
-		const dataObj = JSON.parse(data);
-		if (dataObj.displayname) D('displayName').textContent = "✏️ " + dataObj.displayname;
-		if (dataObj.subscriptions) {
-			D('subscriptions').innerHTML = dataObj.subscriptions.map(e => `<li>${e.displayname}</li>`).join("");
-		};
-		if (dataObj.memberships) {
-			D('memberships').innerHTML = dataObj.memberships.map(e => `<li>${e.displayname} (exp. ${new Date(e.expiryts).toLocaleDateString('en-US')})</li>`).join("");
-		}
-
+		if (data.displayname) D('displayName').textContent = "✏️ " + data.displayname;
+		if (data.subscriptions) D('subscriptions').innerHTML = data.subscriptions.map(e => `<li>${e.displayname}</li>`).join("");
+		if (data.memberships) D('memberships').innerHTML = data.memberships.map(e => `<li>${e.displayname} (exp. ${new Date(e.expiryts).toLocaleDateString('en-US')})</li>`).join("");
 		document.getElementById('test-identity').textContent = `Currently authenticated as: ${data}`;
 	});
 
@@ -291,8 +285,7 @@ function setupWebsocket(restart) {
 	});
 
 	ws.on('writePostResponse', function(data) {
-		dataObj = JSON.parse(data);
-		document.getElementById('test-post-createdts-input').value = dataObj.createdts;
+		document.getElementById('test-post-createdts-input').value = data.createdts;
 		document.getElementById('test-post').textContent = data;
 	});
 
@@ -302,8 +295,7 @@ function setupWebsocket(restart) {
 
 	ws.on('setDisplayNameResponse', function(data) {
 		if (!data) return;
-		dataObj = JSON.parse(data);
-		D('displayName').textContent = "✏️ " + dataObj.displayname;
+		D('displayName').textContent = "✏️ " + data.displayname;
 		D('set-name').value = "";
 
 		D('test-identity').textContent = `Currently authenticated as: ${data}`; // TODO rm
@@ -311,21 +303,15 @@ function setupWebsocket(restart) {
 
 	ws.on('joinResponse', function(data) {
 		if (!data) return;
-		const dataObj = JSON.parse(data);
-		if (dataObj && dataObj.memberships) {
-			D('memberships').innerHTML = dataObj.memberships.map(e => `<li>${e.displayname} (exp. ${new Date(e.expiryts).toLocaleDateString('en-US')})</li>`).join("");
-		}
-
+		if (data.memberships) D('memberships').innerHTML = data.memberships.map(e => `<li>${e.displayname} (exp. ${new Date(e.expiryts).toLocaleDateString('en-US')})</li>`).join("");
+		
 		D('test-identity').textContent = `Currently authenticated as: ${data}`; // TODO rm
 	});
 
 	ws.on('subscribeResponse', function(data) {
 		if (!data) return;
-		const dataObj = JSON.parse(data);
-		if (dataObj && dataObj.subscriptions) {
-			D('subscriptions').innerHTML = dataObj.subscriptions.map(e => `<li>${e.displayname}</li>`).join("");
-		}
-
+		if (data.subscriptions) D('subscriptions').innerHTML = data.subscriptions.map(e => `<li>${e.displayname}</li>`).join("");
+		
 		D('test-identity').textContent = `Currently authenticated as: ${data}`; // TODO rm
 	});
 }
