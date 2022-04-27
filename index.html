@@ -322,10 +322,7 @@ function testFunction() {
 
 function testFetch() {
 	if (!ws) return;
-	ws.emit(
-		'readContentFromUser',
-		{ userid: document.getElementById('test-fetch-input').value },
-	);
+	ws.emit('readContentFromUser', { userid: document.getElementById('test-fetch-input').value });
 }
 
 function testPost() {
@@ -335,21 +332,13 @@ function testPost() {
 		content: document.getElementById('test-post-content-input').value,
 		visibility: document.getElementById('test-post-visibility-input').value,
 	};
-	if (document.getElementById('test-post-createdts-input').value) {
-		post['createdts'] = Number(document.getElementById('test-post-createdts-input').value);
-	}
-	ws.emit(
-		'writePost',
-		post,
-	);
+	if (document.getElementById('test-post-createdts-input').value) post['createdts'] = Number(document.getElementById('test-post-createdts-input').value);
+	ws.emit('writePost', post);
 }
 
 function testDelete() {
 	if (!ws) return;
-	ws.emit(
-		'deletePost',
-		{ createdts: Number(document.getElementById('test-post-createdts-input').value) },
-	);
+	ws.emit('deletePost', { createdts: Number(document.getElementById('test-post-createdts-input').value) });
 }
 
 function testSubscribe() {
