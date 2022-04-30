@@ -84,40 +84,10 @@
 			<ul>
 			<li><span>Title</span>, <span>author</span> <button>Save to library</button><button onclick="toggleRead()">Read directly</span>
 			</ul>
-			
-			<div style="margin-top:30px">
-				<span id="test-identity">Currently not authenticated.</span>
-			</div>
-
-			<div style="margin-top:30px">
-				<input type="text" id="test-subscribe-input"></input>
-				<button onclick="testSubscribe()">Subscribe!</button><br />
-			</div>
-
-			<div style="margin-top:30px">
-				<input type="text" id="test-join-input"></input>
-				<button onclick="testJoin()">Join!</button><br />
-			</div>
-
-			<div style="margin-top:30px">
-				<input type="text" id="test-fetch-input"></input>
-				<button onclick="testFetch()">Fetch!</button><br />
-				<span id="test-fetch">Unknown</span>
-			</div>
 		</div>
 
 		<div id="post" style="display:none; margin-top:30px">
-			<input type="text" id="test-post-createdts-input" placeholder="createdts, required if update"></input><br />
-			<input type="text" id="test-post-title-input" placeholder="title"></input><br />
-			<input type="text" id="test-post-content-input" placeholder="content"></input><br />
-			<select name="visibility" id="test-post-visibility-input">
-				<option value="private">Private</option>
-				<option value="subscriber">Subscriber</option>
-				<option value="public">Public</option>
-			</select><br />
-			<button onclick="testPost()">Post!</button> <button onclick="testDelete()">Delete!</button><br />
-			
-			<br><span id="test-post">Unknown</span>
+			Post composer
 			
 			<br><br><button onclick="togglePost()">Home</button>
 		</div>
@@ -271,84 +241,10 @@ function setupWebsocket(restart) {
 		console.log(data);
 		console.log(new Date(data));
 	});
-
-	ws.on('authenticateUserResponse', function(data) {
-		if (!data) return;
-		if (data.displayname) D('displayName').textContent = "✏️ " + data.displayname;
-		if (data.subscriptions) D('subscriptions').innerHTML = data.subscriptions.map(e => `<li>${e.displayname}</li>`).join("");
-		if (data.memberships) D('memberships').innerHTML = data.memberships.map(e => `<li>${e.displayname} (exp. ${new Date(e.expiryts).toLocaleDateString('en-US')})</li>`).join("");
-		document.getElementById('test-identity').textContent = `Currently authenticated as: ${data}`;
-	});
-
-	ws.on('readContentFromUserResponse', function(data) {
-		document.getElementById('test-fetch').textContent = data;
-	});
-
-	ws.on('writePostResponse', function(data) {
-		document.getElementById('test-post-createdts-input').value = data.createdts;
-		document.getElementById('test-post').textContent = data;
-	});
-
-	ws.on('deletePostResponse', function(data) {
-		document.getElementById('test-post').textContent = data;
-	});
-
-	ws.on('setDisplayNameResponse', function(data) {
-		if (!data) return;
-		D('displayName').textContent = "✏️ " + data.displayname;
-		D('set-name').value = "";
-
-		D('test-identity').textContent = `Currently authenticated as: ${data}`; // TODO rm
-	});
-
-	ws.on('joinResponse', function(data) {
-		if (!data) return;
-		if (data.memberships) D('memberships').innerHTML = data.memberships.map(e => `<li>${e.displayname} (exp. ${new Date(e.expiryts).toLocaleDateString('en-US')})</li>`).join("");
-		
-		D('test-identity').textContent = `Currently authenticated as: ${data}`; // TODO rm
-	});
-
-	ws.on('subscribeResponse', function(data) {
-		if (!data) return;
-		if (data.subscriptions) D('subscriptions').innerHTML = data.subscriptions.map(e => `<li>${e.displayname}</li>`).join("");
-		
-		D('test-identity').textContent = `Currently authenticated as: ${data}`; // TODO rm
-	});
 }
 
 function testFunction() {
 	if (ws) ws.emit('clientPingCue');
-}
-
-function testFetch() {
-	if (!ws) return;
-	ws.emit('readContentFromUser', { userid: document.getElementById('test-fetch-input').value });
-}
-
-function testPost() {
-	if (!ws) return;
-	var post = { 
-		title: document.getElementById('test-post-title-input').value,
-		content: document.getElementById('test-post-content-input').value,
-		visibility: document.getElementById('test-post-visibility-input').value,
-	};
-	if (document.getElementById('test-post-createdts-input').value) post['createdts'] = Number(document.getElementById('test-post-createdts-input').value);
-	ws.emit('writePost', post);
-}
-
-function testDelete() {
-	if (!ws) return;
-	ws.emit('deletePost', { createdts: Number(document.getElementById('test-post-createdts-input').value) });
-}
-
-function testSubscribe() {
-	if (!ws) return;
-	ws.emit('subscribe', { userid: D('test-subscribe-input').value });
-}
-
-function testJoin() {
-	if (!ws) return;
-	ws.emit('join', { userid: D('test-join-input').value });
 }
 
 // UI interaction handlers ///////////////////////////////////////////////////////////////////////
@@ -388,8 +284,6 @@ function importSeed() {
 		D('displayName').textContent = "✏️ " + mainName;
 		D('subscriptions').innerHTML = '<li>' + mainName + '</li>';
 		D('memberships').innerHTML = '<li>' + mainName + '</li>';
-
-		if (ws) ws.emit('authenticateUser', makePostHeader() );
 	}
 }
 
