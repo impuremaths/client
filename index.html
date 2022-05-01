@@ -79,21 +79,24 @@
 	
 	<div id="secondDiv" class="secondDiv">
 	
-		<div id="homepage" style="margin-top:30px">
-			List of all posts:
-			<ul>
-			<li><span>Title</span>, <span>author</span> <button>Save to library</button><button onclick="toggleRead()">Read directly</span>
+		<div id="homepage" style="margin-top:30px">		
+			<button onclick="testFunction()">Fetch recent posts</button> 
+			<ul id="discovery">
+			<li><span>Title</span> :: <span>content</span> <button>Save to library</button><button onclick="toggleRead()">Read directly</span>
 			</ul>
 		</div>
 
 		<div id="post" style="display:none; margin-top:30px">
-			Post composer
-			
+			<textarea id="postTitle" autocomplete="off">Post Title</textarea>			
+			<br><textarea id="postContent" autocomplete="off">Post Content</textarea>
+					
+			<br><br><button onclick="post()">Post</button>			
 			<br><br><button onclick="togglePost()">Home</button>
 		</div>
 		
 		<div id="read" style="display:none; margin-top:30px">
-			A post
+			<div id="readTitle">Post Title</div>			
+			<div id="readContent">Post Content</div>			
 			
 			<br><br><button onclick="toggleRead()">Home</button>
 		</div>
@@ -110,6 +113,10 @@
 
 
 // Global variables and macros ///////////////////////////////////////////////////////////////////////
+
+function testFunction() {
+	if (ws) ws.emit('queryPostsRecent');
+}
 
 const enc = new TextEncoder();
 const dec = new TextDecoder();
@@ -209,7 +216,10 @@ var ws = new WebSocket(serverURL);
 setupWebsocket();
 
 function setupWebsocket(restart) {
-	ws.onopen = function() { console.log("Connected to server!"); };
+	ws.onopen = function() { 
+		console.log("Connected to server!"); 
+		ws.emit('queryPostsRecent');
+	};
 	ws.onclose = function() { 
 		ws = new WebSocket(serverURL);
 		setupWebsocket(true);
@@ -241,13 +251,68 @@ function setupWebsocket(restart) {
 		console.log(data);
 		console.log(new Date(data));
 	});
+	
+	ws.on('queryPostsRecentResponse', function(data) {
+		console.log(data);
+		clearDOM(D('discovery'));
+		data.sort(function(x, y) {
+			return y.createdts - x.createdts;
+		});
+		for (let i = 0; i < data.length; i++) {
+			let postli = make('li', data[i].title + " :: " + data[i].content);
+			postli.appendChild(make('br'));
+			postli.appendChild(make('button', 'Save to library'));
+			let readNowBut = make('button', 'Read now');
+			readNowBut.onclick = toggleRead;
+			postli.appendChild(readNowBut);
+			postli.appendChild(make('br'));
+			postli.appendChild(make('br'));
+			D('discovery').appendChild(postli);
+		}
+	});
 }
 
-function testFunction() {
-	if (ws) ws.emit('clientPingCue');
+// Main panel UI interaction handlers ///////////////////////////////////////////////////////////////////////
+
+function fetchRecent() {
+	if (ws) ws.emit('queryPostsRecent');
 }
 
-// UI interaction handlers ///////////////////////////////////////////////////////////////////////
+function post() {
+	let postData = {title:D('postTitle').value, content:D('postContent').value, visibility:"public"}; 
+	ws.emit('updatePost', postData);
+}
+
+function togglePost() {
+	if (D('post').style.display == "none") {
+		mainPanel('post');
+		D('postButton').classList.add('active');
+	} else {
+		mainPanel('homepage');
+		D('postButton').classList.remove('active');
+	}
+}
+
+function toggleRead() {
+	if (D('read').style.display == "none") {
+		mainPanel('read');
+	} else {
+		mainPanel('homepage');
+	}
+}
+
+function mainPanel(type) {
+	D('post').style.display = 'none';
+	D('read').style.display = 'none';
+	D('homepage').style.display = 'none';
+	
+	if (type == "post") D('post').style.display = "";
+	if (type == "read") D('read').style.display = "";
+	if (type == "homepage") D('homepage').style.display = "";
+}
+
+
+// Sidebar UI interaction handlers ///////////////////////////////////////////////////////////////////////
 
 var clipboardText;
 
@@ -284,6 +349,8 @@ function importSeed() {
 		D('displayName').textContent = "✏️ " + mainName;
 		D('subscriptions').innerHTML = '<li>' + mainName + '</li>';
 		D('memberships').innerHTML = '<li>' + mainName + '</li>';
+		
+		if (ws) ws.emit('authenticateUser', makePostHeader() );
 	}
 }
 
@@ -376,34 +443,6 @@ function setData(type) {
 	} else {
 		console.error("Need code to set " + type);
 	}
-}
-
-function togglePost() {
-	if (D('post').style.display == "none") {
-		mainPanel('post');
-		D('postButton').classList.add('active');
-	} else {
-		mainPanel('homepage');
-		D('postButton').classList.remove('active');
-	}
-}
-
-function toggleRead() {
-	if (D('read').style.display == "none") {
-		mainPanel('read');
-	} else {
-		mainPanel('homepage');
-	}
-}
-
-function mainPanel(type) {
-	D('post').style.display = 'none';
-	D('read').style.display = 'none';
-	D('homepage').style.display = 'none';
-	
-	if (type == "post") D('post').style.display = "";
-	if (type == "read") D('read').style.display = "";
-	if (type == "homepage") D('homepage').style.display = "";
 }
 
 // Global event listeners ///////////////////////////////////////////////////////////////////////
@@ -500,6 +539,14 @@ function showMsg(str, bold, hold) {
 		D('msg').style.transition = "filter 2s linear 0s";
 		D('msg').style.filter = "opacity(0)";
 	}, 5000);
+}
+
+function clearDOM(myNode) {	while (myNode.firstChild) { myNode.removeChild(myNode.lastChild); } }
+
+function make(string, text) { 
+	let myObj = document.createElement(string);
+	if (text) myObj.textContent = text;
+	return myObj;
 }
 
 </script>
