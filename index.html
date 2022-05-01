@@ -80,9 +80,8 @@
 	<div id="secondDiv" class="secondDiv">
 	
 		<div id="homepage" style="margin-top:30px">		
-			<button onclick="testFunction()">Fetch recent posts</button> 
+			<button onclick="fetchRecent()">Fetch recent posts</button> 
 			<ul id="discovery">
-			<li><span>Title</span> :: <span>content</span> <button>Save to library</button><button onclick="toggleRead()">Read directly</span>
 			</ul>
 		</div>
 
@@ -260,13 +259,14 @@ function setupWebsocket(restart) {
 		});
 		for (let i = 0; i < data.length; i++) {
 			let postli = make('li', data[i].title + " :: " + data[i].content);
-			postli.appendChild(make('br'));
-			postli.appendChild(make('button', 'Save to library'));
-			let readNowBut = make('button', 'Read now');
-			readNowBut.onclick = toggleRead;
-			postli.appendChild(readNowBut);
-			postli.appendChild(make('br'));
-			postli.appendChild(make('br'));
+			postli.onclick = toggleRead;
+			postli.style.cursor = "pointer";
+			postli.style.marginBottom = "20px";
+			
+			let libBut = make('button', 'Save to library');
+			libBut.onclick = function() {event.preventDefault() };
+			postli.appendChild(libBut);
+			
 			D('discovery').appendChild(postli);
 		}
 	});
