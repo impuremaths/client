@@ -264,7 +264,8 @@ function setupWebsocket(restart) {
 			postli.style.marginBottom = "20px";
 			
 			let libBut = make('button', 'Save to library');
-			libBut.onclick = function() {event.preventDefault() };
+			libBut.onclick = function() {event.stopPropagation() };
+			libBut.style.margin = "5px";
 			postli.appendChild(libBut);
 			
 			D('discovery').appendChild(postli);
