@@ -24,7 +24,7 @@
 			<button id="postButton" class="right" onclick="togglePost()" autocomplete="off" disabled>Post</button>
 		</div>	
 
-		<div id="accountPanel" class="accordion objectWrapper" style="flex-shrink:0px; max-height:0px; padding-top:0px; padding-bottom:0px; margin-top:0px">
+		<div id="accountPanel" class="accordion objectWrapper" style="flex-shrink:0; max-height:0px; padding-top:0px; padding-bottom:0px; margin-top:0px">
 			<div style="text-align:center; margin-top:5px">
 				<button tabindex="-1" class="left" onclick="generateSeed()">Generate Seed</button>
 				<button id="current" tabindex="-1" style="font-size:0.85em; border-radius:5px" onclick="showCurrent()" autocomplete="off" disabled>Current Seed</button>
@@ -66,7 +66,7 @@
 
 		<div class="objectWrapper" style="margin-top:20px" onclick="openSubAccordion(this)">
 			<div class="clickFlash leftRightBase" style="margin-top:0px" onclick="toggleSubAccordion(this)">
-				<strong>Library</strong> <i style="color:gray">(create account to keep)</i>
+				<strong>Library</strong> <i id="libraryWarning" style="color:gray">(create account to keep)</i>
 			</div>
 			<div class="accordion">
 				<div id="libraryPlaceholder" style="font-style:italic; color:gray; text-align:center; margin-top:15px">Read something!</div>
@@ -398,8 +398,10 @@ function importSeed() {
 		D('displayName').textContent = "✏️ " + mainName;
 		D('subscriptions').innerHTML = '<li>' + mainName + '</li>';
 		D('memberships').innerHTML = '<li>' + mainName + '</li>';
-		
-		if (ws) ws.emit('authenticateUser', makePostHeader() );
+		D('libraryWarning').style.display = "none";
+			
+		let ts = Date.now();
+		if (ws) ws.emit('authenticateUser', {userid: XNO.address, ts, signature:XNO.sign(ts, XNO.address)});
 	}
 }
 
@@ -432,13 +434,7 @@ function clickClearSeed() {
 	D("subPanel").style.display = "none";
 	
 	D('displayName').textContent = "✏️ Anonymous";
-}
-
-function makePostHeader() {
-	let header = {userid: XNO.address, ts:Date.now()};
-	header.signature = XNO.sign(header.ts, XNO.address);
-	console.log(header);
-	return header;
+	D('libraryWarning').style.display = "";
 }
 
 function toggleAccount() {
