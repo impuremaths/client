@@ -24,7 +24,7 @@
 			<button id="postButton" class="right" onclick="togglePost()" autocomplete="off" disabled>Post</button>
 		</div>	
 
-		<div id="accountPanel" class="accordion objectWrapper" style="max-height:0px; padding-top:0px; padding-bottom:0px; margin-top:0px">
+		<div id="accountPanel" class="accordion objectWrapper" style="flex-shrink:0px; max-height:0px; padding-top:0px; padding-bottom:0px; margin-top:0px">
 			<div style="text-align:center; margin-top:5px">
 				<button tabindex="-1" class="left" onclick="generateSeed()">Generate Seed</button>
 				<button id="current" tabindex="-1" style="font-size:0.85em; border-radius:5px" onclick="showCurrent()" autocomplete="off" disabled>Current Seed</button>
@@ -66,10 +66,11 @@
 
 		<div class="objectWrapper" style="margin-top:20px" onclick="openSubAccordion(this)">
 			<div class="clickFlash leftRightBase" style="margin-top:0px" onclick="toggleSubAccordion(this)">
-				<strong>Library</strong>
+				<strong>Library</strong> <i style="color:gray">(create account to keep)</i>
 			</div>
 			<div class="accordion">
-				<ul style="margin-bottom:5px"><li>Clipping</ul>
+				<div id="libraryPlaceholder" style="font-style:italic; color:gray; text-align:center; margin-top:15px">Read something!</div>
+				<ul id="library" style="margin-bottom:5px"></ul>
 			</div>
 		</div>
 		
@@ -94,10 +95,10 @@
 		</div>
 		
 		<div id="read" style="display:none; margin-top:30px">
-			<div id="readTitle">Post Title</div>			
+			<div id="readTitle" style="margin-bottom:10px; font-weight:bold">Post Title</div>			
 			<div id="readContent">Post Content</div>			
 			
-			<br><br><button onclick="toggleRead()">Home</button>
+			<br><button onclick="toggleRead()">Home</button>
 		</div>
 		
 	</div>
@@ -257,21 +258,41 @@ function setupWebsocket(restart) {
 		data.sort(function(x, y) {
 			return y.createdts - x.createdts;
 		});
+		
 		for (let i = 0; i < data.length; i++) {
 			let postli = make('li', data[i].title + " :: " + data[i].content);
-			postli.onclick = toggleRead;
-			postli.style.cursor = "pointer";
-			postli.style.marginBottom = "20px";
+			postli.onclick = function() {
+				readPanelWithData(data[i]);
+				
+				// add to library or unbold existing entry
+				if (!D(data[i].createdts.toString())) addToLib(data[i]);
+				else D(data[i].createdts.toString()).style.fontWeight = "";
+				flash(D(data[i].createdts.toString()));
+			}
+			postli.style = "cursor:pointer; margin-bottom:10px; width:max-content";
 			
-			let libBut = make('button', 'Save to library');
-			libBut.onclick = function() {event.stopPropagation() };
+			// add to library button
+			let libBut = make('button', 'Add to library');
+			libBut.onclick = function() {
+				event.stopPropagation();				
+				if (!D(data[i].createdts.toString())) {
+					addToLib(data[i]);
+					D(data[i].createdts.toString()).style.fontWeight = "bold";
+				}
+				flash(D(data[i].createdts.toString()));
+			};
 			libBut.style.margin = "5px";
 			postli.appendChild(libBut);
 			
 			D('discovery').appendChild(postli);
 		}
 	});
+	
+	ws.on('queryPostResponse', function(data) {
+		console.log(data);
+	});
 }
+
 
 // Main panel UI interaction handlers ///////////////////////////////////////////////////////////////////////
 
@@ -282,6 +303,7 @@ function fetchRecent() {
 function post() {
 	let postData = {title:D('postTitle').value, content:D('postContent').value, visibility:"public"}; 
 	ws.emit('updatePost', postData);
+	togglePost();
 }
 
 function togglePost() {
@@ -302,6 +324,16 @@ function toggleRead() {
 	}
 }
 
+function readPanelWithData(metaData) {
+	D('readTitle').textContent = metaData.title;
+	if (metaData.content) D('readContent').textContent = metaData.content;
+	else {
+		D('readContent').textContent = "Loading...";
+		ws.emit('queryPost', { userid: metaData.userid, createdts: metaData.createdts });
+	}
+	mainPanel('read');
+}
+
 function mainPanel(type) {
 	D('post').style.display = 'none';
 	D('read').style.display = 'none';
@@ -312,8 +344,23 @@ function mainPanel(type) {
 	if (type == "homepage") D('homepage').style.display = "";
 }
 
-
 // Sidebar UI interaction handlers ///////////////////////////////////////////////////////////////////////
+
+function addToLib(metaData) {
+	let libli = make('li', metaData.title + " :: " + metaData.content);
+	libli.onclick = function() {
+		D(metaData.createdts.toString()).style.fontWeight = "";	
+		readPanelWithData(metaData);
+	}
+	libli.style = "cursor:pointer; margin-bottom:10px; width:max-content;";
+	
+	libli.id = metaData.createdts.toString();
+	if (D('library').children[0]) D('library').insertBefore(libli, D('library').children[0]);
+	else {
+		D('library').appendChild(libli);
+		D('libraryPlaceholder').style.display = "none";
+	}
+}
 
 var clipboardText;
 
