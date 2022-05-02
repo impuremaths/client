@@ -265,9 +265,9 @@ function setupWebsocket(restart) {
 				readPanelWithData(data[i]);
 				
 				// add to library or unbold existing entry
-				if (!D(data[i].createdts.toString())) addToLib(data[i]);
-				else D(data[i].createdts.toString()).style.fontWeight = "";
-				flash(D(data[i].createdts.toString()));
+				if (!D(data[i].userid + "-" + data[i].createdts.toString())) addToLib(data[i]);
+				else D(data[i].userid + "-" + data[i].createdts.toString()).style.fontWeight = "";
+				flash(D(data[i].userid + "-" + data[i].createdts.toString()));
 			}
 			postli.style = "cursor:pointer; margin-bottom:10px; width:max-content";
 			
@@ -275,11 +275,11 @@ function setupWebsocket(restart) {
 			let libBut = make('button', 'Add to library');
 			libBut.onclick = function() {
 				event.stopPropagation();				
-				if (!D(data[i].createdts.toString())) {
+				if (!D(data[i].userid + "-" + data[i].createdts.toString())) {
 					addToLib(data[i]);
-					D(data[i].createdts.toString()).style.fontWeight = "bold";
+					D(data[i].userid + "-" + data[i].createdts.toString()).style.fontWeight = "bold";
 				}
-				flash(D(data[i].createdts.toString()));
+				flash(D(data[i].userid + "-" + data[i].createdts.toString()));
 			};
 			libBut.style.margin = "5px";
 			postli.appendChild(libBut);
@@ -349,12 +349,12 @@ function mainPanel(type) {
 function addToLib(metaData) {
 	let libli = make('li', metaData.title + " :: " + metaData.content);
 	libli.onclick = function() {
-		D(metaData.createdts.toString()).style.fontWeight = "";	
+		D(metaData.userid + "-" + metaData.createdts.toString()).style.fontWeight = "";	
 		readPanelWithData(metaData);
 	}
 	libli.style = "cursor:pointer; margin-bottom:10px; width:max-content;";
 	
-	libli.id = metaData.createdts.toString();
+	libli.id = metaData.userid + "-" + metaData.createdts.toString();
 	if (D('library').children[0]) D('library').insertBefore(libli, D('library').children[0]);
 	else {
 		D('library').appendChild(libli);
