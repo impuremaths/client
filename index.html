@@ -261,13 +261,14 @@ function setupWebsocket(restart) {
 		
 		for (let i = 0; i < data.length; i++) {
 			let postli = make('li', data[i].title + " :: " + data[i].content);
+			let postid = data[i].userid + "-" + data[i].createdts.toString();
 			postli.onclick = function() {
 				readPanelWithData(data[i]);
 				
 				// add to library or unbold existing entry
-				if (!D(data[i].userid + "-" + data[i].createdts.toString())) addToLib(data[i]);
-				else D(data[i].userid + "-" + data[i].createdts.toString()).style.fontWeight = "";
-				flash(D(data[i].userid + "-" + data[i].createdts.toString()));
+				if (!D(postid)) addToLib(data[i]);
+				else D(postid).style.fontWeight = "";
+				flash(D(postid));
 			}
 			postli.style = "cursor:pointer; margin-bottom:10px; width:max-content";
 			
@@ -275,11 +276,11 @@ function setupWebsocket(restart) {
 			let libBut = make('button', 'Add to library');
 			libBut.onclick = function() {
 				event.stopPropagation();				
-				if (!D(data[i].userid + "-" + data[i].createdts.toString())) {
+				if (!D(postid)) {
 					addToLib(data[i]);
-					D(data[i].userid + "-" + data[i].createdts.toString()).style.fontWeight = "bold";
+					D(postid).style.fontWeight = "bold";
 				}
-				flash(D(data[i].userid + "-" + data[i].createdts.toString()));
+				flash(D(postid));
 			};
 			libBut.style.margin = "5px";
 			postli.appendChild(libBut);
