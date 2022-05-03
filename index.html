@@ -252,6 +252,14 @@ function setupWebsocket(restart) {
 		console.log(new Date(data));
 	});
 	
+	ws.on('updateDisplayNameResponse', function(data) {
+		console.log(data);
+	});
+	
+	ws.on('authenticateUserResponse', function(data) {
+		console.log(data);
+	});
+	
 	ws.on('queryPostsRecentResponse', function(data) {
 		console.log(data);
 		clearDOM(D('discovery'));
@@ -262,6 +270,7 @@ function setupWebsocket(restart) {
 		for (let i = 0; i < data.length; i++) {
 			let postli = make('li', data[i].title + " :: " + data[i].content);
 			let postid = data[i].userid + "-" + data[i].createdts.toString();
+			postli.style = "cursor:pointer; margin-bottom:10px; width:max-content";
 			postli.onclick = function() {
 				readPanelWithData(data[i]);
 				
@@ -270,7 +279,6 @@ function setupWebsocket(restart) {
 				else D(postid).style.fontWeight = "";
 				flash(D(postid));
 			}
-			postli.style = "cursor:pointer; margin-bottom:10px; width:max-content";
 			
 			// add to library button
 			let libBut = make('button', 'Add to library');
@@ -401,7 +409,10 @@ function importSeed() {
 		D('libraryWarning').style.display = "none";
 			
 		let ts = Date.now();
-		if (ws) ws.emit('authenticateUser', {userid: XNO.address, ts, signature:XNO.sign(ts, XNO.address)});
+		if (ws) {
+			console.log({userid: XNO.address, ts:ts, signature:XNO.sign(ts, XNO.address)});
+			ws.emit('authenticateUser', {userid: XNO.address, ts, signature:XNO.sign(ts, XNO.address)});
+		}
 	}
 }
 
@@ -484,10 +495,11 @@ function toggleEdit(close) {
 	
 function setData(type) {
 	if (type == 'name') {
-		if (ws) ws.emit('setDisplayName', { displayname: D('set-name').value} );
-	} else {
-		console.error("Need code to set " + type);
-	}
+		if (ws) {
+			console.log("Setting name..." + D('set-name').value);
+			ws.emit('updateDisplayName', { displayname: D('set-name').value} );
+		}
+	} else console.error("Need code to set " + type);
 }
 
 // Global event listeners ///////////////////////////////////////////////////////////////////////
