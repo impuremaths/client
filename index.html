@@ -59,14 +59,12 @@
 			</div>
 			<div class="accordion" style="max-height:0px">
 				<ul id="subscriptions"><li>-</ul>
-				<strong>Memberships</strong>
-				<ul id="memberships" style="margin-bottom:5px"><li>-</ul>
 			</div>
 		</div>
 
 		<div class="objectWrapper" style="margin-top:20px" onclick="openSubAccordion(this)">
 			<div class="clickFlash leftRightBase" style="margin-top:0px" onclick="toggleSubAccordion(this)">
-				<strong>Library</strong> <i id="libraryWarning" style="color:gray">(create account to keep)</i>
+				<strong>Library</strong> <i id="libraryWarning" style="color:gray">(create account to save)</i>
 			</div>
 			<div class="accordion">
 				<div id="libraryPlaceholder" style="font-style:italic; color:gray; text-align:center; margin-top:15px">Read something!</div>
@@ -254,9 +252,18 @@ function setupWebsocket(restart) {
 	
 	ws.on('updateDisplayNameResponse', function(data) {
 		console.log(data);
+		if (data && data.displayname) D('displayName').textContent = data.displayname;
 	});
 	
 	ws.on('authenticateUserResponse', function(data) {
+		console.log(data);
+		if (data && data.displayname) D('displayName').textContent = data.displayname;
+		console.log("I should be authenticated! Emitting query to library.");
+		ws.emit('queryLibrary');
+	});
+	
+	ws.on('queryLibraryResponse', function(data) {
+		console.log("Query library response:");
 		console.log(data);
 	});
 	
@@ -269,12 +276,11 @@ function setupWebsocket(restart) {
 		
 		for (let i = 0; i < data.length; i++) {
 			let postli = make('li', data[i].title + " :: " + data[i].content);
+			
 			let postid = data[i].userid + "-" + data[i].createdts.toString();
 			postli.style = "cursor:pointer; margin-bottom:10px; width:max-content";
 			postli.onclick = function() {
 				readPanelWithData(data[i]);
-				
-				// add to library or unbold existing entry
 				if (!D(postid)) addToLib(data[i]);
 				else D(postid).style.fontWeight = "";
 				flash(D(postid));
@@ -282,6 +288,7 @@ function setupWebsocket(restart) {
 			
 			// add to library button
 			let libBut = make('button', 'Add to library');
+			libBut.style.margin = "5px";
 			libBut.onclick = function() {
 				event.stopPropagation();				
 				if (!D(postid)) {
@@ -290,7 +297,6 @@ function setupWebsocket(restart) {
 				}
 				flash(D(postid));
 			};
-			libBut.style.margin = "5px";
 			postli.appendChild(libBut);
 			
 			D('discovery').appendChild(postli);
@@ -356,6 +362,13 @@ function mainPanel(type) {
 // Sidebar UI interaction handlers ///////////////////////////////////////////////////////////////////////
 
 function addToLib(metaData) {
+	if (XNO.address && ws) {
+		let libdata = [{ userid:metaData.userid, createdts:metaData.createdts, lastaccessedts:Date.now() }];
+		console.log("Emitting signal to add to DB library. Payload followed by the post's metaData:");
+		console.log(libdata);
+		console.log(metaData);
+		ws.emit('updateLibrary', libdata);
+	}
 	let libli = make('li', metaData.title + " :: " + metaData.content);
 	libli.onclick = function() {
 		D(metaData.userid + "-" + metaData.createdts.toString()).style.fontWeight = "";	
@@ -399,20 +412,14 @@ function importSeed() {
 		D("profilePanel").style.display = "";
 		D("subPanel").style.display = "";
 		if (!keepAccount && D("accountPanel").style.maxHeight != "0px") toggleAccount();
-			console.log(XNO.pubFromAddr(XNO.address));
-			console.log();
 		let mainName = adj[parseInt(XNO.pubFromAddr(XNO.address).substring(0, 10), 16) % adj.length] + " " 
 											+ animals[parseInt(XNO.pubFromAddr(XNO.address).substring(0, 10), 16) % animals.length];
 		D('displayName').textContent = "✏️ " + mainName;
 		D('subscriptions').innerHTML = '<li>' + mainName + '</li>';
-		D('memberships').innerHTML = '<li>' + mainName + '</li>';
 		D('libraryWarning').style.display = "none";
 			
 		let ts = Date.now();
-		if (ws) {
-			console.log({userid: XNO.address, ts:ts, signature:XNO.sign(ts, XNO.address)});
-			ws.emit('authenticateUser', {userid: XNO.address, ts, signature:XNO.sign(ts, XNO.address)});
-		}
+		if (ws) ws.emit('authenticateUser', {userid: XNO.address, ts, signature:XNO.sign(ts, XNO.address)});
 	}
 }
 
@@ -495,10 +502,7 @@ function toggleEdit(close) {
 	
 function setData(type) {
 	if (type == 'name') {
-		if (ws) {
-			console.log("Setting name..." + D('set-name').value);
-			ws.emit('updateDisplayName', { displayname: D('set-name').value} );
-		}
+		if (ws) ws.emit('updateDisplayName', { displayname: D('set-name').value} );
 	} else console.error("Need code to set " + type);
 }
 
