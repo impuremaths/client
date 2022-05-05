@@ -363,7 +363,7 @@ function mainPanel(type) {
 
 function addToLib(metaData) {
 	if (XNO.address && ws) {
-		let libdata = [{ userid:metaData.userid, createdts:metaData.createdts, lastaccessedts:Date.now() }];
+		let libdata = { posts: [{ userid:metaData.userid, createdts:metaData.createdts, lastaccessedts:Date.now() }] };
 		console.log("Emitting signal to add to DB library. Payload followed by the post's metaData:");
 		console.log(libdata);
 		console.log(metaData);
