@@ -275,12 +275,16 @@ function setupWebsocket(restart) {
 	ws.on('queryLibraryResponse', function(data) {
 		console.log("Query library response:");
 		console.log(data);
+		for (let i = 0; i < data.length; i++) {
+			addToLib(data[i]);
+		}
 	});
 	
 	ws.on('queryPostsRecentResponse', function(data) { listPosts(data) });
 	
 	ws.on('queryPostResponse', function(data) {
 		console.log(data);
+		fillAndDisplayReadPanel(data[0]);
 	});
 	
 	
@@ -322,10 +326,7 @@ function listPosts(data) {
 		libBut.style = "margin:5px 0px 5px 15px;";
 		libBut.onclick = function() {
 			event.stopPropagation();				
-			if (!D(postid)) {
-				addToLib(data[i]);
-				D(postid).style.fontWeight = "bold";
-			}
+			if (!D(postid)) addToLib(data[i], true);
 			flash(D(postid));
 		};
 		postli.appendChild(libBut);
@@ -391,33 +392,49 @@ function mainPanel(type) {
 	if (type == "homepage") D('homepage').style.display = "";
 }
 
-// Sidebar UI interaction handlers ///////////////////////////////////////////////////////////////////////
-
-function testFunction() {
-	if (ws) ws.emit('queryPostsRecent');
-}
-
-function addToLib(metaData) {
-	if (XNO.address && ws) {
-		let libdata = [{ userid:metaData.userid, createdts:metaData.createdts, lastaccessedts:Date.now() }];
-		console.log("Emitting signal to add to DB library. Payload followed by the post's metaData:");
-		console.log(libdata);
-		console.log(metaData);
-		ws.emit('updateLibrary', libdata);
-	}
-	let libli = make('li', metaData.title + " :: " + metaData.content);
+function loadLib(metaData, accessts) {
+	let libli = make('li', metaData.title);
+	if (metaData.postid) {
+		libli.id = metaData.postid;
+		let split = metaData.postid.split("-");
+		metaData.userid = split[0];
+		metaData.createdts = parseInt(split[1]);
+	} else libli.id = metaData.userid + "-" + metaData.createdts.toString();
+	
+	if (!metaData.title) libli.textContent = "Post by " + funName(metaData.userid);
+	
 	libli.onclick = function() {
 		D(metaData.userid + "-" + metaData.createdts.toString()).style.fontWeight = "";	
 		fillAndDisplayReadPanel(metaData);
 	}
 	libli.style = "cursor:pointer; margin-bottom:10px; width:max-content;";
 	
-	libli.id = metaData.userid + "-" + metaData.createdts.toString();
 	if (D('library').children[0]) D('library').insertBefore(libli, D('library').children[0]);
 	else {
 		D('library').appendChild(libli);
 		D('libraryPlaceholder').style.display = "none";
 	}
+	
+	if (!accessts) libli.style.fontWeight = "bold";
+}
+
+// Sidebar UI interaction handlers ///////////////////////////////////////////////////////////////////////
+
+function testFunction() {
+	if (ws) ws.emit('queryPostsRecent');
+}
+
+function addToLib(metaData, addOnly) {
+	let ts = 0;
+	if (!addOnly) ts = Date.now();
+	if (XNO.address && ws) {
+		let libdata = { posts: [{ userid:metaData.userid, createdts:metaData.createdts, lastaccessedts:ts }] };
+		console.log("Emitting signal to add to DB library. Payload followed by the post's metaData:");
+		console.log(libdata);
+		console.log(metaData);
+		ws.emit('updateLibrary', libdata);
+	}
+	loadLib(metaData, ts);
 }
 
 var clipboardText;
