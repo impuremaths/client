@@ -265,7 +265,7 @@ function setupWebsocket(restart) {
 	ws.on('authenticateUserResponse', function(data) {
 		console.log(data);
 		if (data && data.displayname) D('displayName').textContent = data.displayname;
-		console.log("I should be authenticated! Emitting query to library.");
+		console.log("Authenticated! Requesting library...");
 		ws.emit('queryLibrary');
 		for (let i = 0; i < data.edges.length; i++) {
 			makeSubLi(data.edges[i].userid);
@@ -273,36 +273,26 @@ function setupWebsocket(restart) {
 	});
 	
 	ws.on('queryLibraryResponse', function(data) {
-		console.log("Query library response:");
-		console.log(data);
 		for (let i = 0; i < data.length; i++) {
 			addToLib(data[i]);
 		}
 	});
 	
-	ws.on('queryPostsRecentResponse', function(data) { listPosts(data) });
+	ws.on('queryPostsRecentResponse', function(data) { populateHomepage(data); });
 	
-	ws.on('queryPostResponse', function(data) {
-		console.log(data);
-		fillAndDisplayReadPanel(data[0]);
-	});
+	ws.on('queryPostResponse', function(data) { fillAndDisplayReadPanel(data[0]); });
 	
+	ws.on('subscribeResponse', function(data) {	console.log(data); });
 	
-	ws.on('subscribeResponse', function(data) {
-		console.log(data);
-	});
+	ws.on('sponsorResponse', function(data) { console.log(data); });
 	
-	ws.on('sponsorResponse', function(data) {
-		console.log(data);
-	});
-	
-	ws.on('queryPostsFromUser', function (data) { listPosts(data) });
+	ws.on('queryPostsFromUser', function (data) { populateHomepage(data); });
 }
 
 
 // Main panel UI interaction handlers ///////////////////////////////////////////////////////////////////////
 
-function listPosts(data) {
+function populateHomepage(data) {
 	console.log(data);
 	clearDOM(D('discovery'));
 	data.sort(function(x, y) {
@@ -336,6 +326,7 @@ function listPosts(data) {
 	
 	mainPanel('homepage');
 }
+
 function makeSubLi(userid) {
 	let subli = make("li", funName(userid));
 	subli.onclick = function() { if (ws) ws.emit("queryPostsFromUser", {userid}) };
@@ -350,6 +341,10 @@ function post() {
 	let postData = {title:D('postTitle').value, content:D('postContent').value, visibility:"public"}; 
 	ws.emit('updatePost', postData);
 	togglePost();
+}
+
+function subscribeHandler() {
+	if (ws && D('author').textContent) ws.emit("subscribe", {userid: D('author').textContent});
 }
 
 function togglePost() {
@@ -376,10 +371,6 @@ function fillAndDisplayReadPanel(metaData) {
 		ws.emit('queryPost', { userid: metaData.userid, createdts: metaData.createdts });
 	}
 	mainPanel('read');
-}
-
-function subscribeHandler() {
-	if (ws && D('author').textContent) ws.emit("subscribe", {userid: D('author').textContent});
 }
 
 function mainPanel(type) {
@@ -429,9 +420,8 @@ function addToLib(metaData, addOnly) {
 	if (!addOnly) ts = Date.now();
 	if (XNO.address && ws) {
 		let libdata = { posts: [{ userid:metaData.userid, createdts:metaData.createdts, lastaccessedts:ts }] };
-		console.log("Emitting signal to add to DB library. Payload followed by the post's metaData:");
+		console.log("Emitting signal to add to DB library.");
 		console.log(libdata);
-		console.log(metaData);
 		ws.emit('updateLibrary', libdata);
 	}
 	loadLib(metaData, ts);
@@ -452,6 +442,7 @@ function funName(userid) {
 	 return adj[parseInt(XNO.pubFromAddr(userid).substring(0, 10), 16) % adj.length] + " " 
 											+ animals[parseInt(XNO.pubFromAddr(userid).substring(0, 10), 16) % animals.length];
 }
+
 function importSeed() {
 	let seed = D("seed").value;
 	let index = 0;	
