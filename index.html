@@ -273,8 +273,9 @@ function setupWebsocket(restart) {
 	});
 	
 	ws.on('queryLibraryResponse', function(data) {
+		data.sort(function(x, y) { return y.lastaccessedts - x.lastaccessedts});
 		for (let i = 0; i < data.length; i++) {
-			addToLib(data[i]);
+			populateLib(data[i], data[i].lastaccessedts);
 		}
 	});
 	
@@ -383,7 +384,7 @@ function mainPanel(type) {
 	if (type == "homepage") D('homepage').style.display = "";
 }
 
-function loadLib(metaData, accessts) {
+function populateLib(metaData, accessts) {
 	let libli = make('li', metaData.title);
 	if (metaData.postid) {
 		libli.id = metaData.postid;
@@ -424,7 +425,7 @@ function addToLib(metaData, addOnly) {
 		console.log(libdata);
 		ws.emit('updateLibrary', libdata);
 	}
-	loadLib(metaData, ts);
+	populateLib(metaData, ts);
 }
 
 var clipboardText;
@@ -488,6 +489,7 @@ function clearSeed() {
 	XNO.seed = "";
 	XNO.encryptKey = "";
 	clearDOM(D('subscriptions'));
+	clearDOM(D('library'));
 }
 
 function clickClearSeed() {
