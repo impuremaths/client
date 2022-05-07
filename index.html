@@ -16,8 +16,11 @@
 
 <body>
 	<strong id="msg" class="msg" style="display:none;"></strong>
+	
 	<div class="containerDiv">
+	
 	<div id="firstDiv" class="firstDiv" style="background-color:steelblue">
+	
 		<div style="margin-left:18px; margin-right:18px; margin-bottom:5px; margin-top:5px; text-align:right">
 			<button style="float:left; font-size:0.85em" onclick="testFunction()">Test</button> 
 			<button id="account" class="left" onclick="toggleAccount()">Account</button>				
@@ -42,7 +45,7 @@
 				<strong style="overflow:hidden"><div id="displayName" style="text-overflow:ellipsis; overflow:hidden; font-size:1.2em;" class="flash">✏️ Anonymous</div></strong>
 			</div>
 
-			<div id="editpanel" class="accordion" style="max-height:0px">			
+			<div id="editPanel" class="accordion" style="max-height:0px">			
 				<div style="display:flex; justify-content:space-between;">
 					<input placeHolder="Display name (public) ..." id="set-name" 
 					       style="padding-right:30px; flex-grow:1; margin-right:10px;" type="text"autocapitalize="off" maxlength="64"
@@ -53,7 +56,8 @@
 				<div class='address' style="margin-top:15px" id="address" onclick="clickCopy(this, this.textContent)">&nbsp;</div>
 			</div>	
 		</div>	
-		<div id="subPanel" class="objectWrapper" onclick="openSubAccordion(this)" style="display:none">
+		
+		<div id="subPanel" class="objectWrapper" style="display:none" onclick="openSubAccordion(this)">
 			<div class="clickFlash leftRightBase" style="margin-top:0px" onclick="toggleSubAccordion(this)">
 				<strong>Subscriptions</strong>
 			</div>
@@ -64,14 +68,13 @@
 
 		<div class="objectWrapper" style="margin-top:20px" onclick="openSubAccordion(this)">
 			<div class="clickFlash leftRightBase" style="margin-top:0px" onclick="toggleSubAccordion(this)">
-				<strong>Library</strong> <i id="libraryWarning" style="color:gray">(create account to save)</i>
+				<strong>Library</strong> <i id="libraryWarning" style="color:gray">(create an account to save)</i>
 			</div>
 			<div class="accordion">
 				<div id="libraryPlaceholder" style="font-style:italic; color:gray; text-align:center; margin-top:15px">Read something!</div>
 				<ul id="library" style="margin-bottom:5px"></ul>
 			</div>
 		</div>
-		
 		
 	</div>
 	
@@ -100,34 +103,17 @@
 		</div>
 		
 	</div>
+	
 	</div>
 	
-
 <script src="nacl.js"></script>
 <script src="xno.js"></script>
 <script src="tweetnacl.js"></script>
 <script>
 
-
-
-// Global variables and macros ///////////////////////////////////////////////////////////////////////
-
-function testFunction() {
-	if (ws) ws.emit('queryPostsRecent');
-}
-
-const enc = new TextEncoder();
-const dec = new TextDecoder();
-function D(string) { return document.getElementById(string); }
-
-const adj = ["Disillusioned", "Nihilistic", "Disenchanted", "Embittered", "Worldly", "Embattled", "Cynical", "Skeptical", "Contemplative", 
-				"Introspective", "Meditative", "Pensive", "Philosophical", "Stoic", "Apathetic", "Analytical", "Scholarly", "Erudite", "Composed", "Detached"];
-const animals = ["Puppy", "Kitten", "Bunny", "Hamster", "Panda", "Otter", "Hedgehog", "Penguin", "Squirrel", "Turtle", "Koala", "Hatchling", "Kit", "Joey", "Fledgling", 
-					"Fawn", "Foal", "Calf", "Cub", "Colt", "Piglet", "Eaglet", "Owlet"];
+// crypto methods ///////////////////////////////////////////////////////////////////////
 
 var XNO = {};
-
-// crypto methods ///////////////////////////////////////////////////////////////////////
 
 XNO.checkSeed = function(seed) { return typeof seed === "string" && /^[0-9a-fA-F]{64}$/.test(seed);};
 
@@ -207,28 +193,48 @@ function hexToByteArray(hex) {
   return new Uint8Array(a);
 }
 
-// Websocket code ///////////////////////////////////////////////////////////////////////
+// Global variables and macros; and initializers ///////////////////////////////////////////////////////////////////////
+
+const enc = new TextEncoder();
+const dec = new TextDecoder();
+function D(string) { return document.getElementById(string); }
+
+const adj = ["Disillusioned", "Nihilistic", "Disenchanted", "Embittered", "Worldly", "Embattled", "Cynical", "Skeptical", "Contemplative", 
+				"Introspective", "Meditative", "Pensive", "Philosophical", "Stoic", "Apathetic", "Analytical", "Scholarly", "Erudite", "Composed", "Detached"];
+const animals = ["Puppy", "Kitten", "Bunny", "Hamster", "Panda", "Otter", "Hedgehog", "Penguin", "Squirrel", "Turtle", "Koala", "Hatchling", "Kit", "Joey", "Fledgling", 
+					"Fawn", "Foal", "Calf", "Cub", "Colt", "Piglet", "Eaglet", "Owlet"];
 
 var serverURL = 'wss://impuremaths.herokuapp.com';
 var ws = new WebSocket(serverURL);
 setupWebsocket();
 
-function setupWebsocket(restart) {
-	ws.onopen = function() { 
-		console.log("Connected to server!"); 
-		ws.emit('queryPostsRecent');
-	};
-	ws.onclose = function() { 
-		ws = new WebSocket(serverURL);
-		setupWebsocket(true);
-	}
+let localSeed = localStorage.getItem("localSeed");
+if (localSeed) {
+	D("seed").value = localSeed;
+	importSeed();
+}
 
+// Websocket code ///////////////////////////////////////////////////////////////////////
+
+
+function setupWebsocket(restart) {
 	ws.customEvents = {};
 	ws.on = function(cueName, eventAction) { ws.customEvents[cueName] = eventAction; };
 	ws.emit = function(cueName, payload) { 
 		if (ws.readyState == 1) ws.send(JSON.stringify({cueName:cueName, payload:payload})); 
 		return (ws.readyState == 1);
 	};
+	
+	// Standard commands
+	ws.onopen = function() { 
+		console.log("Connected to server!"); 
+		ws.emit('queryPostsRecent');
+		importSeed();
+	};
+	ws.onclose = function() { 
+		ws = new WebSocket(serverURL);
+		setupWebsocket(true);
+	}
 	ws.onmessage = function(event) {
 		let data;
 		try { data = JSON.parse(event.data); }
@@ -332,11 +338,8 @@ function togglePost() {
 }
 
 function toggleRead() {
-	if (D('read').style.display == "none") {
-		mainPanel('read');
-	} else {
-		mainPanel('homepage');
-	}
+	if (D('read').style.display == "none") mainPanel('read');
+	else mainPanel('homepage');
 }
 
 function readPanelWithData(metaData) {
@@ -361,9 +364,13 @@ function mainPanel(type) {
 
 // Sidebar UI interaction handlers ///////////////////////////////////////////////////////////////////////
 
+function testFunction() {
+	if (ws) ws.emit('queryPostsRecent');
+}
+
 function addToLib(metaData) {
 	if (XNO.address && ws) {
-		let libdata = { posts: [{ userid:metaData.userid, createdts:metaData.createdts, lastaccessedts:Date.now() }] };
+		let libdata = [{ userid:metaData.userid, createdts:metaData.createdts, lastaccessedts:Date.now() }];
 		console.log("Emitting signal to add to DB library. Payload followed by the post's metaData:");
 		console.log(libdata);
 		console.log(metaData);
@@ -420,6 +427,7 @@ function importSeed() {
 			
 		let ts = Date.now();
 		if (ws) ws.emit('authenticateUser', {userid: XNO.address, ts, signature:XNO.sign(ts, XNO.address)});
+		localStorage.setItem("localSeed", XNO.seed);
 	}
 }
 
@@ -453,6 +461,8 @@ function clickClearSeed() {
 	
 	D('displayName').textContent = "✏️ Anonymous";
 	D('libraryWarning').style.display = "";
+	
+	localStorage.removeItem("localSeed");
 }
 
 function toggleAccount() {
@@ -490,7 +500,7 @@ function toggleVisibility() {
 }
 
 function toggleEdit(close) {
-	let obj = D("editpanel");
+	let obj = D("editPanel");
 	if (!close && obj.style.maxHeight == "0px") {
 		showAccordion(obj);
 		obj.style.marginTop = "10px";
