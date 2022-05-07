@@ -267,13 +267,15 @@ function setupWebsocket(restart) {
 		if (data && data.displayname) D('displayName').textContent = data.displayname;
 		console.log("Authenticated! Requesting library...");
 		ws.emit('queryLibrary');
-		for (let i = 0; i < data.edges.length; i++) {
-			makeSubLi(data.edges[i].userid);
+		if (data.edges) {
+			for (let i = 0; i < data.edges.length; i++) {
+				makeSubLi(data.edges[i].userid);
+			}
 		}
 	});
 	
 	ws.on('queryLibraryResponse', function(data) {
-		data.sort(function(x, y) { return y.pushedts - x.pushedts});
+		data.sort(function(x, y) { return x.pushedts - y.pushedts});
 		for (let i = 0; i < data.length; i++) {
 			populateLib(data[i], data[i].lastaccessedts);
 		}
@@ -301,7 +303,7 @@ function populateHomepage(data) {
 	});
 	
 	for (let i = 0; i < data.length; i++) {
-		let postli = make('li', data[i].title);
+		let postli = make('li');
 		
 		let postid = data[i].userid + "-" + data[i].createdts.toString();
 		postli.style = "cursor:pointer; margin-bottom:10px; width:max-content";
@@ -314,13 +316,15 @@ function populateHomepage(data) {
 		
 		// add to library button
 		let libBut = make('button', 'Add to library');
-		libBut.style = "margin:5px 0px 5px 15px;";
+		libBut.style = "margin-right:10px";
 		libBut.onclick = function() {
 			event.stopPropagation();				
 			if (!D(postid)) addToLib(data[i], true);
 			flash(D(postid));
 		};
 		postli.appendChild(libBut);
+		
+		postli.appendChild(make('span', data[i].title));
 		
 		D('discovery').appendChild(postli);
 	}
@@ -471,7 +475,10 @@ function importSeed() {
 		D('subscribe').disabled = false;
 			
 		let ts = Date.now();
-		if (ws) ws.emit('authenticateUser', {userid: XNO.address, ts, signature:XNO.sign(ts, XNO.address)});
+		if (ws) {
+			console.log({userid: XNO.address, ts, signature:XNO.sign(ts, XNO.address)});
+			ws.emit('authenticateUser', {userid: XNO.address, ts, signature:XNO.sign(ts, XNO.address)});
+		}
 		localStorage.setItem("localSeed", XNO.seed);
 	}
 }
