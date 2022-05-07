@@ -62,7 +62,7 @@
 				<strong>Subscriptions</strong>
 			</div>
 			<div class="accordion" style="max-height:0px">
-				<ul id="subscriptions"><li>-</ul>
+				<ul id="subscriptions"></ul>
 			</div>
 		</div>
 
@@ -97,9 +97,10 @@
 		
 		<div id="read" style="display:none; margin-top:30px">
 			<div id="readTitle" style="margin-bottom:10px; font-weight:bold">Post Title</div>			
-			<div id="readContent">Post Content</div>			
-			
-			<br><button onclick="toggleRead()">Home</button>
+			<div id="readContent">Post Content</div>
+			<br>Author: <span id="author"></span>
+			<br><br><button id="subscribe" onclick="subscribeHandler()" autocomplete="off" disabled>Subscribe</button>
+			<br><br><button onclick="toggleRead()">Home</button>
 		</div>
 		
 	</div>
@@ -266,6 +267,9 @@ function setupWebsocket(restart) {
 		if (data && data.displayname) D('displayName').textContent = data.displayname;
 		console.log("I should be authenticated! Emitting query to library.");
 		ws.emit('queryLibrary');
+		for (let i = 0; i < data.edges.length; i++) {
+			makeSubLi(data.edges[i].userid);
+		}
 	});
 	
 	ws.on('queryLibraryResponse', function(data) {
@@ -273,49 +277,67 @@ function setupWebsocket(restart) {
 		console.log(data);
 	});
 	
-	ws.on('queryPostsRecentResponse', function(data) {
-		console.log(data);
-		clearDOM(D('discovery'));
-		data.sort(function(x, y) {
-			return y.createdts - x.createdts;
-		});
-		
-		for (let i = 0; i < data.length; i++) {
-			let postli = make('li', data[i].title + " :: " + data[i].content);
-			
-			let postid = data[i].userid + "-" + data[i].createdts.toString();
-			postli.style = "cursor:pointer; margin-bottom:10px; width:max-content";
-			postli.onclick = function() {
-				readPanelWithData(data[i]);
-				if (!D(postid)) addToLib(data[i]);
-				else D(postid).style.fontWeight = "";
-				flash(D(postid));
-			}
-			
-			// add to library button
-			let libBut = make('button', 'Add to library');
-			libBut.style.margin = "5px";
-			libBut.onclick = function() {
-				event.stopPropagation();				
-				if (!D(postid)) {
-					addToLib(data[i]);
-					D(postid).style.fontWeight = "bold";
-				}
-				flash(D(postid));
-			};
-			postli.appendChild(libBut);
-			
-			D('discovery').appendChild(postli);
-		}
-	});
+	ws.on('queryPostsRecentResponse', function(data) { listPosts(data) });
 	
 	ws.on('queryPostResponse', function(data) {
 		console.log(data);
 	});
+	
+	
+	ws.on('subscribeResponse', function(data) {
+		console.log(data);
+	});
+	
+	ws.on('sponsorResponse', function(data) {
+		console.log(data);
+	});
+	
+	ws.on('queryPostsFromUser', function (data) { listPosts(data) });
 }
 
 
 // Main panel UI interaction handlers ///////////////////////////////////////////////////////////////////////
+
+function listPosts(data) {
+	console.log(data);
+	clearDOM(D('discovery'));
+	data.sort(function(x, y) {
+		return y.createdts - x.createdts;
+	});
+	
+	for (let i = 0; i < data.length; i++) {
+		let postli = make('li', data[i].title);
+		
+		let postid = data[i].userid + "-" + data[i].createdts.toString();
+		postli.style = "cursor:pointer; margin-bottom:10px; width:max-content";
+		postli.onclick = function() {
+			fillAndDisplayReadPanel(data[i]);
+			if (!D(postid)) addToLib(data[i]);
+			else D(postid).style.fontWeight = "";
+			flash(D(postid));
+		}
+		
+		// add to library button
+		let libBut = make('button', 'Add to library');
+		libBut.style = "margin:5px 0px 5px 15px;";
+		libBut.onclick = function() {
+			event.stopPropagation();				
+			if (!D(postid)) {
+				addToLib(data[i]);
+				D(postid).style.fontWeight = "bold";
+			}
+			flash(D(postid));
+		};
+		postli.appendChild(libBut);
+		
+		D('discovery').appendChild(postli);
+	}
+}
+function makeSubLi(userid) {
+	let subli = make("li", funName(userid));
+	subli.onclick = function() { if (ws) ws.emit("queryPostsFromUser", {userid}) };
+	D('subscriptions').appendChild(subli);
+}
 
 function fetchRecent() {
 	if (ws) ws.emit('queryPostsRecent');
@@ -342,14 +364,19 @@ function toggleRead() {
 	else mainPanel('homepage');
 }
 
-function readPanelWithData(metaData) {
+function fillAndDisplayReadPanel(metaData) {
 	D('readTitle').textContent = metaData.title;
+	D('author').textContent = metaData.userid;
 	if (metaData.content) D('readContent').textContent = metaData.content;
 	else {
 		D('readContent').textContent = "Loading...";
 		ws.emit('queryPost', { userid: metaData.userid, createdts: metaData.createdts });
 	}
 	mainPanel('read');
+}
+
+function subscribeHandler() {
+	if (ws && D('author').textContent) ws.emit("subscribe", {userid: D('author').textContent});
 }
 
 function mainPanel(type) {
@@ -379,7 +406,7 @@ function addToLib(metaData) {
 	let libli = make('li', metaData.title + " :: " + metaData.content);
 	libli.onclick = function() {
 		D(metaData.userid + "-" + metaData.createdts.toString()).style.fontWeight = "";	
-		readPanelWithData(metaData);
+		fillAndDisplayReadPanel(metaData);
 	}
 	libli.style = "cursor:pointer; margin-bottom:10px; width:max-content;";
 	
@@ -402,6 +429,10 @@ function generateSeed() {
 	console.log("New seed copied to clipboard. Store it safely, elsewhere! (Find it again via 'Account' button.)");
 }
 
+function funName(userid) {
+	 return adj[parseInt(XNO.pubFromAddr(userid).substring(0, 10), 16) % adj.length] + " " 
+											+ animals[parseInt(XNO.pubFromAddr(userid).substring(0, 10), 16) % animals.length];
+}
 function importSeed() {
 	let seed = D("seed").value;
 	let index = 0;	
@@ -419,11 +450,12 @@ function importSeed() {
 		D("profilePanel").style.display = "";
 		D("subPanel").style.display = "";
 		if (!keepAccount && D("accountPanel").style.maxHeight != "0px") toggleAccount();
-		let mainName = adj[parseInt(XNO.pubFromAddr(XNO.address).substring(0, 10), 16) % adj.length] + " " 
-											+ animals[parseInt(XNO.pubFromAddr(XNO.address).substring(0, 10), 16) % animals.length];
-		D('displayName').textContent = "✏️ " + mainName;
-		D('subscriptions').innerHTML = '<li>' + mainName + '</li>';
+		D('displayName').textContent = "✏️ " + funName(XNO.address);
+		
+		makeSubLi(XNO.address);
 		D('libraryWarning').style.display = "none";
+		
+		D('subscribe').disabled = false;
 			
 		let ts = Date.now();
 		if (ws) ws.emit('authenticateUser', {userid: XNO.address, ts, signature:XNO.sign(ts, XNO.address)});
@@ -445,6 +477,7 @@ function clearSeed() {
 	XNO.index = "";
 	XNO.seed = "";
 	XNO.encryptKey = "";
+	clearDOM(D('subscriptions'));
 }
 
 function clickClearSeed() {
@@ -457,6 +490,7 @@ function clickClearSeed() {
 	D("postButton").disabled = true;
 	toggleEdit(true);
 	D("profilePanel").style.display = "none";
+	
 	D("subPanel").style.display = "none";
 	
 	D('displayName').textContent = "✏️ Anonymous";
