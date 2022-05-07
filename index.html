@@ -273,7 +273,7 @@ function setupWebsocket(restart) {
 	});
 	
 	ws.on('queryLibraryResponse', function(data) {
-		data.sort(function(x, y) { return y.lastaccessedts - x.lastaccessedts});
+		data.sort(function(x, y) { return y.pushedts - x.pushedts});
 		for (let i = 0; i < data.length; i++) {
 			populateLib(data[i], data[i].lastaccessedts);
 		}
@@ -417,15 +417,17 @@ function testFunction() {
 }
 
 function addToLib(metaData, addOnly) {
-	let ts = 0;
-	if (!addOnly) ts = Date.now();
+	let ts = Date.now();
 	if (XNO.address && ws) {
-		let libdata = { posts: [{ userid:metaData.userid, createdts:metaData.createdts, lastaccessedts:ts }] };
+		let libdata = { posts: [{ userid:metaData.userid, createdts:metaData.createdts, pushedts:ts }] };
+		if (!addOnly) libdata.posts[0].lastaccessedts = ts;
 		console.log("Emitting signal to add to DB library.");
 		console.log(libdata);
 		ws.emit('updateLibrary', libdata);
 	}
-	populateLib(metaData, ts);
+	let accessedts;
+	if (!addOnly) accessedts = ts;
+	populateLib(metaData, accessedts);
 }
 
 var clipboardText;
