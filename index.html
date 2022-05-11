@@ -61,7 +61,7 @@
 			<div class="clickFlash leftRightBase" style="margin-top:0px" onclick="toggleSubAccordion(this)">
 				<strong>Subscriptions</strong>
 			</div>
-			<div class="accordion" style="max-height:0px">
+			<div class="accordion">
 				<ul id="subscriptions"></ul>
 			</div>
 		</div>
@@ -99,8 +99,9 @@
 			<div id="readTitle" style="margin-bottom:10px; font-weight:bold">Post Title</div>			
 			<div id="readContent">Post Content</div>
 			<br>Author: <span id="author"></span>
+			<br>Address: <span id="authorid"></span>
 			<br><br><button id="subscribe" onclick="subscribeHandler()" autocomplete="off" disabled>Subscribe</button>
-			<br><br><button onclick="toggleRead()">Home</button>
+			<br><br><button onclick="mainPanel('homepage')">Home</button>
 		</div>
 		
 	</div>
@@ -229,8 +230,12 @@ function setupWebsocket(restart) {
 	// Standard commands
 	ws.onopen = function() { 
 		console.log("Connected to server!"); 
-		ws.emit('queryPostsRecent');
-		importSeed();
+		ws.emit('queryPostsRecent');		
+		if (XNO.address) {
+			let ts = Date.now();
+			console.log({userid: XNO.address, ts, signature:XNO.sign(ts, XNO.address)});
+			ws.emit('authenticateUser', {userid: XNO.address, ts, signature:XNO.sign(ts, XNO.address)});
+		}
 	};
 	ws.onclose = function() { 
 		ws = new WebSocket(serverURL);
@@ -251,7 +256,8 @@ function setupWebsocket(restart) {
 		}
 	};
 
-	// Custom commands	
+	// Custom commands ////////////////////////////////////////////////////////
+	
 	ws.on('serverPongCue', function(data) { 
 		console.log(data);
 		console.log(new Date(data));
@@ -264,51 +270,54 @@ function setupWebsocket(restart) {
 	
 	ws.on('authenticateUserResponse', function(data) {
 		console.log(data);
-		if (data && data.displayname) D('displayName').textContent = data.displayname;
 		console.log("Authenticated! Requesting library...");
 		ws.emit('queryLibrary');
-		if (data.edges) {
-			for (let i = 0; i < data.edges.length; i++) {
-				makeSubLi(data.edges[i].userid);
-			}
-		}
+		if (data && data.displayname) D('displayName').textContent = data.displayname;
+		console.log(data.edges);
+		populateSubscriptions(data.edges);
 	});
 	
 	ws.on('queryLibraryResponse', function(data) {
+		clearDOM(D('library'));
 		data.sort(function(x, y) { return x.pushedts - y.pushedts});
 		for (let i = 0; i < data.length; i++) {
-			populateLib(data[i], data[i].lastaccessedts);
+			makeLibLi(data[i], data[i].lastaccessedts);
 		}
 	});
 	
 	ws.on('queryPostsRecentResponse', function(data) { populateHomepage(data); });
 	
-	ws.on('queryPostResponse', function(data) { fillAndDisplayReadPanel(data[0]); });
+	ws.on('queryPostsFromUser', function (data) { 
+		populateHomepage(data); 
+		mainPanel('homepage');
+	});
+	
+	ws.on('queryPostResponse', function(data) { toggleRead(data[0]); });
 	
 	ws.on('subscribeResponse', function(data) {	console.log(data); });
 	
-	ws.on('sponsorResponse', function(data) { console.log(data); });
-	
-	ws.on('queryPostsFromUser', function (data) { populateHomepage(data); });
+	ws.on('sponsorResponse', function(data) { 
+		console.log(data); 
+		makeSubLi(data.userid2);
+	});
 }
 
 
 // Main panel UI interaction handlers ///////////////////////////////////////////////////////////////////////
 
 function populateHomepage(data) {
-	console.log(data);
-	clearDOM(D('discovery'));
 	data.sort(function(x, y) {
 		return y.createdts - x.createdts;
 	});
 	
+	clearDOM(D('discovery'));	
 	for (let i = 0; i < data.length; i++) {
 		let postli = make('li');
 		
 		let postid = data[i].userid + "-" + data[i].createdts.toString();
 		postli.style = "cursor:pointer; margin-bottom:10px; width:max-content";
 		postli.onclick = function() {
-			fillAndDisplayReadPanel(data[i]);
+			toggleRead(data[i]);
 			if (!D(postid)) addToLib(data[i]);
 			else D(postid).style.fontWeight = "";
 			flash(D(postid));
@@ -324,18 +333,9 @@ function populateHomepage(data) {
 		};
 		postli.appendChild(libBut);
 		
-		postli.appendChild(make('span', data[i].title));
-		
+		postli.appendChild(make('span', data[i].title));		
 		D('discovery').appendChild(postli);
 	}
-	
-	mainPanel('homepage');
-}
-
-function makeSubLi(userid) {
-	let subli = make("li", funName(userid));
-	subli.onclick = function() { if (ws) ws.emit("queryPostsFromUser", {userid}) };
-	D('subscriptions').appendChild(subli);
 }
 
 function fetchRecent() {
@@ -349,7 +349,7 @@ function post() {
 }
 
 function subscribeHandler() {
-	if (ws && D('author').textContent) ws.emit("subscribe", {userid: D('author').textContent});
+	if (ws && D('authorid').textContent) ws.emit("subscribe", {userid: D('authorid').textContent});
 }
 
 function togglePost() {
@@ -362,14 +362,10 @@ function togglePost() {
 	}
 }
 
-function toggleRead() {
-	if (D('read').style.display == "none") mainPanel('read');
-	else mainPanel('homepage');
-}
-
-function fillAndDisplayReadPanel(metaData) {
+function toggleRead(metaData) {
 	D('readTitle').textContent = metaData.title;
-	D('author').textContent = metaData.userid;
+	D('author').textContent = funName(metaData.userid);
+	D('authorid') = metaData.userid;
 	if (metaData.content) D('readContent').textContent = metaData.content;
 	else {
 		D('readContent').textContent = "Loading...";
@@ -388,50 +384,10 @@ function mainPanel(type) {
 	if (type == "homepage") D('homepage').style.display = "";
 }
 
-function populateLib(metaData, accessts) {
-	let libli = make('li', metaData.title);
-	if (metaData.postid) {
-		libli.id = metaData.postid;
-		let split = metaData.postid.split("-");
-		metaData.userid = split[0];
-		metaData.createdts = parseInt(split[1]);
-	} else libli.id = metaData.userid + "-" + metaData.createdts.toString();
-	
-	if (!metaData.title) libli.textContent = "Post by " + funName(metaData.userid);
-	
-	libli.onclick = function() {
-		D(metaData.userid + "-" + metaData.createdts.toString()).style.fontWeight = "";	
-		fillAndDisplayReadPanel(metaData);
-	}
-	libli.style = "cursor:pointer; margin-bottom:10px; width:max-content;";
-	
-	if (D('library').children[0]) D('library').insertBefore(libli, D('library').children[0]);
-	else {
-		D('library').appendChild(libli);
-		D('libraryPlaceholder').style.display = "none";
-	}
-	
-	if (!accessts) libli.style.fontWeight = "bold";
-}
-
 // Sidebar UI interaction handlers ///////////////////////////////////////////////////////////////////////
 
 function testFunction() {
 	if (ws) ws.emit('queryPostsRecent');
-}
-
-function addToLib(metaData, addOnly) {
-	let ts = Date.now();
-	if (XNO.address && ws) {
-		let libdata = { posts: [{ userid:metaData.userid, createdts:metaData.createdts, pushedts:ts }] };
-		if (!addOnly) libdata.posts[0].lastaccessedts = ts;
-		console.log("Emitting signal to add to DB library.");
-		console.log(libdata);
-		ws.emit('updateLibrary', libdata);
-	}
-	let accessedts;
-	if (!addOnly) accessedts = ts;
-	populateLib(metaData, accessedts);
 }
 
 var clipboardText;
@@ -459,7 +415,9 @@ function importSeed() {
 		let keepAccount = XNO.address;
 		clearSeed();		
 		XNO.unpackSeed(seed, parseInt(index));
-		D('address').textContent = XNO.address;
+		
+		D('displayName').textContent = "✏️ " + funName(XNO.address);
+		D('address').textContent = XNO.address;	
 		
 		D("current").disabled = false;
 		D("clear").disabled = false;
@@ -467,20 +425,70 @@ function importSeed() {
 		D("profilePanel").style.display = "";
 		D("subPanel").style.display = "";
 		if (!keepAccount && D("accountPanel").style.maxHeight != "0px") toggleAccount();
-		D('displayName').textContent = "✏️ " + funName(XNO.address);
 		
-		makeSubLi(XNO.address);
+		populateSubscriptions();
 		D('libraryWarning').style.display = "none";
-		
 		D('subscribe').disabled = false;
-			
-		let ts = Date.now();
-		if (ws) {
-			console.log({userid: XNO.address, ts, signature:XNO.sign(ts, XNO.address)});
-			ws.emit('authenticateUser', {userid: XNO.address, ts, signature:XNO.sign(ts, XNO.address)});
-		}
+		
 		localStorage.setItem("localSeed", XNO.seed);
 	}
+}
+
+function populateSubscriptions(edges) {
+	clearDOM(D('subscriptions'));
+	if (XNO.address) makeSubLi(XNO.address);
+	if (edges) {
+		for (let i = 0; i < edges.length; i++) {
+			makeSubLi(edges[i].userid);
+		}
+	}
+}
+
+function makeSubLi(userid) {
+	console.error(userid);
+	let subli = make("li", funName(userid));
+	subli.onclick = function() { if (ws) ws.emit("queryPostsFromUser", {userid}) };
+	D('subscriptions').appendChild(subli);
+}
+
+function addToLib(metaData, addOnly) {
+	let ts = Date.now();
+	if (XNO.address && ws) {
+		let libdata = { posts: [{ userid:metaData.userid, createdts:metaData.createdts, pushedts:ts }] };
+		if (!addOnly) libdata.posts[0].lastaccessedts = ts;
+		console.log("Emitting signal to add to DB library.");
+		console.log(libdata);
+		ws.emit('updateLibrary', libdata);
+	}
+	let accessedts;
+	if (!addOnly) accessedts = ts;
+	makeLibLi(metaData, accessedts);
+}
+
+function makeLibLi(metaData, accessts) {
+	let libli = make('li', metaData.title);
+	if (metaData.postid) {
+		libli.id = metaData.postid;
+		let split = metaData.postid.split("-");
+		metaData.userid = split[0];
+		metaData.createdts = parseInt(split[1]);
+	} else libli.id = metaData.userid + "-" + metaData.createdts.toString();
+	
+	if (!metaData.title) libli.textContent = "Post by " + funName(metaData.userid);
+	
+	libli.onclick = function() {
+		D(metaData.userid + "-" + metaData.createdts.toString()).style.fontWeight = "";	
+		toggleRead(metaData);
+	}
+	libli.style = "cursor:pointer; margin-bottom:10px; width:max-content;";
+	
+	if (D('library').children[0]) D('library').insertBefore(libli, D('library').children[0]);
+	else {
+		D('library').appendChild(libli);
+		D('libraryPlaceholder').style.display = "none";
+	}
+	
+	if (!accessts) libli.style.fontWeight = "bold";
 }
 
 function showCurrent() {
@@ -491,17 +499,17 @@ function showCurrent() {
 }
 
 function clearSeed() {
-	XNO.privateKey = "";
-	XNO.publicKey = "";
-	XNO.address = "";
-	XNO.index = "";
-	XNO.seed = "";
-	XNO.encryptKey = "";
 	clearDOM(D('subscriptions'));
 	clearDOM(D('library'));
 }
 
 function clickClearSeed() {
+	XNO.privateKey = "";
+	XNO.publicKey = "";
+	XNO.address = "";
+	XNO.seed = "";
+	XNO.encryptKey = "";
+	
 	clearSeed();	
 	inputEvent(D('seed'), "");
 	D('address').textContent = "";
