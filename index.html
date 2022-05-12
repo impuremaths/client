@@ -365,7 +365,7 @@ function togglePost() {
 function toggleRead(metaData) {
 	D('readTitle').textContent = metaData.title;
 	D('author').textContent = funName(metaData.userid);
-	D('authorid') = metaData.userid;
+	D('authorid').textContent = metaData.userid;
 	if (metaData.content) D('readContent').textContent = metaData.content;
 	else {
 		D('readContent').textContent = "Loading...";
