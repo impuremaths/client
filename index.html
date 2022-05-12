@@ -431,6 +431,11 @@ function importSeed() {
 		D('subscribe').disabled = false;
 		
 		localStorage.setItem("localSeed", XNO.seed);
+		if (keepAccount != XNO.address && ws) {
+			let ts = Date.now();
+			console.log({userid: XNO.address, ts, signature:XNO.sign(ts, XNO.address)});
+			ws.emit('authenticateUser', {userid: XNO.address, ts, signature:XNO.sign(ts, XNO.address)});
+		}
 	}
 }
 
@@ -439,14 +444,16 @@ function populateSubscriptions(edges) {
 	if (XNO.address) makeSubLi(XNO.address);
 	if (edges) {
 		for (let i = 0; i < edges.length; i++) {
-			makeSubLi(edges[i].userid);
+			makeSubLi(edges[i].userid, edges[i].displayname);
 		}
 	}
 }
 
-function makeSubLi(userid) {
+function makeSubLi(userid, displayname) {
 	console.error(userid);
-	let subli = make("li", funName(userid));
+	let name = funName(userid);
+	if (displayname) name = displayname;
+	let subli = make("li", name);
 	subli.onclick = function() { if (ws) ws.emit("queryPostsFromUser", {userid}) };
 	D('subscriptions').appendChild(subli);
 }
