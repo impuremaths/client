@@ -62,7 +62,7 @@
 				<strong>Subscriptions</strong>
 			</div>
 			<div class="accordion">
-				<ul id="subscriptions"></ul>
+				<ul id="subscriptions" style="margin-bottom:5px"></ul>
 			</div>
 		</div>
 
@@ -230,7 +230,7 @@ function setupWebsocket(restart) {
 	// Standard commands
 	ws.onopen = function() { 
 		console.log("Connected to server!"); 
-		ws.emit('queryPostsRecent');		
+		if (!restart) ws.emit('queryPostsRecent');		
 		if (XNO.address) {
 			let ts = Date.now();
 			console.log({userid: XNO.address, ts, signature:XNO.sign(ts, XNO.address)});
