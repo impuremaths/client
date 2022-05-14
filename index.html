@@ -292,7 +292,7 @@ function setupWebsocket(restart) {
 		mainPanel('homepage');
 	});
 	
-	ws.on('queryPostResponse', function(data) { toggleRead(data[0]); });
+	ws.on('queryPostResponse', function(data) { toggleRead(data); });
 	
 	ws.on('subscribeResponse', function(data) {	console.log(data); });
 	
