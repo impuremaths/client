@@ -82,7 +82,7 @@
 	<div id="secondDiv" class="secondDiv">
 	
 		<div id="homepage" style="margin-top:30px">		
-			<button onclick="fetchRecent()">Fetch recent posts</button> 
+			<button onclick="fetchRecent()">All recent posts</button> 
 			<ul id="discovery">
 			</ul>
 		</div>
@@ -401,11 +401,6 @@ function generateSeed() {
 	console.log("New seed copied to clipboard. Store it safely, elsewhere! (Find it again via 'Account' button.)");
 }
 
-function funName(userid) {
-	 return adj[parseInt(XNO.pubFromAddr(userid).substring(0, 10), 16) % adj.length] + " " 
-											+ animals[parseInt(XNO.pubFromAddr(userid).substring(0, 10), 16) % animals.length];
-}
-
 function importSeed() {
 	let seed = D("seed").value;
 	let index = 0;	
@@ -450,12 +445,60 @@ function populateSubscriptions(edges) {
 }
 
 function makeSubLi(userid, displayname) {
-	console.error(userid);
 	let name = funName(userid);
 	if (displayname) name = displayname;
-	let subli = make("li", name);
+	let subli = make("li");
 	subli.onclick = function() { if (ws) ws.emit("queryPostsFromUser", {userid}) };
+	subli.style = "cursor:pointer; width:max-content;";
+	
+	let unsubBut = make("button", "x");
+	unsubBut.style.marginRight = "10px";
+	unsubBut.onclick = function() {
+		event.stopPropagation();
+		subli.parentNode.removeChild(subli);
+		console.error("Signal server too");
+	};	
+	subli.appendChild(unsubBut);
+	
+	subli.appendChild(make('span', name));
+	
 	D('subscriptions').appendChild(subli);
+}
+
+function makeLibLi(metaData, accessts) {
+	let libli = make('li');
+	if (metaData.postid) {
+		libli.id = metaData.postid;
+		let split = metaData.postid.split("-");
+		metaData.userid = split[0];
+		metaData.createdts = parseInt(split[1]);
+	} else libli.id = metaData.userid + "-" + metaData.createdts.toString();	
+	if (!metaData.title) libli.textContent = "Post by " + funName(metaData.userid);	
+	libli.onclick = function() {
+		D(metaData.userid + "-" + metaData.createdts.toString()).style.fontWeight = "";	
+		toggleRead(metaData);
+	}
+	libli.style = "cursor:pointer; width:max-content;";
+	
+	let unsubBut = make("button", "x");
+	unsubBut.style.marginRight = "10px";
+	unsubBut.onclick = function() {
+		event.stopPropagation();
+		libli.parentNode.removeChild(libli);
+		console.error("Signal server too");
+		if (!D('library').children[0]) D('libraryPlaceholder').style.display = "";
+	};	
+	libli.appendChild(unsubBut);
+	
+	libli.appendChild(make('span', metaData.title));
+	
+	if (D('library').children[0]) D('library').insertBefore(libli, D('library').children[0]);
+	else {
+		D('library').appendChild(libli);
+		D('libraryPlaceholder').style.display = "none";
+	}
+	
+	if (!accessts) libli.style.fontWeight = "bold";
 }
 
 function addToLib(metaData, addOnly) {
@@ -470,32 +513,6 @@ function addToLib(metaData, addOnly) {
 	let accessedts;
 	if (!addOnly) accessedts = ts;
 	makeLibLi(metaData, accessedts);
-}
-
-function makeLibLi(metaData, accessts) {
-	let libli = make('li', metaData.title);
-	if (metaData.postid) {
-		libli.id = metaData.postid;
-		let split = metaData.postid.split("-");
-		metaData.userid = split[0];
-		metaData.createdts = parseInt(split[1]);
-	} else libli.id = metaData.userid + "-" + metaData.createdts.toString();
-	
-	if (!metaData.title) libli.textContent = "Post by " + funName(metaData.userid);
-	
-	libli.onclick = function() {
-		D(metaData.userid + "-" + metaData.createdts.toString()).style.fontWeight = "";	
-		toggleRead(metaData);
-	}
-	libli.style = "cursor:pointer; margin-bottom:10px; width:max-content;";
-	
-	if (D('library').children[0]) D('library').insertBefore(libli, D('library').children[0]);
-	else {
-		D('library').appendChild(libli);
-		D('libraryPlaceholder').style.display = "none";
-	}
-	
-	if (!accessts) libli.style.fontWeight = "bold";
 }
 
 function showCurrent() {
@@ -599,6 +616,11 @@ window.addEventListener('copy', function(e) {
 });
 
 // UI helper library ///////////////////////////////////////////////////////////////////////
+
+function funName(userid) {
+	 return adj[parseInt(XNO.pubFromAddr(userid).substring(0, 10), 16) % adj.length] + " " 
+											+ animals[parseInt(XNO.pubFromAddr(userid).substring(0, 10), 16) % animals.length];
+}
 
 function D(string) { return document.getElementById(string); }
 
