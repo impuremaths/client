@@ -90,8 +90,9 @@
 			<textarea id="postTitle" autocomplete="off">Post Title</textarea>			
 			<br><textarea id="postContent" autocomplete="off">Post Content</textarea>
 					
-			<br><br><button onclick="post()">Post</button>			
-			<br><br><button onclick="togglePost()">Home</button>
+			<br><br>Creation timestamp: <span id="creationEdit"></span>
+			<br><br><button onclick="post()">Post/Edit</button>
+			<button onclick="cancelPost()">Cancel</button>	
 		</div>
 		
 		<div id="read" style="display:none; margin-top:30px">
@@ -99,7 +100,9 @@
 			<div id="readContent">Post Content</div>
 			<br>Author: <span id="author"></span>
 			<br>Address: <span id="authorid"></span>
+			<br><br>Creation timestamp: <span id="creation"></span>
 			<br><br><button id="subscribe" onclick="subscribeHandler()" autocomplete="off" disabled>Subscribe</button>
+			<button id="edit" onclick="editHandler()" autocomplete="off" disabled>Edit</button>
 		</div>
 		
 	</div>
@@ -334,30 +337,43 @@ function subscribeHandler() {
 	}
 }
 
+
 function post() {
-	ws.emit('updatePost', {title:D('postTitle').value, content:D('postContent').value, visibility:"public"});
+	ws.emit('updatePost', {title:D('postTitle').value, content:D('postContent').value, visibility:"public", createdts: parseInt(D('creationEdit').textContent)});
+	togglePost();
+}
+
+function cancelPost() {
+	D('creationEdit').textContent = "";
 	togglePost();
 }
 
 function togglePost() {
-	if (D('post').style.display == "none") {
-		mainPanel('post');
-		D('postButton').classList.add('active');
-	} else {
-		mainPanel('homepage');
-		D('postButton').classList.remove('active');
-	}
+	if (D('post').style.display == "none") mainPanel('post');
+	else mainPanel('homepage');
 }
 
 function fillPost(metaData) {
 	D('readTitle').textContent = metaData.title;
 	D('author').textContent = funName(metaData.userid);
 	D('authorid').textContent = metaData.userid;
+	D('creation').textContent = metaData.createdts;	
+	
 	if (metaData.content) D('readContent').textContent = metaData.content;
 	else {
 		D('readContent').textContent = "Loading...";
 		ws.emit('queryPost', { userid: metaData.userid, createdts: metaData.createdts });
 	}
+	
+	if (metaData.userid == XNO.address) D('edit').disabled = false;
+	else D('edit').disabled = true;
+}
+
+function editHandler() {
+	D('creationEdit').textContent = D('creation').textContent;
+	D('postContent').value = D('readContent').textContent;
+	D('postTitle').value = D('readTitle').textContent;
+	togglePost();	
 }
 
 function mainPanel(type) {
@@ -365,7 +381,11 @@ function mainPanel(type) {
 	D('read').style.display = 'none';
 	D('homepage').style.display = 'none';
 	
-	if (type == "post") D('post').style.display = "";
+	if (type == "post") {
+		D('post').style.display = "";
+		D('postButton').classList.add('active');
+	} else D('postButton').classList.remove('active');
+	
 	if (type == "read") D('read').style.display = "";
 	if (type == "homepage") D('homepage').style.display = "";
 }
