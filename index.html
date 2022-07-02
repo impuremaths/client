@@ -327,7 +327,11 @@ function fetchRecent() {
 }
 
 function subscribeHandler() {
-	if (ws && D('authorid').textContent) ws.emit("subscribe", {userid: D('authorid').textContent});
+	if (D(D('authorid').textContent)) flash(D(D('authorid').textContent));
+	else {
+		makeSubLi(D('authorid').textContent);
+		if (ws) ws.emit("subscribe", {userid: D('authorid').textContent});
+	}
 }
 
 function post() {
@@ -430,6 +434,7 @@ function makeSubLi(userid, displayname) {
 	let name = funName(userid);
 	if (displayname) name = displayname;
 	let subli = make("li");
+	subli.id = userid;
 	subli.onclick = function() { 	
 		clearDOM(D('discovery'));
 		mainPanel('homepage');
@@ -442,26 +447,24 @@ function makeSubLi(userid, displayname) {
 	unsubBut.onclick = function() {
 		event.stopPropagation();
 		subli.parentNode.removeChild(subli);
-		if (ws) {
-			ws.emit('unsubscribe', {userid});
-			console.log(userid);
-		}
+		if (ws) ws.emit('unsubscribe', {userid});
 	};	
-	subli.appendChild(unsubBut);
 	
-	subli.appendChild(make('span', name));
-	
+	subli.appendChild(unsubBut);	
+	subli.appendChild(make('span', name));	
 	D('subscriptions').appendChild(subli);
 }
 
 function makeLibLi(metaData, accessts) {
 	let libli = make('li');
+	if (!accessts) libli.style.fontWeight = "bold";
 	if (metaData.postid) {
 		libli.id = metaData.postid;
 		let split = metaData.postid.split("-");
 		metaData.userid = split[0];
 		metaData.createdts = parseInt(split[1]);
-	} else libli.id = metaData.userid + "-" + metaData.createdts.toString();	
+	} else libli.id = metaData.userid + "-" + metaData.createdts.toString();
+	
 	if (!metaData.title) libli.textContent = "Post by " + funName(metaData.userid);	
 	libli.onclick = function() {
 		D(metaData.userid + "-" + metaData.createdts.toString()).style.fontWeight = "";	
@@ -481,17 +484,14 @@ function makeLibLi(metaData, accessts) {
 		}
 		if (!D('library').children[0]) D('libraryPlaceholder').style.display = "";
 	};	
-	libli.appendChild(unsubBut);
 	
-	libli.appendChild(make('span', metaData.title));
-	
+	libli.appendChild(unsubBut);	
+	libli.appendChild(make('span', metaData.title));	
 	if (D('library').children[0]) D('library').insertBefore(libli, D('library').children[0]);
 	else {
 		D('library').appendChild(libli);
 		D('libraryPlaceholder').style.display = "none";
 	}
-	
-	if (!accessts) libli.style.fontWeight = "bold";
 }
 
 function addToLib(metaData, addOnly) {
