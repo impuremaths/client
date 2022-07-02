@@ -433,7 +433,7 @@ function makeSubLi(userid, displayname) {
 	subli.onclick = function() { 	
 		clearDOM(D('discovery'));
 		mainPanel('homepage');
-		if (ws) ws.emit("queryPostsFromUser", {userid}) 
+		if (ws) ws.emit("queryPostsFromUser", {userid});
 	};
 	subli.style = "cursor:pointer; width:max-content;";
 	
@@ -442,7 +442,10 @@ function makeSubLi(userid, displayname) {
 	unsubBut.onclick = function() {
 		event.stopPropagation();
 		subli.parentNode.removeChild(subli);
-		console.error("Signal server too");
+		if (ws) {
+			ws.emit('unsubscribe', {userid});
+			console.log(userid);
+		}
 	};	
 	subli.appendChild(unsubBut);
 	
