@@ -90,7 +90,7 @@
 			<textarea id="postTitle" autocomplete="off">Post Title</textarea>			
 			<br><textarea id="postContent" autocomplete="off">Post Content</textarea>
 					
-			<br><br>Creation timestamp: <span id="creationEdit"></span>
+			<br><br>Created at: <span id="creationEdit"></span>
 			<br><br><button onclick="post()">Post/Edit</button>
 			<button onclick="cancelPost()">Cancel</button>	
 		</div>
@@ -100,7 +100,7 @@
 			<div id="readContent">Post Content</div>
 			<br>Author: <span id="author"></span>
 			<br>Address: <span id="authorid"></span>
-			<br><br>Creation timestamp: <span id="creation"></span>
+			<br><br>Created at: <span id="creation"></span>
 			<br><br><button id="subscribe" onclick="subscribeHandler()" autocomplete="off" disabled>Subscribe</button>
 			<button id="edit" onclick="editHandler()" autocomplete="off" disabled>Edit</button>
 		</div>
@@ -345,6 +345,8 @@ function post() {
 
 function cancelPost() {
 	D('creationEdit').textContent = "";
+	D('postContent').value = "";
+	D('postTitle').value = "";
 	togglePost();
 }
 
