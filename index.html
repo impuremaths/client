@@ -475,7 +475,10 @@ function makeLibLi(metaData, accessts) {
 	unsubBut.onclick = function() {
 		event.stopPropagation();
 		libli.parentNode.removeChild(libli);
-		console.error("Signal server too");
+		if (ws) {
+			ws.emit('deleteLibrary', {postid:metaData.postid});
+			console.log(metaData.postid);
+		}
 		if (!D('library').children[0]) D('libraryPlaceholder').style.display = "";
 	};	
 	libli.appendChild(unsubBut);
