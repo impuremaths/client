@@ -80,29 +80,35 @@
 	
 	
 	<div id="secondDiv" class="secondDiv">	
-		<button style="margin-top:30px" onclick="fetchRecent()">All recent posts</button> 
+		<button style="margin-top:30px" onclick="fetchRecent()">Recent posts</button> 
 	
 		<div id="homepage">		
 			<ul id="discovery"></ul>
 		</div>
 
 		<div id="post" style="display:none; margin-top:30px">
-			<textarea id="postTitle" autocomplete="off">Post Title</textarea>			
-			<br><textarea id="postContent" autocomplete="off">Post Content</textarea>
+			<textarea id="postTitle" style="width:300px; margin-bottom:10px;" autocomplete="off">Post Title</textarea>			
+			<Br><textarea id="postContent" style="height:100px; width:300px" autocomplete="off">Post Content</textarea>
 					
-			<br><br>Created at: <span id="creationEdit"></span>
-			<br><br><button onclick="post()">Post/Edit</button>
+			<div style="font-size:0.9em; margin-left:10px">
+			<br>Created: <span id="creationEdit"></span>
+			<br>Modified: <span id="modificationEdit"></span>
+			</div>
+			<br><button onclick="post()">Post/Edit</button>
 			<button onclick="cancelPost()">Cancel</button>	
 		</div>
 		
 		<div id="read" style="display:none; margin-top:30px">
-			<div id="readTitle" style="margin-bottom:10px; font-weight:bold">Post Title</div>			
+			<div id="readTitle" style="margin-bottom:25px; font-weight:bold; font-size:1.1em">Post Title</div>			
 			<div id="readContent" style="white-space:pre-wrap">Post Content</div>
+			<div style="font-size:0.9em; margin-left:10px">
 			<br>Author: <span id="author"></span>
 			<br>Address: <span id="authorid"></span>
-			<br><br>Created at: <span id="creation"></span>
-			<br><br><button id="subscribe" onclick="subscribeHandler()" autocomplete="off" disabled>Subscribe</button>
-			<button id="edit" onclick="editHandler()" autocomplete="off" disabled>Edit</button>
+			<br>Created: <span id="creation"></span>
+			<br>Modified: <span id="modification"></span>
+			</div>
+			<br><button id="subscribe" onclick="subscribeHandler()" autocomplete="off" disabled>Subscribe</button>
+			<button id="edit" onclick="editHandler()" autocomplete="off">Edit</button>
 		</div>
 		
 	</div>
@@ -345,8 +351,9 @@ function post() {
 
 function cancelPost() {
 	D('creationEdit').textContent = "";
-	D('postContent').value = "";
-	D('postTitle').value = "";
+	D('modificationEdit').textContent = "";
+	D('postContent').value = "Post Content";
+	D('postTitle').value = "Post Title";
 	togglePost();
 }
 
@@ -360,6 +367,8 @@ function fillPost(metaData) {
 	D('author').textContent = funName(metaData.userid);
 	D('authorid').textContent = metaData.userid;
 	D('creation').textContent = metaData.createdts;	
+	D('modification').textContent = metaData.modifiedts;	
+	console.log(metaData);
 	
 	if (metaData.content) D('readContent').textContent = metaData.content;
 	else {
@@ -367,12 +376,19 @@ function fillPost(metaData) {
 		ws.emit('queryPost', { userid: metaData.userid, createdts: metaData.createdts });
 	}
 	
-	if (metaData.userid == XNO.address) D('edit').disabled = false;
-	else D('edit').disabled = true;
+	if (metaData.userid == XNO.address) {
+		D('edit').style.display = "";
+		D('subscribe').style.display = "none";
+	}
+	else {
+		D('edit').style.display = "none";
+		D('subscribe').style.display = "";
+	}
 }
 
 function editHandler() {
 	D('creationEdit').textContent = D('creation').textContent;
+	D('modificationEdit').textContent = D('modification').textContent;
 	D('postContent').value = D('readContent').textContent;
 	D('postTitle').value = D('readTitle').textContent;
 	togglePost();	
@@ -629,6 +645,10 @@ window.addEventListener('copy', function(e) {
 			navigator.clipboard.writeText(clipboardText);
 		}
 	}
+});
+
+window.addEventListener('keydown', function(evt) {
+	if (evt.keyCode == 27) mainPanel('homepage');		
 });
 
 // UI helper library ///////////////////////////////////////////////////////////////////////
