@@ -22,7 +22,6 @@
 	<div id="firstDiv" class="firstDiv" style="background-color:steelblue">
 	
 		<div style="margin: 5px 18px; text-align:right">
-			<button style="float:left; font-size:0.85em" onclick="testFunction()">Test</button> 
 			<button id="account" class="left" onclick="toggleAccount()">Account</button>				
 			<button id="postButton" class="right" onclick="togglePost()" autocomplete="off" disabled>Post</button>
 		</div>	
@@ -57,22 +56,22 @@
 			</div>	
 		</div>	
 		
-		<div id="subPanel" class="objectWrapper" style="display:none" onclick="openSubAccordion(this)">
+		<div id="subPanel" class="objectWrapper" style="display:none; margin-top:20px" onclick="openSubAccordion(this)">
 			<div class="clickFlash leftRightBase" style="margin-top:0px" onclick="toggleSubAccordion(this)">
 				<strong>Subscriptions</strong>
 			</div>
 			<div class="accordion">
-				<ul id="subscriptions" style="margin-bottom:5px"></ul>
+				<ul id="subscriptions" style="margin-bottom:5px; max-height:25vh; overflow:auto"></ul>
 			</div>
 		</div>
 
-		<div class="objectWrapper" style="margin-top:20px" onclick="openSubAccordion(this)">
+		<div class="objectWrapper" onclick="openSubAccordion(this)">
 			<div class="clickFlash leftRightBase" style="margin-top:0px" onclick="toggleSubAccordion(this)">
 				<strong>Library</strong> <i id="libraryWarning" style="color:gray">(create an account to save)</i>
 			</div>
 			<div class="accordion">
 				<div id="libraryPlaceholder" style="font-style:italic; color:gray; text-align:center; margin-top:15px">Read something!</div>
-				<ul id="library" style="margin-bottom:5px"></ul>
+				<ul id="library" style="margin-bottom:5px; max-height:40vh; overflow:auto"></ul>
 			</div>
 		</div>
 		
@@ -495,7 +494,6 @@ function makeSubLi(userid, displayname) {
 
 function makeLibLi(metaData, accessts) {
 	let libli = make('li');
-	if (!accessts) libli.style.fontWeight = "bold";
 	if (metaData.postid) {
 		libli.id = metaData.postid;
 		let split = metaData.postid.split("-");
@@ -509,7 +507,9 @@ function makeLibLi(metaData, accessts) {
 		mainPanel('read');
 		fillPost(metaData);
 	}
-	libli.style = "cursor:pointer; width:max-content;";
+	libli.style = "cursor:pointer; text-overflow:ellipsis; white-space:nowrap; overflow:hidden";
+	if (!accessts) libli.style.fontWeight = "bold";
+	libli.title = metaData.title;
 	
 	let unsubBut = make("button", "x");
 	unsubBut.style.marginRight = "10px";
