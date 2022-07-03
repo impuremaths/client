@@ -300,6 +300,12 @@ ul::-webkit-scrollbar-thumb:hover {
 	background: #d4d4d4;
 }
 
+ul {
+	list-style:none;
+	padding-left:0px;
+	scrollbar-width:thin;
+}
+
 @media only screen 
   and (max-device-width: 450px), (max-device-height: 450px) { 
 	html {
