@@ -23,7 +23,7 @@
 	
 		<div style="margin: 5px 18px; text-align:right">
 			<button id="account" class="left" onclick="toggleAccount()">Account</button>				
-			<button id="postButton" class="right" onclick="togglePost()" autocomplete="off" disabled>Post</button>
+			<button id="postButton" class="right" onclick="togglePost()" autocomplete="off" disabled>Editor</button>
 		</div>	
 
 		<div id="accountPanel" class="accordion objectWrapper" style="flex-shrink:0; max-height:0px; padding-top:0px; padding-bottom:0px; margin-top:0px">
@@ -94,7 +94,7 @@
 			<br>Modified: <span id="modificationEdit"></span>
 			</div>
 			<br><button onclick="post()">Post/Edit</button>
-			<button onclick="cancelPost()">Cancel</button>	
+			<button onclick="cancelPost()">Clear/Cancel</button>	
 		</div>
 		
 		<div id="read" style="display:none; margin-top:30px">
@@ -214,6 +214,8 @@ if (localSeed) {
 	importSeed();
 }
 
+var topPage = "homepage";
+
 // Websocket code ///////////////////////////////////////////////////////////////////////
 
 function setupWebsocket(restart) {
@@ -267,8 +269,11 @@ function setupWebsocket(restart) {
 	});
 	
 	ws.on('authenticateUserResponse', function(data) {
-		if (data && data.displayname) D('displayName').textContent = data.displayname;
-		populateSubscriptions(data.edges);		
+		populateSubscriptions(data.edges);
+		if (data && data.displayname) {
+			D('displayName').textContent = data.displayname;
+			D(data.userid).children[1].textContent = data.displayname;
+		}
 		console.log(data);
 		console.log("Authenticated! Requesting library...");
 		ws.emit('queryLibrary');
@@ -287,6 +292,10 @@ function setupWebsocket(restart) {
 	ws.on('queryPostsFromUser', function (data) { populateHomepage(data); });
 	
 	ws.on('queryPostResponse', function(data) { fillPost(data); });
+	
+	ws.on('updatePostResponse', function(data) { if (!data.errMsg) fillPost(data); });
+	
+	ws.on('queryUsersResponse', function(data) { populateSubscriptionNames(data); });
 	
 	ws.on('subscribeResponse', function(data) {	console.log(data); });
 	
@@ -345,7 +354,7 @@ function subscribeHandler() {
 
 function post() {
 	ws.emit('updatePost', {title:D('postTitle').value, content:D('postContent').value, visibility:"public", createdts: parseInt(D('creationEdit').textContent)});
-	togglePost();
+	mainPanel('read');
 }
 
 function cancelPost() {
@@ -358,7 +367,7 @@ function cancelPost() {
 
 function togglePost() {
 	if (D('post').style.display == "none") mainPanel('post');
-	else mainPanel('homepage');
+	else mainPanel(topPage);
 }
 
 function fillPost(metaData) {
@@ -403,8 +412,14 @@ function mainPanel(type) {
 		D('postButton').classList.add('active');
 	} else D('postButton').classList.remove('active');
 	
-	if (type == "read") D('read').style.display = "";
-	if (type == "homepage") D('homepage').style.display = "";
+	if (type == "read") {
+		D('read').style.display = "";
+		topPage = "read";
+	}
+	if (type == "homepage") {
+		D('homepage').style.display = "";
+		topPage = "homepage";
+	}
 }
 
 // Sidebar UI interaction handlers ///////////////////////////////////////////////////////////////////////
@@ -461,9 +476,18 @@ function populateSubscriptions(edges) {
 	clearDOM(D('subscriptions'));
 	if (XNO.address) makeSubLi(XNO.address);
 	if (edges) {
+		let userids = [];
 		for (let i = 0; i < edges.length; i++) {
 			makeSubLi(edges[i].userid, edges[i].displayname);
+			userids.push(edges[i].userid);
 		}
+		if (ws) ws.emit('queryUsers', {userids});
+	}
+}
+
+function populateSubscriptionNames(data) {
+	for (let i = 0; i < data.length; i++) {
+		if (data[i].displayname) D(data[i].userid).children[1].textContent = data[i].displayname;
 	}
 }
 
@@ -654,7 +678,8 @@ window.addEventListener('keydown', function(evt) {
 // UI helper library ///////////////////////////////////////////////////////////////////////
 
 function funName(userid) {
-	 return adj[parseInt(XNO.pubFromAddr(userid).substring(0, 10), 16) % adj.length] + " " 
+	if (D(userid)) return D(userid).children[1].textContent;
+	return adj[parseInt(XNO.pubFromAddr(userid).substring(0, 10), 16) % adj.length] + " " 
 											+ animals[parseInt(XNO.pubFromAddr(userid).substring(0, 10), 16) % animals.length];
 }
 
