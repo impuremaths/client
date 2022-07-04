@@ -80,6 +80,7 @@
 	
 	<div id="secondDiv" class="secondDiv">	
 		<button style="margin-top:30px" onclick="fetchRecent()">Recent posts</button> 
+		<span id="loadingMsg" style="margin-left:10px; font-style:italic">Loading...</span>
 	
 		<div id="homepage">		
 			<ul id="discovery"></ul>
@@ -229,7 +230,10 @@ function setupWebsocket(restart) {
 	// Standard commands
 	ws.onopen = function() { 
 		console.log("Connected to server!"); 
-		if (!restart) ws.emit('queryPostsRecent');		
+		if (!restart) {
+			ws.emit('queryPostsRecent');
+			D('loadingMsg').style.display = "";
+		}
 		if (XNO.address) {
 			let ts = Date.now();
 			let loginPacket = {userid: XNO.address, ts, signature:XNO.sign(ts, XNO.address)};
@@ -287,7 +291,10 @@ function setupWebsocket(restart) {
 		}
 	});
 	
-	ws.on('queryPostsRecentResponse', function(data) { populateHomepage(data); });
+	ws.on('queryPostsRecentResponse', function(data) { 
+		D('loadingMsg').style.display = "";
+		populateHomepage(data); 
+	});
 	
 	ws.on('queryPostsFromUser', function (data) { populateHomepage(data); });
 	
@@ -307,6 +314,7 @@ function setupWebsocket(restart) {
 
 function populateHomepage(data) {
 	data.sort(function(x, y) { return y.createdts - x.createdts; });
+	D('loadingMsg').style.display = "none";
 	clearDOM(D('discovery'));
 	
 	for (let i = 0; i < data.length; i++) {
@@ -323,7 +331,7 @@ function populateHomepage(data) {
 		}
 		
 		// add to library button
-		let libBut = make('button', 'Add to library');
+		let libBut = make('button', '+');
 		libBut.style = "margin-right:10px";
 		libBut.onclick = function() {
 			event.stopPropagation();				
@@ -338,9 +346,11 @@ function populateHomepage(data) {
 }
 
 function fetchRecent() {
-	clearDOM(D('discovery'));
 	mainPanel('homepage');
-	if (ws) ws.emit('queryPostsRecent');
+	if (ws) {	
+		D('loadingMsg').style.display = "";
+		ws.emit('queryPostsRecent');
+	}
 }
 
 function subscribeHandler() {
@@ -496,10 +506,12 @@ function makeSubLi(userid, displayname) {
 	if (displayname) name = displayname;
 	let subli = make("li");
 	subli.id = userid;
-	subli.onclick = function() { 	
-		clearDOM(D('discovery'));
+	subli.onclick = function() {
 		mainPanel('homepage');
-		if (ws) ws.emit("queryPostsFromUser", {userid});
+		if (ws) {		
+			D('loadingMsg').style.display = "";
+			ws.emit("queryPostsFromUser", {userid});
+		}
 	};
 	subli.style = "cursor:pointer; width:max-content;";
 	
