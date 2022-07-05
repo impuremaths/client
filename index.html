@@ -79,16 +79,16 @@
 	
 	
 	<div id="secondDiv" class="secondDiv">	
-		<button style="margin-top:30px" onclick="fetchRecent()">Recent posts</button> 
+		<button style="margin-top:25px" onclick="fetchRecent()">Recent</button> 
 		<span id="loadingMsg" style="margin-left:10px; font-style:italic">Loading...</span>
 	
 		<div id="homepage">		
 			<ul id="discovery"></ul>
 		</div>
 
-		<div id="post" style="display:none; margin-top:30px">
-			<textarea id="postTitle" style="width:300px; margin-bottom:10px;" autocomplete="off">Post Title</textarea>			
-			<Br><textarea id="postContent" style="height:100px; width:300px" autocomplete="off">Post Content</textarea>
+		<div id="post" style="display:none; margin-top:25px">
+			<textarea id="postTitle" style="width:300px; margin-bottom:10px;" autocomplete="off">Title</textarea>			
+			<Br><textarea id="postContent" style="height:100px; width:300px" autocomplete="off">Content</textarea>
 					
 			<div style="font-size:0.9em; margin-left:10px">
 			<br>Created: <span id="creationEdit"></span>
@@ -98,9 +98,9 @@
 			<button onclick="cancelPost()">Clear/Cancel</button>	
 		</div>
 		
-		<div id="read" style="display:none; margin-top:30px">
-			<div id="readTitle" style="margin-bottom:25px; font-weight:bold; font-size:1.1em">Post Title</div>			
-			<div id="readContent" style="white-space:pre-wrap">Post Content</div>
+		<div id="read" style="display:none; margin-top:25px">
+			<div id="readTitle" style="margin-bottom:25px; font-weight:bold; font-size:1.1em">Title</div>			
+			<div id="readContent" style="white-space:pre-wrap">Content</div>
 			<div style="font-size:0.9em; margin-left:10px">
 			<br>Author: <span id="author"></span>
 			<br>Address: <span id="authorid"></span>
@@ -370,9 +370,9 @@ function post() {
 function cancelPost() {
 	D('creationEdit').textContent = "";
 	D('modificationEdit').textContent = "";
-	D('postContent').value = "Post Content";
-	D('postTitle').value = "Post Title";
-	togglePost();
+	D('postContent').value = "Content";
+	D('postTitle').value = "Title";
+	mainPanel(topPage);
 }
 
 function togglePost() {
@@ -388,9 +388,13 @@ function fillPost(metaData) {
 	D('modification').textContent = metaData.modifiedts;	
 	console.log(metaData);
 	
-	if (metaData.content) D('readContent').textContent = metaData.content;
+	if (metaData.content) {
+		D('readContent').textContent = metaData.content;
+		D('readContent').style.fontStyle = "";
+	}
 	else {
 		D('readContent').textContent = "Loading...";
+		D('readContent').style.fontStyle = "italic";
 		ws.emit('queryPost', { userid: metaData.userid, createdts: metaData.createdts });
 	}
 	
@@ -409,7 +413,7 @@ function editHandler() {
 	D('modificationEdit').textContent = D('modification').textContent;
 	D('postContent').value = D('readContent').textContent;
 	D('postTitle').value = D('readTitle').textContent;
-	togglePost();	
+	mainPanel('post');
 }
 
 function mainPanel(type) {
@@ -592,6 +596,8 @@ function showCurrent() {
 function clearSeed() {
 	clearDOM(D('subscriptions'));
 	clearDOM(D('library'));
+	cancelPost();
+	mainPanel("homepage");
 }
 
 function clickClearSeed() {
