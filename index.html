@@ -351,7 +351,6 @@ function makeLabel(data) {
 	postTitle.style.textOverflow = "ellipsis";
 	
 	let postMeta = make('div');
-	postMeta.title = data.userid;
 	postMeta.style.fontSize = "0.8em";
 	postMeta.style.overflow = "hidden";
 	postMeta.style.textOverflow = "ellipsis";
@@ -365,8 +364,12 @@ function makeLabel(data) {
 			ws.emit("queryPostsFromUser", {userid:data.userid});
 		}
 	};
+	postAuthor.title = data.userid;
+	;
 	let postDate = make('span', " - " + new Date(data.createdts).toLocaleDateString());	
+	postDate.title = data.createdts;
 	let postModified = make('span', " - " + new Date(data.modifiedts).toLocaleDateString());
+	postModified.title = data.modifiedts;
 	
 	postMeta.appendChild(postAuthor);
 	postMeta.appendChild(postDate);
