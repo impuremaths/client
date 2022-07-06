@@ -87,14 +87,13 @@
 		</div>
 
 		<div id="post" style="display:none; margin-top:25px">
-			<textarea id="postTitle" style="width:300px; margin-bottom:10px;" autocomplete="off">Title</textarea>			
-			<Br><textarea id="postContent" style="height:100px; width:300px" autocomplete="off">Content</textarea>
-					
+			<textarea id="postTitle" style="width:300px;" autocomplete="off">Title</textarea>	
 			<div style="font-size:0.9em; margin-left:10px">
-			<br>Created: <span id="creationEdit"></span>
-			<br>Modified: <span id="modificationEdit"></span>
-			</div>
-			<br><button onclick="post()">Post/Edit</button>
+			Created: <span id="creationEdit"> - </span> &nbsp;&nbsp; Modified: <span id="modificationEdit"> - </span>
+			</div>		
+			<br><textarea id="postContent" style="height:100px; width:300px" autocomplete="off">Content</textarea>
+					
+			<br><br><button onclick="post()">Post/Edit</button>
 			<button onclick="cancelPost()">Clear/Cancel</button>	
 		</div>
 		
@@ -400,13 +399,14 @@ function subscribeHandler() {
 
 
 function post() {
-	ws.emit('updatePost', {title:D('postTitle').value, content:D('postContent').value, visibility:"public", createdts: parseInt(D('creationEdit').textContent)});
+	ws.emit('updatePost', {title:D('postTitle').value, content:D('postContent').value, visibility:"public", createdts: parseInt(D('creationEdit').title)});
 	mainPanel('read');
 }
 
 function cancelPost() {
-	D('creationEdit').textContent = "";
-	D('modificationEdit').textContent = "";
+	D('creationEdit').textContent = " - ";
+	D('creationEdit').title = " - ";
+	D('modificationEdit').textContent = " - ";
 	D('postContent').value = "Content";
 	D('postTitle').value = "Title";
 	mainPanel(topPage);
@@ -448,7 +448,8 @@ function fillPost(metaData) {
 }
 
 function editHandler() {
-	D('creationEdit').textContent = D('creation').title;
+	D('creationEdit').textContent = D('creation').textContent;
+	D('creationEdit').title = D('creation').title;
 	D('modificationEdit').textContent = D('modification').textContent;
 	D('postContent').value = D('readContent').textContent;
 	D('postTitle').value = D('readTitle').textContent;
