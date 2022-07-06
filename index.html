@@ -324,9 +324,9 @@ function populateHomepage(data) {
 		postli.onclick = function() {
 			mainPanel('read');
 			fillPost(data[i]);
+			ws.emit('queryPost', { userid: data[i].userid, createdts: data[i].createdts });
 			if (!D(postid)) addToLib(data[i]);
 			else D(postid).style.fontWeight = "";
-			flash(D(postid));
 		}
 		
 		// add to library button
@@ -350,11 +350,13 @@ function makeLabel(data) {
 	postTitle.style.overflow = "hidden";
 	postTitle.style.textOverflow = "ellipsis";
 	
-	let postAuthor = make('div', funName(data.userid) + " - " + new Date(data.createdts).toLocaleDateString());
-	postAuthor.title = data.userid;
-	postAuthor.style.fontSize = "0.8em";
-	postAuthor.style.overflow = "hidden";
-	postAuthor.style.textOverflow = "ellipsis";
+	let postMeta = make('div');
+	postMeta.title = data.userid;
+	postMeta.style.fontSize = "0.8em";
+	postMeta.style.overflow = "hidden";
+	postMeta.style.textOverflow = "ellipsis";
+	
+	let postAuthor = make('span', funName(data.userid));
 	postAuthor.onclick = function() {
 		event.stopPropagation();
 		mainPanel('homepage');
@@ -363,11 +365,17 @@ function makeLabel(data) {
 			ws.emit("queryPostsFromUser", {userid:data.userid});
 		}
 	};
+	let postDate = make('span', " - " + new Date(data.createdts).toLocaleDateString());	
+	let postModified = make('span', " - " + new Date(data.modifiedts).toLocaleDateString());
+	
+	postMeta.appendChild(postAuthor);
+	postMeta.appendChild(postDate);
+	if (data.modifiedts) postMeta.appendChild(postModified);
 	
 	let postLabel = make('div');
 	postLabel.style.overflow = "hidden";
 	postLabel.appendChild(postTitle);
-	postLabel.appendChild(postAuthor);
+	postLabel.appendChild(postMeta);
 	return postLabel;
 }
 
@@ -407,35 +415,37 @@ function togglePost() {
 }
 
 function fillPost(metaData) {
+	let postid = metaData.postid;
+	if (!postid) postid = metaData.userid + "-" + metaData.createdts.toString();
+	if (D(postid)) flash(D(postid));
+	
 	D('readTitle').textContent = metaData.title;
 	D('author').textContent = funName(metaData.userid);
 	D('author').title = metaData.userid;
-	D('creation').textContent = metaData.createdts;	
-	D('modification').textContent = metaData.modifiedts;	
+	D('creation').textContent = new Date(metaData.createdts).toLocaleDateString();
+	D('creation').title = metaData.createdts;
+	D('modification').textContent = new Date(metaData.modifiedts).toLocaleDateString();
 	console.log(metaData);
 	
 	if (metaData.content) {
 		D('readContent').textContent = metaData.content;
 		D('readContent').style.fontStyle = "";
-	}
-	else {
+	} else {
 		D('readContent').textContent = "Loading...";
 		D('readContent').style.fontStyle = "italic";
-		ws.emit('queryPost', { userid: metaData.userid, createdts: metaData.createdts });
 	}
 	
 	if (metaData.userid == XNO.address) {
 		D('edit').style.display = "";
 		D('subscribe').style.display = "none";
-	}
-	else {
+	} else {
 		D('edit').style.display = "none";
 		D('subscribe').style.display = "";
 	}
 }
 
 function editHandler() {
-	D('creationEdit').textContent = D('creation').textContent;
+	D('creationEdit').textContent = D('creation').title;
 	D('modificationEdit').textContent = D('modification').textContent;
 	D('postContent').value = D('readContent').textContent;
 	D('postTitle').value = D('readTitle').textContent;
@@ -572,6 +582,7 @@ function makeLibLi(metaData, accessts) {
 		D(metaData.userid + "-" + metaData.createdts.toString()).style.fontWeight = "";	
 		mainPanel('read');
 		fillPost(metaData);
+		ws.emit('queryPost', { userid: metaData.userid, createdts: metaData.createdts });
 	}
 	libli.style = "cursor:pointer; white-space:nowrap; display:flex; align-items:center; margin-bottom:10px";
 	if (!accessts) libli.style.fontWeight = "bold";
@@ -581,10 +592,7 @@ function makeLibLi(metaData, accessts) {
 	unsubBut.onclick = function() {
 		event.stopPropagation();
 		libli.parentNode.removeChild(libli);
-		if (ws) {
-			ws.emit('deleteLibrary', {postid:metaData.postid});
-			console.log(metaData.postid);
-		}
+		if (ws) ws.emit('deleteLibrary', {postid:libli.id});
 		if (!D('library').children[0]) D('libraryPlaceholder').style.display = "";
 	};	
 	
