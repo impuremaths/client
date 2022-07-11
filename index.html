@@ -65,7 +65,7 @@
 			</div>
 		</div>
 
-		<div class="objectWrapper" onclick="openSubAccordion(this)">
+		<div class="objectWrapper" onclick="openSubAccordion(this)" style="margin-bottom:20px">
 			<div class="clickFlash leftRightBase" style="margin-top:0px" onclick="toggleSubAccordion(this)">
 				<strong>Library</strong> <i id="libraryWarning" style="color:gray">(create an account to save)</i>
 			</div>
@@ -87,11 +87,11 @@
 		</div>
 
 		<div id="post" style="display:none; margin-top:25px">
-			<textarea id="postTitle" style="width:300px;" autocomplete="off">Title</textarea>	
+			<textarea id="postTitle" style="width:300px;" autocomplete="off" placeholder="Title..."></textarea>	
 			<div style="font-size:0.9em; margin-left:10px">
 			Created: <span id="creationEdit"> - </span> &nbsp;&nbsp; Modified: <span id="modificationEdit"> - </span>
 			</div>		
-			<br><textarea id="postContent" style="height:100px; width:300px" autocomplete="off">Content</textarea>
+			<br><textarea id="postContent" style="height:100px; width:300px" autocomplete="off" placeholder="Content..."></textarea>
 					
 			<br><br><button onclick="post()">Post/Edit</button>
 			<button onclick="cancelPost()">Clear/Cancel</button>	
@@ -99,7 +99,7 @@
 		
 		<div id="read" style="display:none; margin-top:25px">
 			<div id="readTitle" style="font-weight:bold; font-size:1.1em">Title</div>	
-			<div style="font-size:0.8em"><span id="author"></span> | <span id="creation"></span><span id="modification"></span> &nbsp; <button id="edit" onclick="editHandler()" autocomplete="off" style="padding:2px 8px">Edit</button></div>
+			<div style="font-size:0.8em"><span id="author" onclick="loadAuthor(this.title)" style="cursor:pointer"></span> | <span id="creation"></span><span id="modification"></span>&nbsp;<button id="edit" onclick="editHandler()" autocomplete="off" style="padding:2px 8px; margin:2px">Edit</button></div>
 			
 			<br>
 			<div id="readContent" style="white-space:pre-wrap">Content</div>
@@ -297,7 +297,13 @@ function setupWebsocket(restart) {
 	
 	ws.on('queryPostResponse', function(data) { fillPost(data); });
 	
-	ws.on('updatePostResponse', function(data) { if (!data.errMsg) fillPost(data); });
+	ws.on('updatePostResponse', function(data) { 
+		if (!data.errMsg) {
+			fillPost(data); 
+			D('postContent').value = "";
+			D('postTitle').value = "";
+		}
+	});
 	
 	ws.on('queryUsersResponse', function(data) { populateSubscriptionNames(data); });
 	
@@ -342,6 +348,14 @@ function populateHomepage(data) {
 	}
 }
 
+function loadAuthor(userid) {
+	mainPanel('homepage');
+	if (ws) {		
+		D('loadingMsg').style.display = "";
+		ws.emit("queryPostsFromUser", {userid});
+	}
+}
+
 function makeLabel(data) {	
 	let postTitle = make('div', data.title);
 	postTitle.title = data.title;
@@ -356,11 +370,7 @@ function makeLabel(data) {
 	let postAuthor = make('span', funName(data.userid));
 	postAuthor.onclick = function() {
 		event.stopPropagation();
-		mainPanel('homepage');
-		if (ws) {		
-			D('loadingMsg').style.display = "";
-			ws.emit("queryPostsFromUser", {userid:data.userid});
-		}
+		loadAuthor(data.userid);
 	};
 	postAuthor.title = data.userid;
 	;
@@ -409,8 +419,8 @@ function cancelPost() {
 	D('creationEdit').textContent = " - ";
 	D('creationEdit').title = " - ";
 	D('modificationEdit').textContent = " - ";
-	D('postContent').value = "Content";
-	D('postTitle').value = "Title";
+	D('postContent').value = "";
+	D('postTitle').value = "";
 	mainPanel(topPage);
 }
 
