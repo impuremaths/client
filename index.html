@@ -193,6 +193,8 @@ function hexToByteArray(hex) {
 
 // Global variables and macros; and initializers ///////////////////////////////////////////////////////////////////////
 
+var DOMdisplayNames = {};
+var cacheDisplayNames = {};
 const enc = new TextEncoder();
 const dec = new TextDecoder();
 function D(string) { return document.getElementById(string); }
@@ -270,12 +272,21 @@ function setupWebsocket(restart) {
 	});
 	
 	ws.on('authenticateUserResponse', function(data) {
-		populateSubscriptions(data.edges);
+		clearDOM(D('subscriptions'));
+		if (XNO.address) makeSubLi(XNO.address);
+		if (data.edges) {
+			for (let i = 0; i < data.edges.length; i++) {
+				makeSubLi(data.edges[i].userid, data.edges[i].displayname);
+			}
+			populateNamesRequest();
+		}
+		
 		if (data && data.displayname) {
 			D('displayName').textContent = data.displayname;
-			D(data.userid).children[1].textContent = data.displayname;
+			for (let i = 0; i < DOMdisplayNames[data.userid].length; i++) {
+				if (data.displayname) DOMdisplayNames[data.userid][i].textContent = data.displayname;
+			}
 		}
-		console.log(data);
 		console.log("Authenticated! Requesting library...");
 		ws.emit('queryLibrary');
 	});
@@ -286,12 +297,10 @@ function setupWebsocket(restart) {
 		for (let i = 0; i < data.length; i++) {
 			makeLibLi(data[i], data[i].lastaccessedts);
 		}
+		populateNamesRequest();
 	});
 	
-	ws.on('queryPostsRecentResponse', function(data) { 
-		D('loadingMsg').style.display = "";
-		populateHomepage(data); 
-	});
+	ws.on('queryPostsRecentResponse', function(data) { populateHomepage(data); });
 	
 	ws.on('queryPostsFromUser', function (data) { populateHomepage(data); });
 	
@@ -305,7 +314,17 @@ function setupWebsocket(restart) {
 		}
 	});
 	
-	ws.on('queryUsersResponse', function(data) { populateSubscriptionNames(data); });
+	ws.on('queryUsersResponse', function(data) { 
+		for (let i = 0; i < data.length; i++) {
+			for (let j = 0; j < DOMdisplayNames[data[i].userid].length; j++) {
+				if (data[i].displayname) {
+					DOMdisplayNames[data[i].userid][j].textContent = data[i].displayname;
+					cacheDisplayNames[data[i].userid] = data[i].displayname;
+				} else delete cacheDisplayNames[data[i].userid];
+			}
+			delete DOMdisplayNames[data[i].userid];
+		}
+	});
 	
 	ws.on('subscribeResponse', function(data) {	console.log(data); });
 	
@@ -314,6 +333,14 @@ function setupWebsocket(restart) {
 
 
 // Main panel UI interaction handlers ///////////////////////////////////////////////////////////////////////
+
+function populateNamesRequest() {
+	let userids = [];	
+	for (let name in DOMdisplayNames) {
+		userids.push(name);
+	}
+	if (ws) ws.emit('queryUsers', {userids});
+}
 
 function populateHomepage(data) {
 	data.sort(function(x, y) { return y.createdts - x.createdts; });
@@ -368,6 +395,10 @@ function makeLabel(data) {
 	postMeta.style.textOverflow = "ellipsis";
 	
 	let postAuthor = make('span', funName(data.userid));
+	
+	if (!DOMdisplayNames[data.userid]) DOMdisplayNames[data.userid] = [postAuthor];
+	else DOMdisplayNames[data.userid].push(postAuthor);
+	
 	postAuthor.onclick = function() {
 		event.stopPropagation();
 		loadAuthor(data.userid);
@@ -531,7 +562,8 @@ function importSeed() {
 		D("subPanel").style.display = "";
 		if (!keepAccount && D("accountPanel").style.maxHeight != "0px") toggleAccount();
 		
-		populateSubscriptions();
+		clearDOM(D('subscriptions'));
+		if (XNO.address) makeSubLi(XNO.address);
 		D('libraryWarning').style.display = "none";
 		D('subscribe').disabled = false;
 		
@@ -541,25 +573,6 @@ function importSeed() {
 			console.log({userid: XNO.address, ts, signature:XNO.sign(ts, XNO.address)});
 			ws.emit('authenticateUser', {userid: XNO.address, ts, signature:XNO.sign(ts, XNO.address)});
 		}
-	}
-}
-
-function populateSubscriptions(edges) {
-	clearDOM(D('subscriptions'));
-	if (XNO.address) makeSubLi(XNO.address);
-	if (edges) {
-		let userids = [];
-		for (let i = 0; i < edges.length; i++) {
-			makeSubLi(edges[i].userid, edges[i].displayname);
-			userids.push(edges[i].userid);
-		}
-		if (ws) ws.emit('queryUsers', {userids});
-	}
-}
-
-function populateSubscriptionNames(data) {
-	for (let i = 0; i < data.length; i++) {
-		if (data[i].displayname) D(data[i].userid).children[1].textContent = data[i].displayname;
 	}
 }
 
@@ -585,8 +598,12 @@ function makeSubLi(userid, displayname) {
 		if (ws) ws.emit('unsubscribe', {userid});
 	};	
 	
-	subli.appendChild(unsubBut);	
-	subli.appendChild(make('span', name));	
+	subli.appendChild(unsubBut);
+	let nameSpan = make('span', name);
+	subli.appendChild(nameSpan);	
+	if (!DOMdisplayNames[userid]) DOMdisplayNames[userid] = [nameSpan];
+	else DOMdisplayNames[userid].push(nameSpan);
+	
 	D('subscriptions').appendChild(subli);
 }
 
@@ -751,7 +768,7 @@ window.addEventListener('keydown', function(evt) {
 // UI helper library ///////////////////////////////////////////////////////////////////////
 
 function funName(userid) {
-	if (D(userid)) return D(userid).children[1].textContent;
+	if (cacheDisplayNames[userid]) return cacheDisplayNames[userid];
 	return adj[parseInt(XNO.pubFromAddr(userid).substring(0, 10), 16) % adj.length] + " " 
 											+ animals[parseInt(XNO.pubFromAddr(userid).substring(0, 10), 16) % animals.length];
 }
