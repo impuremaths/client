@@ -456,6 +456,7 @@ function post() {
 function comment() {
 	console.log(D('author').title + "-" + D('creation').title);
 	ws.emit('updateComment', {content:D('commentContent').value, postid: D('author').title + "-" + D('creation').title});
+	D('commentContent').value = "";
 	mainPanel('read');
 }
 
@@ -531,6 +532,7 @@ function fillPost(metaData) {
 						repPanel.style.display = "none";	
 						console.log({content:repPanel.children[0].value, postid: postid, parentid: metaData.comments[i].commentid });
 						ws.emit('updateComment', {content:repPanel.children[0].value, postid: postid, parentid: metaData.comments[i].commentid });
+						repPanel.children[0].value = "";	
 					}
 				};
 				
