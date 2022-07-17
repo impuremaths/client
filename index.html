@@ -99,13 +99,18 @@
 		
 		<div id="read" style="display:none; margin-top:25px">
 			<div id="readTitle" style="font-weight:bold; font-size:1.1em">Title</div>	
-			<div style="font-size:0.8em"><span id="author" onclick="loadAuthor(this.title)" style="cursor:pointer"></span> | <span id="creation"></span><span id="modification"></span>&nbsp;<button id="edit" onclick="editHandler()" autocomplete="off" style="padding:2px 8px; margin:2px">Edit</button></div>
+			<div style="font-size:0.8em"><span id="author" onclick="loadAuthor(this.title)" style="cursor:pointer"></span>
+			<button id="subscribe" onclick="subscribeHandler()" autocomplete="off" style="padding:2px 8px; margin:2px" disabled>Subscribe</button> | <span id="creation"></span><span id="modification"></span>&nbsp;<button id="edit" onclick="editHandler()" autocomplete="off" style="padding:2px 8px; margin:2px">Edit</button></div>
 			
 			<br>
 			<div id="readContent" style="white-space:pre-wrap">Content</div>
-			<div style="font-size:0.9em; margin-left:10px">
-			</div>
-			<br><button id="subscribe" onclick="subscribeHandler()" autocomplete="off" disabled>Subscribe</button>
+			<br>
+			<textarea id="commentContent" style="height:100px; width:80%" autocomplete="off" placeholder="Comment..."></textarea>
+			
+			<br><br><button id="comment" onclick="comment()" disabled>Comment</button>
+			<br>
+			<ul id="readComments" style="white-space:pre-wrap; font-size:0.9em; margin-top:30px"><ul>
+			
 		</div>
 		
 	</div>
@@ -311,7 +316,7 @@ function setupWebsocket(restart) {
 			fillPost(data); 
 			D('postContent').value = "";
 			D('postTitle').value = "";
-		}
+		} else console.log(data);
 	});
 	
 	ws.on('queryUsersResponse', function(data) { 
@@ -329,6 +334,8 @@ function setupWebsocket(restart) {
 	ws.on('subscribeResponse', function(data) {	console.log(data); });
 	
 	ws.on('sponsorResponse', function(data) { makeSubLi(data.userid2); });
+	
+	ws.on('updateCommentResponse', function(data) {	console.log(data); });
 }
 
 
@@ -446,6 +453,12 @@ function post() {
 	mainPanel('read');
 }
 
+function comment() {
+	console.log(D('author').title + "-" + D('creation').title);
+	ws.emit('updateComment', {content:D('commentContent').value, postid: D('author').title + "-" + D('creation').title});
+	mainPanel('read');
+}
+
 function cancelPost() {
 	D('creationEdit').textContent = " - ";
 	D('creationEdit').title = " - ";
@@ -485,6 +498,47 @@ function fillPost(metaData) {
 	} else {
 		D('readContent').textContent = "Loading...";
 		D('readContent').style.fontStyle = "italic";
+	}
+	
+	clearDOM(D('readComments'));
+	if (metaData.comments) {
+		for (let i = 0; i < metaData.comments.length; i++) {
+			if (metaData.comments[i].parentid) D(metaData.comments[i].parentid).appendChild(make('li', metaData.comments[i].content));
+			else {
+				D('readComments').appendChild(make('li', metaData.comments[i].content));
+				
+				// future replies
+				let ulcomment = make('ul');
+				ulcomment.style = "margin-left:20px";
+				ulcomment.id = metaData.comments[i].commentid;
+				D('readComments').appendChild(ulcomment);
+				
+				// reply content
+				let repPanel = make('div');
+				repPanel.style.display = "none";
+				repPanel.innerHTML = '<textarea placeholder="Reply..." style="margin-top:20px;"></textarea>';
+				D('readComments').appendChild(repPanel);
+				
+				
+				// reply button
+				let repBut = make('button', "Reply");
+				repBut.style = "margin-left:20px;margin-bottom:20px;margin-top:10px;";
+				repBut.title = metaData.comments[i].commentid;
+				
+				repBut.onclick = function() {
+					if (repPanel.style.display) repPanel.style.display = "";
+					else {
+						repPanel.style.display = "none";	
+						console.log({content:repPanel.children[0].value, postid: postid, parentid: metaData.comments[i].commentid });
+						ws.emit('updateComment', {content:repPanel.children[0].value, postid: postid, parentid: metaData.comments[i].commentid });
+					}
+				};
+				
+				D('readComments').appendChild(repBut);
+				
+				
+			}
+		}	
 	}
 	
 	if (metaData.userid == XNO.address) {
@@ -566,6 +620,7 @@ function importSeed() {
 		if (XNO.address) makeSubLi(XNO.address);
 		D('libraryWarning').style.display = "none";
 		D('subscribe').disabled = false;
+		D('comment').disabled = false;
 		
 		localStorage.setItem("localSeed", XNO.seed);
 		if (keepAccount != XNO.address && ws) {
@@ -686,6 +741,8 @@ function clickClearSeed() {
 	D("current").disabled = true;	
 	D("clear").disabled = true;
 	D("postButton").disabled = true;
+	D("comment").disabled = true;
+	D('subscribe').disabled = true;
 	toggleEdit(true);
 	D("profilePanel").style.display = "none";
 	
