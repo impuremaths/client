@@ -103,11 +103,12 @@
 			<button id="subscribe" onclick="subscribeHandler()" autocomplete="off" style="padding:2px 8px; margin:2px" disabled>Subscribe</button> | <span id="creation"></span><span id="modification"></span>&nbsp;<button id="edit" onclick="editHandler()" autocomplete="off" style="padding:2px 8px; margin:2px">Edit</button></div>
 			
 			<br>
-			<div id="readContent" style="white-space:pre-wrap">Content</div>
-			<br>
-			<textarea id="commentContent" style="height:100px; width:80%" autocomplete="off" placeholder="Comment..."></textarea>
+			<div id="readContent" style="white-space:pre-wrap; width:80%;">Content</div>
 			
-			<br><br><button id="comment" onclick="comment()" disabled>Comment</button>
+			<br>
+			<textarea id="commentContent" style="height:80px; width:80%; margin-top:40px; display:none" autocomplete="off" placeholder="Comment..."></textarea>
+			<br><button id="comment" style="margin-top:10px" onclick="comment()" disabled>Comment</button>
+			
 			<br>
 			<ul id="readComments" style="white-space:pre-wrap; font-size:0.9em; margin-top:30px"><ul>
 			
@@ -390,44 +391,49 @@ function loadAuthor(userid) {
 	}
 }
 
-function makeLabel(data) {	
-	let postTitle = make('div', data.title);
-	postTitle.title = data.title;
-	postTitle.style.overflow = "hidden";
-	postTitle.style.textOverflow = "ellipsis";
-	
+function makeMetaLabel(userid, createdts, modifiedts) {
 	let postMeta = make('div');
 	postMeta.style.fontSize = "0.8em";
 	postMeta.style.overflow = "hidden";
 	postMeta.style.textOverflow = "ellipsis";
 	
-	let postAuthor = make('span', funName(data.userid));
+	let postAuthor = make('span', funName(userid));
+	postAuthor.style.cursor = "pointer";
 	
-	if (!DOMdisplayNames[data.userid]) DOMdisplayNames[data.userid] = [postAuthor];
-	else DOMdisplayNames[data.userid].push(postAuthor);
+	if (!DOMdisplayNames[userid]) DOMdisplayNames[userid] = [postAuthor];
+	else DOMdisplayNames[userid].push(postAuthor);
 	
 	postAuthor.onclick = function() {
 		event.stopPropagation();
-		loadAuthor(data.userid);
+		loadAuthor(userid);
 	};
-	postAuthor.title = data.userid;
+	postAuthor.title = userid;
 	;
-	let postDate = make('span', " | " + new Date(data.createdts).toLocaleDateString());	
-	postDate.title = data.createdts;
+	let postDate = make('span', " | " + new Date(createdts).toLocaleDateString());	
+	postDate.title = createdts;
 	
 	postMeta.appendChild(postAuthor);
 	postMeta.appendChild(postDate);
-	if (data.modifiedts && data.modifiedts != data.createdts) {
-		let mts = new Date(data.modifiedts);
+	
+	if (modifiedts && modifiedts != createdts) {
+		let mts = new Date(modifiedts);
 		let postModified = make('span', " - " + mts.toLocaleDateString());
-		postModified.title = data.modifiedts;
+		postModified.title = modifiedts;
 		postMeta.appendChild(postModified);
-	}
+	}	
+	return postMeta;
+}
+
+function makeLabel(data) {
+	let postTitle = make('div', data.title);
+	postTitle.title = data.title;
+	postTitle.style.overflow = "hidden";
+	postTitle.style.textOverflow = "ellipsis";
 	
 	let postLabel = make('div');
 	postLabel.style.overflow = "hidden";
 	postLabel.appendChild(postTitle);
-	postLabel.appendChild(postMeta);
+	postLabel.appendChild(makeMetaLabel(data.userid, data.createdts));
 	return postLabel;
 }
 
@@ -454,10 +460,14 @@ function post() {
 }
 
 function comment() {
-	console.log(D('author').title + "-" + D('creation').title);
-	ws.emit('updateComment', {content:D('commentContent').value, postid: D('author').title + "-" + D('creation').title});
-	D('commentContent').value = "";
-	mainPanel('read');
+	if (D('commentContent').style.display) D('commentContent').style.display = "";
+	else {
+		D('commentContent').style.display = "none";
+		console.log(D('author').title + "-" + D('creation').title);
+		ws.emit('updateComment', {content:D('commentContent').value, postid: D('author').title + "-" + D('creation').title});
+		D('commentContent').value = "";
+		mainPanel('read');
+	}
 }
 
 function cancelPost() {
@@ -504,9 +514,15 @@ function fillPost(metaData) {
 	clearDOM(D('readComments'));
 	if (metaData.comments) {
 		for (let i = 0; i < metaData.comments.length; i++) {
-			if (metaData.comments[i].parentid) D(metaData.comments[i].parentid).appendChild(make('li', metaData.comments[i].content));
-			else {
-				D('readComments').appendChild(make('li', metaData.comments[i].content));
+			let theComment = make('li', metaData.comments[i].content);
+			theComment.style.marginBottom = "10px";
+			
+			if (metaData.comments[i].parentid) {
+				D(metaData.comments[i].parentid).appendChild(makeMetaLabel(metaData.comments[i].commentid.split("-")[0], parseInt(metaData.comments[i].commentid.split("-")[1]), metaData.comments[i].modifiedts));
+				D(metaData.comments[i].parentid).appendChild(theComment);
+			} else {
+				D('readComments').appendChild(makeMetaLabel(metaData.comments[i].commentid.split("-")[0], parseInt(metaData.comments[i].commentid.split("-")[1]), metaData.comments[i].modifiedts));
+				D('readComments').appendChild(theComment);
 				
 				// future replies
 				let ulcomment = make('ul');
@@ -514,16 +530,16 @@ function fillPost(metaData) {
 				ulcomment.id = metaData.comments[i].commentid;
 				D('readComments').appendChild(ulcomment);
 				
-				// reply content
+				// reply editor
 				let repPanel = make('div');
 				repPanel.style.display = "none";
-				repPanel.innerHTML = '<textarea placeholder="Reply..." style="margin-top:20px;"></textarea>';
+				repPanel.innerHTML = '<textarea placeholder="Reply..." style="margin-left:20px; margin-bottom:10px; margin-top:10px; width:60%;"></textarea>';
 				D('readComments').appendChild(repPanel);
 				
 				
 				// reply button
 				let repBut = make('button', "Reply");
-				repBut.style = "margin-left:20px;margin-bottom:20px;margin-top:10px;";
+				repBut.style = "margin-left:20px;margin-bottom:20px; font-size:0.9em";
 				repBut.title = metaData.comments[i].commentid;
 				
 				repBut.onclick = function() {
@@ -562,6 +578,8 @@ function editHandler() {
 }
 
 function mainPanel(type) {
+	D('commentContent').style.display = 'none';
+	D('commentContent').value = "";
 	D('post').style.display = 'none';
 	D('read').style.display = 'none';
 	D('homepage').style.display = 'none';
