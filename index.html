@@ -513,6 +513,9 @@ function fillPost(metaData) {
 	
 	clearDOM(D('readComments'));
 	if (metaData.comments) {
+		metaData.comments.sort(function(x, y) {
+			return parseInt(x.commentid.split("-")[1]) - parseInt(y.commentid.split("-")[1]);
+		});
 		for (let i = 0; i < metaData.comments.length; i++) {
 			let theComment = make('li', metaData.comments[i].content);
 			theComment.style.marginBottom = "10px";
