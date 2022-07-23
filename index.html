@@ -416,8 +416,7 @@ function makeMetaLabel(userid, createdts, modifiedts) {
 	postMeta.appendChild(postDate);
 	
 	if (modifiedts && modifiedts != createdts) {
-		let mts = new Date(modifiedts);
-		let postModified = make('span', " - " + mts.toLocaleDateString());
+		let postModified = make('span', " - " + new Date(modifiedts).toLocaleDateString());
 		postModified.title = modifiedts;
 		postMeta.appendChild(postModified);
 	}	
@@ -433,7 +432,7 @@ function makeLabel(data) {
 	let postLabel = make('div');
 	postLabel.style.overflow = "hidden";
 	postLabel.appendChild(postTitle);
-	postLabel.appendChild(makeMetaLabel(data.userid, data.createdts));
+	postLabel.appendChild(makeMetaLabel(data.userid, data.createdts, data.modifiedts));
 	return postLabel;
 }
 
@@ -496,9 +495,11 @@ function fillPost(metaData) {
 	D('creation').title = metaData.createdts;
 	if (metaData.modifiedts && metaData.modifiedts != metaData.createdts) {
 		D('modification').textContent = " - " + new Date(metaData.modifiedts).toLocaleDateString();
+		D('modification').title = metaData.modifiedts;
 		D('modification').style.display = "";
 	} else {
 		D('modification').textContent = "";
+		D('modification').title = "";
 		D('modification').style.display = "none";
 	}
 	console.log(metaData);
