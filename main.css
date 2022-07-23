@@ -306,6 +306,11 @@ ul {
 	scrollbar-width:thin;
 }
 
+li {
+	border-radius:5px;
+	padding-right:5px;
+}
+
 @media only screen 
   and (max-device-width: 450px), (max-device-height: 450px) { 
 	html {
