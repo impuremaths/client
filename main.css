@@ -202,11 +202,11 @@ button.right {
 
 a {
 	text-decoration: none;
-	color: #699;
+    color: #888;
 }
 
 a:hover {
-    color: #333;
+	color: #699;
 }
 
 .leftRightBase {
