@@ -577,7 +577,8 @@ function fillPost(metaData) {
 function editHandler() {
 	D('creationEdit').textContent = D('creation').textContent;
 	D('creationEdit').title = D('creation').title;
-	D('modificationEdit').textContent = D('modification').textContent;
+	D('modificationEdit').textContent = D('modification').textContent.substr(3);
+	D('modificationEdit').title = D('modification').title;
 	D('postContent').value = D('readContent').textContent;
 	D('postTitle').value = D('readTitle').textContent;
 	mainPanel('post');
