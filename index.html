@@ -78,11 +78,11 @@
 	<div id="secondDiv" class="secondDiv">
 	
 		<button id="browseButton" class="left" style="margin-top:25px; margin-bottom:10px" onclick="fetchRecent()">Browse</button>	
-		<button id="readButton" style="font-size:0.85em; border-radius:5px;" onclick="mainPanel('read')" autocomplete="off">Read</button>
-		<button id="postButton" class="right" onclick="togglePost()" autocomplete="off" disabled>Write</button>
+		<button id="readButton" style="font-size:0.85em; border-radius:5px;" onclick="loadPanel('read')" autocomplete="off">Read</button>
+		<button id="postButton" class="right" onclick="loadPanel('post')" autocomplete="off" disabled>Write</button>
 		<span id="loadingMsg" style="margin-left:10px; font-style:italic">Loading...</span>
 	
-		<div id="homepage">		
+		<div id="browse">		
 			<ul id="discovery"></ul>
 		</div>
 
@@ -99,8 +99,9 @@
 		
 		<div id="read" style="display:none; margin-top:25px">
 			<div id="readTitle" style="font-weight:bold; font-size:1.1em">Title</div>	
-			<div style="font-size:0.8em"><span id="author" onclick="loadAuthor(this.title)" style="cursor:pointer">Author</span>
-			<button id="subscribe" onclick="subscribeHandler()" autocomplete="off" style="display:none; padding:2px 8px; margin:2px" disabled>Subscribe</button> | <span id="creation">Post date</span><span id="modification"> - Modified date</span>&nbsp;<button id="edit" onclick="editHandler()" autocomplete="off" style="display:none; padding:2px 8px; margin:2px">Edit</button></div>
+			<div style="font-size:0.8em"><a id="author" onclick="loadAuthor(this.title)" style="cursor:pointer">Author</a>
+			<button id="subscribe" onclick="subscribeHandler()" autocomplete="off" style="display:none; padding:2px 8px; margin:2px" disabled>Subscribe</button> | <span id="creation">Post date</span><span id="modification"> - Modified date</span>
+			<button id="edit" onclick="editHandler()" autocomplete="off" style="display:none; padding:2px 8px; margin:2px; margin-left:5px;">Edit</button></div>
 			
 			<br>
 			<div id="readContent" style="white-space:pre-wrap; width:80%;">Content</div>
@@ -110,7 +111,7 @@
 			<br><button id="comment" style="margin-top:10px; display:none;" onclick="comment()" disabled>Comment</button>
 			
 			<br>
-			<ul id="readComments" style="white-space:pre-wrap; font-size:0.9em; margin-top:30px"><ul>
+			<ul id="readComments" style="white-space:pre-wrap; margin-top:30px"><ul>
 			
 		</div>
 		
@@ -199,6 +200,7 @@ function hexToByteArray(hex) {
 
 // Global variables and macros; and initializers ///////////////////////////////////////////////////////////////////////
 
+var topPage = "browse";
 var DOMdisplayNames = {};
 var cacheDisplayNames = {};
 const enc = new TextEncoder();
@@ -219,8 +221,6 @@ if (localSeed) {
 	D("seed").value = localSeed;
 	importSeed();
 }
-
-var topPage = "homepage";
 
 // Websocket code ///////////////////////////////////////////////////////////////////////
 
@@ -284,7 +284,7 @@ function setupWebsocket(restart) {
 			for (let i = 0; i < data.edges.length; i++) {
 				makeSubLi(data.edges[i].userid, data.edges[i].displayname);
 			}
-			populateNamesRequest();
+			requestNames();
 		}
 		
 		if (data && data.displayname) {
@@ -304,22 +304,16 @@ function setupWebsocket(restart) {
 		for (let i = 0; i < data.length; i++) {
 			makeLibLi(data[i], data[i].lastaccessedts);
 		}
-		populateNamesRequest();
+		requestNames();
 	});
 	
-	ws.on('queryPostsRecentResponse', function(data) { populateHomepage(data); });
-	
-	ws.on('queryPostsFromUser', function (data) { populateHomepage(data); });
-	
-	ws.on('queryPostResponse', function(data) { fillPost(data); });
-	
-	ws.on('updatePostResponse', function(data) { 
-		if (!data.errMsg) {
-			fillPost(data); 
-			D('postContent').value = "";
-			D('postTitle').value = "";
-		} else console.log(data);
-	});
+	function requestNames() {
+		let userids = [];	
+		for (let name in DOMdisplayNames) {
+			userids.push(name);
+		}
+		if (ws) ws.emit('queryUsers', {userids});
+	}
 	
 	ws.on('queryUsersResponse', function(data) { 
 		for (let i = 0; i < data.length; i++) {
@@ -333,42 +327,40 @@ function setupWebsocket(restart) {
 		}
 	});
 	
+	ws.on('queryPostsRecentResponse', function(data) { populateDiscovery(data); });
+	
+	ws.on('queryPostsFromUser', function (data) { populateDiscovery(data); });
+	
+	ws.on('queryPostResponse', function(data) { fillPost(data); });
+	
+	ws.on('updatePostResponse', function(data) { 
+		if (!data.errMsg) {
+			fillPost(data); 
+			D('postContent').value = "";
+			D('postTitle').value = "";
+		} else console.log(data);
+	});
+	
 	ws.on('subscribeResponse', function(data) {	console.log(data); });
 	
 	ws.on('sponsorResponse', function(data) { makeSubLi(data.userid2); });
 	
-	ws.on('updateCommentResponse', function(data) {	console.log(data); });
+	ws.on('updateCommentResponse', function(data) {	
+		addComment(data);
+	});
 }
 
 
 // Main panel UI interaction handlers ///////////////////////////////////////////////////////////////////////
 
-function populateNamesRequest() {
-	let userids = [];	
-	for (let name in DOMdisplayNames) {
-		userids.push(name);
-	}
-	if (ws) ws.emit('queryUsers', {userids});
-}
-
-function populateHomepage(data) {
+function populateDiscovery(data) {
 	data.sort(function(x, y) { return y.createdts - x.createdts; });
 	D('loadingMsg').style.display = "none";
 	clearDOM(D('discovery'));
 	
-	for (let i = 0; i < data.length; i++) {
-		let postli = make('li');
-		postli.style = "cursor:pointer; margin-bottom:10px; width:max-content; display:flex; align-items:center";
-		
+	for (let i = 0; i < data.length; i++) {		
 		let postid = data[i].userid + "-" + data[i].createdts.toString();
-		postli.onclick = function() {
-			mainPanel('read');
-			fillPost(data[i]);
-			ws.emit('queryPost', { userid: data[i].userid, createdts: data[i].createdts });
-			if (!D(postid)) addToLib(data[i]);
-			else D(postid).style.fontWeight = "";
-		}
-		
+
 		// add to library button
 		let libBut = make('button', '+');
 		libBut.style = "margin-right:10px";
@@ -378,41 +370,49 @@ function populateHomepage(data) {
 			flash(D(postid));
 		};
 		
+		let readBut = makeLabel(data[i]);
+		readBut.style = "cursor:pointer";
+		readBut.onclick = function() {
+			loadPanel('read');
+			fillPost(data[i]);
+			ws.emit('queryPost', { userid: data[i].userid, createdts: data[i].createdts });
+			if (!D(postid)) addToLib(data[i]);
+			else D(postid).style.fontWeight = "";
+		}
+		
+		let postli = make('li');
+		postli.style = "margin-bottom:10px; width:max-content; display:flex; align-items:center";
 		postli.appendChild(libBut);	
-		postli.appendChild(makeLabel(data[i]));
+		postli.appendChild(readBut);
 		D('discovery').appendChild(postli);
 	}
 }
 
 function loadAuthor(userid) {
-	mainPanel('homepage');
-	if (ws) {		
+	loadPanel('browse');
+	if (ws && userid) {
 		D('loadingMsg').style.display = "";
 		ws.emit("queryPostsFromUser", {userid});
 	}
 }
 
 function makeMetaLabel(userid, createdts, modifiedts) {
-	let postMeta = make('div');
-	postMeta.style.fontSize = "0.8em";
-	postMeta.style.overflow = "hidden";
-	postMeta.style.textOverflow = "ellipsis";
 	
-	let postAuthor = make('span', funName(userid));
+	let postAuthor = make('a', funName(userid));
+	postAuthor.title = userid;
 	postAuthor.style.cursor = "pointer";
-	
-	if (!DOMdisplayNames[userid]) DOMdisplayNames[userid] = [postAuthor];
-	else DOMdisplayNames[userid].push(postAuthor);
-	
 	postAuthor.onclick = function() {
 		event.stopPropagation();
 		loadAuthor(userid);
 	};
-	postAuthor.title = userid;
-	;
+	if (!DOMdisplayNames[userid]) DOMdisplayNames[userid] = [postAuthor];
+	else DOMdisplayNames[userid].push(postAuthor);
+	
 	let postDate = make('span', " | " + new Date(createdts).toLocaleDateString());	
 	postDate.title = createdts;
 	
+	let postMeta = make('div');
+	postMeta.style = "font-size:0.8em; overflow:hidden; text-overflow:ellipsis";
 	postMeta.appendChild(postAuthor);
 	postMeta.appendChild(postDate);
 	
@@ -420,7 +420,7 @@ function makeMetaLabel(userid, createdts, modifiedts) {
 		let postModified = make('span', " - " + new Date(modifiedts).toLocaleDateString());
 		postModified.title = modifiedts;
 		postMeta.appendChild(postModified);
-	}	
+	}
 	return postMeta;
 }
 
@@ -438,7 +438,7 @@ function makeLabel(data) {
 }
 
 function fetchRecent() {
-	mainPanel('homepage');
+	loadPanel('browse');
 	if (ws) {	
 		D('loadingMsg').style.display = "";
 		ws.emit('queryPostsRecent');
@@ -453,10 +453,9 @@ function subscribeHandler() {
 	}
 }
 
-
 function post() {
 	ws.emit('updatePost', {title:D('postTitle').value, content:D('postContent').value, visibility:"public", createdts: parseInt(D('creationEdit').title)});
-	mainPanel('read');
+	loadPanel('read');
 }
 
 function comment() {
@@ -466,22 +465,45 @@ function comment() {
 		console.log(D('author').title + "-" + D('creation').title);
 		ws.emit('updateComment', {content:D('commentContent').value, postid: D('author').title + "-" + D('creation').title});
 		D('commentContent').value = "";
-		mainPanel('read');
+		loadPanel('read');
 	}
 }
 
 function cancelPost() {
 	D('creationEdit').textContent = " - ";
-	D('creationEdit').title = " - ";
+	D('creationEdit').title = "";
 	D('modificationEdit').textContent = " - ";
+	D('modificationEdit').title = "";	
 	D('postContent').value = "";
 	D('postTitle').value = "";
-	mainPanel(topPage);
+	loadPanel(topPage);
 }
 
-function togglePost() {
-	if (D('post').style.display == "none") mainPanel('post');
-	else mainPanel(topPage);
+function editHandler() {
+	D('creationEdit').textContent = D('creation').textContent;
+	D('creationEdit').title = D('creation').title;
+	D('modificationEdit').textContent = D('modification').textContent.substr(3);
+	D('modificationEdit').title = D('modification').title;
+	D('postContent').value = D('readContent').textContent;
+	D('postTitle').value = D('readTitle').textContent;
+	loadPanel('post');
+}
+
+function loadPanel(type) {
+	D('commentContent').style.display = 'none';
+	D('commentContent').value = "";
+	
+	D('post').style.display = 'none';
+	D('read').style.display = 'none';
+	D('browse').style.display = 'none';
+	
+	D('postButton').classList.remove('active');
+	D('readButton').classList.remove('active');
+	D('browseButton').classList.remove('active');
+	
+	D(type).style.display = "";
+	D(type + "Button").classList.add('active');
+	if (type != "post") topPage = type;
 }
 
 function fillPost(metaData) {
@@ -503,7 +525,6 @@ function fillPost(metaData) {
 		D('modification').title = "";
 		D('modification').style.display = "none";
 	}
-	console.log(metaData);
 	
 	if (metaData.content) {
 		D('readContent').textContent = metaData.content;
@@ -513,57 +534,6 @@ function fillPost(metaData) {
 		D('readContent').style.fontStyle = "italic";
 	}
 	
-	clearDOM(D('readComments'));
-	if (metaData.comments) {
-		metaData.comments.sort(function(x, y) {
-			return parseInt(x.commentid.split("-")[1]) - parseInt(y.commentid.split("-")[1]);
-		});
-		for (let i = 0; i < metaData.comments.length; i++) {
-			let theComment = make('li', metaData.comments[i].content);
-			theComment.style.marginBottom = "10px";
-			
-			if (metaData.comments[i].parentid) {
-				D(metaData.comments[i].parentid).appendChild(makeMetaLabel(metaData.comments[i].commentid.split("-")[0], parseInt(metaData.comments[i].commentid.split("-")[1]), metaData.comments[i].modifiedts));
-				D(metaData.comments[i].parentid).appendChild(theComment);
-			} else {
-				D('readComments').appendChild(makeMetaLabel(metaData.comments[i].commentid.split("-")[0], parseInt(metaData.comments[i].commentid.split("-")[1]), metaData.comments[i].modifiedts));
-				D('readComments').appendChild(theComment);
-				
-				// future replies
-				let ulcomment = make('ul');
-				ulcomment.style = "margin-left:20px";
-				ulcomment.id = metaData.comments[i].commentid;
-				D('readComments').appendChild(ulcomment);
-				
-				// reply editor
-				let repPanel = make('div');
-				repPanel.style.display = "none";
-				repPanel.innerHTML = '<textarea placeholder="Reply..." style="margin-left:20px; margin-bottom:10px; margin-top:10px; width:60%;"></textarea>';
-				D('readComments').appendChild(repPanel);
-				
-				
-				// reply button
-				let repBut = make('button', "Reply");
-				repBut.style = "margin-left:20px;margin-bottom:20px; font-size:0.9em";
-				repBut.title = metaData.comments[i].commentid;
-				
-				repBut.onclick = function() {
-					if (repPanel.style.display) repPanel.style.display = "";
-					else {
-						repPanel.style.display = "none";	
-						console.log({content:repPanel.children[0].value, postid: postid, parentid: metaData.comments[i].commentid });
-						ws.emit('updateComment', {content:repPanel.children[0].value, postid: postid, parentid: metaData.comments[i].commentid });
-						repPanel.children[0].value = "";	
-					}
-				};
-				
-				D('readComments').appendChild(repBut);
-				
-				
-			}
-		}	
-	}
-	
 	if (metaData.userid == XNO.address) {
 		D('edit').style.display = "";
 		D('subscribe').style.display = "none";
@@ -571,43 +541,94 @@ function fillPost(metaData) {
 		D('edit').style.display = "none";
 		D('subscribe').style.display = "";
 	}
+	
 	D('comment').style.display = "";
+	clearDOM(D('readComments'));
+	
+	if (metaData.comments) {
+		metaData.comments.sort(function(x, y) {
+			return parseInt(x.commentid.split("-")[1]) - parseInt(y.commentid.split("-")[1]);
+		});		
+		for (let i = 0; i < metaData.comments.length; i++) {
+			addComment(metaData.comments[i]);
+		}	
+	}
 }
 
-function editHandler() {
-	D('creationEdit').textContent = D('creation').textContent;
-	D('creationEdit').title = D('creation').title;
-	D('modificationEdit').textContent = D('modification').textContent.substr(3);
-	D('modificationEdit').title = D('modification').title;
-	D('postContent').value = D('readContent').textContent;
-	D('postTitle').value = D('readTitle').textContent;
-	mainPanel('post');
+function addComment(commentData) {
+	let theComment = make('li', commentData.content);
+	theComment.id = commentData.commentid;
+	theComment.style = "margin-bottom:10px; font-size:0.9em";
+	let theLabel = makeMetaLabel(commentData.commentid.split("-")[0], parseInt(commentData.commentid.split("-")[1]), commentData.modifiedts);
+
+	// reply editor
+	let editPanel = make('div');
+	editPanel.style.display = "none";
+	editPanel.innerHTML = '<textarea placeholder="Reply..." style="margin-left:20px; margin-bottom:10px; margin-top:10px; width:60%;"></textarea>';
+	
+	if (XNO.address == commentData.commentid.split("-")[0]) {
+		let editBut = make('button', "Edit");
+		editBut.style = "padding:2px 8px; margin:2px; margin-left:5px;";
+		theLabel.appendChild(editBut);
+				
+		editBut.onclick = function() {
+			if (editPanel.style.display) {
+				editPanel.style.display = "";
+				editPanel.children[0].value = D(commentData.commentid).textContent;
+				this.textContent = "Send Edit";
+			} else {
+				editPanel.style.display = "none";
+				if (editPanel.children[0].value != D(commentData.commentid).textContent)
+					ws.emit('updateComment', {content:editPanel.children[0].value, postid: commentData.postid, parentid: commentData.parentid, commentid: commentData.commentid });
+				this.textContent = "Edit";
+			}
+		};		
+	}	
+		
+	if (D(commentData.commentid)) D(commentData.commentid).textContent = commentData.content;
+	else if (commentData.parentid) {
+		D(commentData.parentid + "-ul").appendChild(theLabel);	
+		if (XNO.address == commentData.commentid.split("-")[0])	D(commentData.parentid + "-ul").appendChild(editPanel);	
+		D(commentData.parentid + "-ul").appendChild(theComment);
+	} else {
+		D('readComments').appendChild(theLabel);
+		if (XNO.address == commentData.commentid.split("-")[0])	D('readComments').appendChild(editPanel);	
+		D('readComments').appendChild(theComment);
+		
+		// future replies
+		let ulcomment = make('ul');
+		ulcomment.style = "margin-left:20px";
+		ulcomment.id = commentData.commentid + "-ul";
+		D('readComments').appendChild(ulcomment);
+		
+		// reply editor
+		let repPanel = make('div');
+		repPanel.style.display = "none";
+		repPanel.innerHTML = '<textarea placeholder="Reply..." style="margin-left:20px; margin-bottom:10px; margin-top:10px; width:60%;"></textarea>';
+		D('readComments').appendChild(repPanel);				
+		
+		// reply button
+		let repBut = make('button', "Reply");
+		repBut.style = "margin-left:20px;margin-bottom:20px; margin-top:5px; font-size:0.9em";
+		repBut.title = commentData.commentid;
+		
+		repBut.onclick = function() {
+			if (repPanel.style.display) {
+				repPanel.style.display = "";
+				this.textContent = "Send Reply";
+			} else {
+				repPanel.style.display = "none";	
+				console.log({content:repPanel.children[0].value, postid: commentData.postid, parentid: commentData.commentid });
+				if (repPanel.children[0].value) ws.emit('updateComment', {content:repPanel.children[0].value, postid: commentData.postid, parentid: commentData.commentid });
+				repPanel.children[0].value = "";
+				this.textContent = "Reply";	
+			}
+		};
+		
+		D('readComments').appendChild(repBut);
+	}
 }
 
-function mainPanel(type) {
-	D('commentContent').style.display = 'none';
-	D('commentContent').value = "";
-	D('post').style.display = 'none';
-	D('read').style.display = 'none';
-	D('homepage').style.display = 'none';
-	
-	if (type == "post") {
-		D('post').style.display = "";
-		D('postButton').classList.add('active');
-	} else D('postButton').classList.remove('active');
-	
-	if (type == "read") {
-		D('read').style.display = "";
-		D('readButton').classList.add('active');
-		topPage = "read";
-	} else D('readButton').classList.remove('active');
-	
-	if (type == "homepage") {
-		D('homepage').style.display = "";
-		D('browseButton').classList.add('active');
-		topPage = "homepage";
-	}else D('browseButton').classList.remove('active');
-}
 
 // Sidebar UI interaction handlers ///////////////////////////////////////////////////////////////////////
 
@@ -669,7 +690,7 @@ function makeSubLi(userid, displayname) {
 	let subli = make("li");
 	subli.id = userid;
 	subli.onclick = function() {
-		mainPanel('homepage');
+		loadPanel('browse');
 		if (ws) {		
 			D('loadingMsg').style.display = "";
 			ws.emit("queryPostsFromUser", {userid});
@@ -706,7 +727,7 @@ function makeLibLi(metaData, accessts) {
 	if (!metaData.title) libli.textContent = "Post by " + funName(metaData.userid);	
 	libli.onclick = function() {
 		D(metaData.userid + "-" + metaData.createdts.toString()).style.fontWeight = "";	
-		mainPanel('read');
+		loadPanel('read');
 		fillPost(metaData);
 		ws.emit('queryPost', { userid: metaData.userid, createdts: metaData.createdts });
 	}
@@ -756,7 +777,7 @@ function clearSeed() {
 	clearDOM(D('subscriptions'));
 	clearDOM(D('library'));
 	cancelPost();
-	mainPanel("homepage");
+	loadPanel("browse");
 }
 
 function clickClearSeed() {
@@ -830,7 +851,7 @@ window.addEventListener('copy', function(e) {
 });
 
 window.addEventListener('keydown', function(evt) {
-	if (evt.keyCode == 27) mainPanel('homepage');		
+	if (evt.keyCode == 27) loadPanel('browse');		
 });
 
 // UI helper library ///////////////////////////////////////////////////////////////////////
