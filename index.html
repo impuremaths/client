@@ -77,7 +77,7 @@
 	
 	<div id="secondDiv" class="secondDiv">
 	
-		<button id="browseButton" class="left" style="margin-top:25px; margin-bottom:10px" onclick="fetchRecent()">Browse</button>	
+		<button id="browseButton" class="left active" style="margin-top:25px; margin-bottom:10px" onclick="fetchRecent()">Browse</button>	
 		<button id="readButton" style="font-size:0.85em; border-radius:5px;" onclick="loadPanel('read')" autocomplete="off">Read</button>
 		<button id="postButton" class="right" onclick="loadPanel('post')" autocomplete="off" disabled>Write</button>
 		<span id="loadingMsg" style="margin-left:10px; font-style:italic">Loading...</span>
@@ -438,11 +438,11 @@ function makeLabel(data) {
 }
 
 function fetchRecent() {
-	loadPanel('browse');
-	if (ws) {	
+	if (ws && D('browseButton').classList.contains('active')) {	
 		D('loadingMsg').style.display = "";
 		ws.emit('queryPostsRecent');
 	}
+	loadPanel('browse');
 }
 
 function subscribeHandler() {
@@ -611,6 +611,7 @@ function addComment(commentData) {
 		let repBut = make('button', "Reply");
 		repBut.style = "margin-left:20px;margin-bottom:20px; margin-top:5px; font-size:0.9em";
 		repBut.title = commentData.commentid;
+		if (!XNO.address) repBut.disabled = true;
 		
 		repBut.onclick = function() {
 			if (repPanel.style.display) {
