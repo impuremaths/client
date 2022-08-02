@@ -223,10 +223,10 @@ if (localSeed) {
 	importSeed();
 }
 
-const queryString = window.location.search;
+var queryString = window.location.search;
 console.log(queryString);
-const urlParams = new URLSearchParams(queryString);
-const postid = urlParams.get('postid');
+var urlParams = new URLSearchParams(queryString);
+var postid = urlParams.get('postid');
 console.log(postid);
 
 
