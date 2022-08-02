@@ -106,7 +106,8 @@
 			<br>
 			<div id="readContent" style="white-space:pre-wrap; width:80%;">Content</div>
 			
-			<br>
+			
+			<div style="margin-top:40px;">Share: <a id="permalink" href="" target="_blank">Permalink</a></div>
 			<textarea id="commentContent" style="height:80px; width:80%; margin-top:40px; display:none" autocomplete="off" placeholder="Comment..."></textarea>
 			<br><button id="comment" style="margin-top:10px; display:none;" onclick="comment()" disabled>Comment</button>
 			
@@ -222,6 +223,13 @@ if (localSeed) {
 	importSeed();
 }
 
+const queryString = window.location.search;
+console.log(queryString);
+const urlParams = new URLSearchParams(queryString);
+const postid = urlParams.get('postid');
+console.log(postid);
+
+
 // Websocket code ///////////////////////////////////////////////////////////////////////
 
 function setupWebsocket(restart) {
@@ -244,6 +252,14 @@ function setupWebsocket(restart) {
 			let loginPacket = {userid: XNO.address, ts, signature:XNO.sign(ts, XNO.address)};
 			ws.emit('authenticateUser', loginPacket);
 			console.log(loginPacket);
+		}
+		if (postid) {
+			loadPanel("read");
+			let split = postid.split("-");
+			let userid = split[0];
+			let createdts = parseInt(split[1]);		
+			ws.emit('queryPost', { userid: userid, createdts: createdts });	
+			postid = "";
 		}
 	};
 	ws.onclose = function() { 
@@ -510,6 +526,10 @@ function fillPost(metaData) {
 	let postid = metaData.postid;
 	if (!postid) postid = metaData.userid + "-" + metaData.createdts.toString();
 	if (D(postid)) flash(D(postid));
+	
+	let url = new URL(window.location);
+	url.search = new URLSearchParams({postid});
+	D('permalink').href = url;
 	
 	D('readTitle').textContent = metaData.title;
 	D('author').textContent = funName(metaData.userid);
