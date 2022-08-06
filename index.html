@@ -77,7 +77,7 @@
 	
 	<div id="secondDiv" class="secondDiv">
 	
-		<button id="browseButton" class="left active" style="margin-top:25px; margin-bottom:10px" onclick="fetchRecent()">Browse</button>	
+		<button id="browseButton" class="left active" style="margin-top:25px; margin-bottom:10px" onclick="loadAuthor()">Browse</button>	
 		<button id="readButton" style="font-size:0.85em; border-radius:5px;" onclick="loadPanel('read')" autocomplete="off">Read</button>
 		<button id="postButton" class="right" onclick="loadPanel('post')" autocomplete="off" disabled>Write</button>
 		<span id="loadingMsg" style="margin-left:10px; font-style:italic">Loading...</span>
@@ -85,7 +85,7 @@
 		<div id="browse">
 			<div style="margin-top:20px; margin-bottom:20px">
 			<button id="subscribe" onclick="subscribeHandler()" autocomplete="off" style="display:none; padding:2px 8px; margin:2px;" disabled>+</button>
-			<span style="font-weight:bold; font-size:1.1em" id="info">Recent</span>
+			<span style="font-weight:bold; font-size:1.1em; cursor:pointer" onclick="loadAuthor(this.title)" id="info">Recent</span>
 			</div>
 			<ul id="discovery"></ul>
 		</div>
@@ -247,7 +247,7 @@ function setupWebsocket(restart) {
 	ws.onopen = function() { 
 		console.log("Connected to server!"); 
 		if (!restart) {
-			ws.emit('queryPostsRecent');
+			loadAuthor(D('info').title);
 			D('loadingMsg').style.display = "";
 		}
 		if (XNO.address) {
@@ -414,16 +414,21 @@ function populateDiscovery(data) {
 
 function loadAuthor(userid) {
 	loadPanel('browse');
-	if (ws && userid) {
+	if (ws) {
 		D('loadingMsg').style.display = "";
-		if (userid == XNO.address) {
+		if (!userid || userid == XNO.address) {
 			D('subscribe').style.display = "none";
 		} else {
 			D('subscribe').style.display = "";
 		}
-		D('info').textContent = funName(userid);
 		D('info').title = userid;
-		ws.emit("queryPostsFromUser", {userid});
+		if (userid) {
+			D('info').textContent = funName(userid);
+			ws.emit("queryPostsFromUser", {userid});
+		} else {
+			textContent = "Recent";
+			if (D('browseButton').classList.contains('active')) ws.emit('queryPostsRecent');
+		}
 	}
 }
 
@@ -466,14 +471,6 @@ function makeLabel(data) {
 	postLabel.appendChild(postTitle);
 	postLabel.appendChild(makeMetaLabel(data.userid, data.createdts, data.modifiedts));
 	return postLabel;
-}
-
-function fetchRecent() {
-	if (ws && D('browseButton').classList.contains('active')) {	
-		D('loadingMsg').style.display = "";
-		ws.emit('queryPostsRecent');
-	}
-	loadPanel('browse');
 }
 
 function subscribeHandler() {
