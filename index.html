@@ -413,23 +413,27 @@ function populateDiscovery(data) {
 }
 
 function loadAuthor(userid) {
-	loadPanel('browse');
+	if (userid) D('info').title = userid;
+	else D('info').title = "";
 	if (ws) {
-		D('loadingMsg').style.display = "";
 		if (!userid || userid == XNO.address) {
 			D('subscribe').style.display = "none";
 		} else {
 			D('subscribe').style.display = "";
 		}
-		D('info').title = userid;
 		if (userid) {
+			D('loadingMsg').style.display = "";
 			D('info').textContent = funName(userid);
 			ws.emit("queryPostsFromUser", {userid});
 		} else {
 			textContent = "Recent";
-			if (D('browseButton').classList.contains('active')) ws.emit('queryPostsRecent');
+			if (D('browseButton').classList.contains('active')) {
+				D('loadingMsg').style.display = "";
+				ws.emit('queryPostsRecent');
+			}
 		}
 	}
+	loadPanel('browse');
 }
 
 function makeMetaLabel(userid, createdts, modifiedts) {
