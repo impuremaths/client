@@ -20,13 +20,13 @@
 	<div class="containerDiv">
 	
 	<div id="firstDiv" class="firstDiv" style="background-color:steelblue">		
-		<div id="profilePanel" class="objectWrapper" style="margin-bottom:15px">
-			<div class="clickFlash" style="display:flex; justify-content:space-between" onclick="toggleEdit();">
+		<div id="profilePanel" class="objectWrapper" style="margin-bottom:15px; margin-top:50px" onclick="openSubAccordion(this)">
+			<div class="clickFlash" style="display:flex; justify-content:space-between;" onclick="toggleSubAccordion(this)">
 				<strong style="overflow:hidden"><div id="displayName" style="text-overflow:ellipsis; overflow:hidden; font-size:1.2em;" class="flash">✏️ Just Reading</div></strong>
 			</div>
 
 			<div id="editPanel" class="accordion" style="max-height:0px">
-				<div style="text-align:center; margin-top:5px">
+				<div style="text-align:center; margin-top:10px">
 					<button tabindex="-1" class="left" onclick="generateSeed()">Create Account</button>
 					<button id="current" tabindex="-1" style="font-size:0.85em; border-radius:5px" onclick="showCurrent()" autocomplete="off" disabled>Current Seed</button>
 					<button id="clear" class="right" onclick="if (confirm('Log out of the current account? (Check that you have saved your account seed elsewhere!)')) clickClearSeed();" autocomplete="off" disabled>Log Out</button>
@@ -39,11 +39,11 @@
 				</div>
 				
 				<div id="grayout" style="opacity:0.3">
-				<div style="font-size:0.9em">Unique address (public):</div>
+				<div style="font-size:0.9em">Public address:</div>
 				<div class='address' style="margin-bottom:15px;" id="address" onclick="clickCopy(this, this.textContent)"> - </div>
 			
 				<div style="display:flex; justify-content:space-between;">
-					<input placeHolder="Display name (public) ..." id="set-name" 
+					<input placeHolder="Public display name ..." id="set-name" 
 					       style="padding-right:30px; flex-grow:1; margin-right:10px;" type="text"autocapitalize="off" maxlength="64"
 					       onkeyup="if (event.keyCode == 13) setData('name'); if (event.keyCode == 27) this.value = '';">
 					<button  tabindex="-1" class="close-icon" onclick="closeCopy(this.previousElementSibling)"></button>
@@ -53,22 +53,22 @@
 			</div>	
 		</div>	
 		
-		<div id="subPanel" class="objectWrapper" style="display:none;" onclick="openSubAccordion(this)">
+		<div id="subPanel" class="objectWrapper" style="overflow:hidden; display:none; flex-direction:column; flex-shrink:0; max-height:40vh" onclick="openSubAccordion(this)">
 			<div class="clickFlash leftRightBase" style="margin-top:0px" onclick="toggleSubAccordion(this)">
 				<strong>Subscriptions</strong>
 			</div>
 			<div class="accordion">
-				<ul id="subscriptions" style="margin-bottom:5px; max-height:25vh; overflow:auto"></ul>
+				<ul id="subscriptions" style="margin-bottom:5px; overflow:auto; max-height:calc(100% - 15px)"></ul>
 			</div>
 		</div>
 
-		<div class="objectWrapper" onclick="openSubAccordion(this)" style="margin-bottom:22px">
+		<div class="objectWrapper" style="margin-bottom:10px; overflow:hidden; display:flex; flex-direction:column" onclick="openSubAccordion(this)">
 			<div class="clickFlash leftRightBase" style="margin-top:0px" onclick="toggleSubAccordion(this)">
-				<strong>Library</strong> <i id="libraryWarning" style="color:gray">Create account to persist!</i>
+				<strong>Library</strong> <i id="libraryWarning" style="color:gray">Create an account to persist!</i>
 			</div>
 			<div class="accordion">
 				<div id="libraryPlaceholder" style="font-style:italic; color:gray; text-align:center; margin-top:15px">Read something!</div>
-				<ul id="library" style="margin-bottom:5px; max-height:43vh; overflow:auto"></ul>
+				<ul id="library" style="margin-bottom:5px; overflow:auto; max-height:calc(100% - 15px)"></ul>
 			</div>
 		</div>
 		
@@ -82,11 +82,15 @@
 		<button id="postButton" class="right" onclick="loadPanel('post')" autocomplete="off" disabled>Write</button>
 		<span id="loadingMsg" style="margin-left:10px; font-style:italic">Loading...</span>
 	
-		<div id="browse">		
+		<div id="browse">
+			<div style="margin-top:20px; margin-bottom:20px">
+			<button id="subscribe" onclick="subscribeHandler()" autocomplete="off" style="display:none; padding:2px 8px; margin:2px; font-size:0.85em" disabled>+</button>
+			<span style="font-weight:bold" id="info">Recent</span>
+			</div>
 			<ul id="discovery"></ul>
 		</div>
 
-		<div id="post" style="display:none; margin-top:25px">
+		<div id="post" style="display:none; margin-top:20px">
 			<textarea id="postTitle" style="width:80%" autocomplete="off" placeholder="Title..."></textarea>	
 			<div style="font-size:0.9em; margin-left:10px">
 			Created: <span id="creationEdit"> - </span> &nbsp;&nbsp; Modified: <span id="modificationEdit"> - </span>
@@ -97,10 +101,9 @@
 			<button onclick="cancelPost()">Clear/Cancel</button>	
 		</div>
 		
-		<div id="read" style="display:none; margin-top:25px">
+		<div id="read" style="display:none; margin-top:20px">
 			<div id="readTitle" style="font-weight:bold; font-size:1.1em">Title</div>	
-			<div style="font-size:0.8em"><a id="author" onclick="loadAuthor(this.title)" style="cursor:pointer">Author</a>
-			<button id="subscribe" onclick="subscribeHandler()" autocomplete="off" style="display:none; padding:2px 8px; margin:2px" disabled>Subscribe</button> | <span id="creation">Post date</span><span id="modification"> - Modified date</span>
+			<div style="font-size:0.8em"><a id="author" onclick="loadAuthor(this.title)" style="cursor:pointer">Author</a> | <span id="creation">Post date</span><span id="modification"> - Modified date</span>
 			<button id="edit" onclick="editHandler()" autocomplete="off" style="display:none; padding:2px 8px; margin:2px; margin-left:5px;">Edit</button></div>
 			
 			<br>
@@ -307,8 +310,8 @@ function setupWebsocket(restart) {
 			D('displayName').textContent = data.displayname;
 			for (let i = 0; i < DOMdisplayNames[data.userid].length; i++) {
 				if (data.displayname) DOMdisplayNames[data.userid][i].textContent = data.displayname;
-			}			
-			toggleEdit(true);
+			}
+			closeSubAccordion(D('editPanel'));
 		}
 		console.log("Authenticated! Requesting library...");
 		ws.emit('queryLibrary');
@@ -343,7 +346,12 @@ function setupWebsocket(restart) {
 		}
 	});
 	
-	ws.on('queryPostsRecentResponse', function(data) { populateDiscovery(data); });
+	ws.on('queryPostsRecentResponse', function(data) { 
+		D('subscribe').style.display = "none";
+		D('info').textContent = "Recent";
+		D('info').title = "";
+		populateDiscovery(data); 
+	});
 	
 	ws.on('queryPostsFromUser', function (data) { populateDiscovery(data); });
 	
@@ -408,6 +416,13 @@ function loadAuthor(userid) {
 	loadPanel('browse');
 	if (ws && userid) {
 		D('loadingMsg').style.display = "";
+		if (userid == XNO.address) {
+			D('subscribe').style.display = "none";
+		} else {
+			D('subscribe').style.display = "";
+		}
+		D('info').textContent = funName(userid);
+		D('info').title = userid;
 		ws.emit("queryPostsFromUser", {userid});
 	}
 }
@@ -462,10 +477,10 @@ function fetchRecent() {
 }
 
 function subscribeHandler() {
-	if (D(D('author').title)) flash(D(D('author').title));
+	if (D(D('info').title)) flash(D(D('info').title));
 	else {
-		makeSubLi(D('author').title);
-		if (ws) ws.emit("subscribe", {userid: D('author').title});
+		makeSubLi(D('info').title);
+		if (ws) ws.emit("subscribe", {userid: D('info').title});
 	}
 }
 
@@ -531,6 +546,9 @@ function fillPost(metaData) {
 	url.search = new URLSearchParams({postid});
 	D('permalink').href = url;
 	
+	if (!DOMdisplayNames[metaData.userid]) DOMdisplayNames[metaData.userid] = [D('author')];
+	else DOMdisplayNames[metaData.userid].push(D('author'));
+	
 	D('readTitle').textContent = metaData.title;
 	D('author').textContent = funName(metaData.userid);
 	D('author').title = metaData.userid;
@@ -556,10 +574,8 @@ function fillPost(metaData) {
 	
 	if (metaData.userid == XNO.address) {
 		D('edit').style.display = "";
-		D('subscribe').style.display = "none";
 	} else {
 		D('edit').style.display = "none";
-		D('subscribe').style.display = "";
 	}
 	
 	D('comment').style.display = "";
@@ -688,7 +704,7 @@ function importSeed() {
 		D("setDisplayBut").disabled = false;
 		D("grayout").style.opacity = "";
 		
-		D("subPanel").style.display = "";
+		D("subPanel").style.display = "flex";
 		
 		clearDOM(D('subscriptions'));
 		if (XNO.address) makeSubLi(XNO.address);
@@ -714,6 +730,13 @@ function makeSubLi(userid, displayname) {
 		loadPanel('browse');
 		if (ws) {		
 			D('loadingMsg').style.display = "";
+			if (userid == XNO.address) {
+				D('subscribe').style.display = "none";
+			} else {
+				D('subscribe').style.display = "";
+			}
+			D('info').textContent = funName(userid);
+			D('info').title = userid;
 			ws.emit("queryPostsFromUser", {userid});
 		}
 	};
@@ -817,7 +840,7 @@ function clickClearSeed() {
 	D("postButton").disabled = true;
 	D("comment").disabled = true;
 	D('subscribe').disabled = true;
-	toggleEdit(true);
+	closeSubAccordion(D('editPanel'));
 	//D("profilePanel").style.display = "none";
 	D("setDisplayBut").disabled = true;
 	if (!D('library').children[0]) D('libraryPlaceholder').style.display = "";	
@@ -839,17 +862,6 @@ function toggleVisibility() {
 	} else {
 		x.type = "password";		
 		D("show").classList.remove('active');
-	}
-}
-
-function toggleEdit(close) {
-	let obj = D("editPanel");
-	if (!close && obj.style.maxHeight == "0px") {
-		showAccordion(obj);
-		obj.style.marginTop = "10px";
-	} else {	
-		hideAccordion(obj);
-     	obj.style.marginBottom = "0px";
 	}
 }
 	
@@ -889,13 +901,16 @@ function D(string) { return document.getElementById(string); }
 
 function toggleSubAccordion(but) {
 	let obj = but.parentNode.lastElementChild;
-	if (obj.style.maxHeight == "0px") {
-		showAccordion(obj);	
-		setTimeout(function() { if (obj.style.maxHeight != "0px") obj.style.maxHeight = ""; }, 100);
-	} else {
-		if (obj.style.maxHeight != "0px") showAccordion(obj);
-		setTimeout(function() { hideAccordion(obj); }, 1);
-	}
+	if (obj.style.maxHeight == "0px") openSubAccordion(but.parentNode);
+	else closeSubAccordion(obj); 
+}
+
+function closeSubAccordion(obj) {
+	if (obj.style.maxHeight != "0px") showAccordion(obj);
+	setTimeout(function() { 
+		obj.style.maxHeight = "0px";
+		obj.style.marginTop = "0px";
+	}, 1);
 }
 
 function openSubAccordion(but) {
@@ -907,11 +922,6 @@ function openSubAccordion(but) {
 }
 
 function showAccordion(obj) { obj.style.maxHeight = obj.scrollHeight + "px"; }
-
-function hideAccordion(obj) {
-	obj.style.maxHeight = "0px";
-	obj.style.marginTop = "0px";
-}
 
 function flash(elt, str) {
 	if (elt) {
