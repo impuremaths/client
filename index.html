@@ -53,7 +53,7 @@
 			</div>	
 		</div>	
 		
-		<div id="subPanel" class="objectWrapper" style="overflow:hidden; display:none; flex-direction:column; flex-shrink:0; max-height:40vh" onclick="openSubAccordion(this)">
+		<div id="subPanel" class="objectWrapper" style="overflow:hidden; display:none; flex-direction:column; flex-shrink:0; max-height:33vh" onclick="openSubAccordion(this)">
 			<div class="clickFlash leftRightBase" style="margin-top:0px" onclick="toggleSubAccordion(this)">
 				<strong>Subscriptions</strong>
 			</div>
@@ -80,12 +80,12 @@
 		<button id="browseButton" class="left active" style="margin-top:25px; margin-bottom:10px" onclick="loadAuthor()">Browse</button>	
 		<button id="readButton" style="font-size:0.85em; border-radius:5px;" onclick="loadPanel('read')" autocomplete="off">Read</button>
 		<button id="postButton" class="right" onclick="loadPanel('post')" autocomplete="off" disabled>Write</button>
-		<span id="loadingMsg" style="margin-left:10px; font-style:italic">Loading...</span>
 	
 		<div id="browse">
 			<div style="margin-top:20px; margin-bottom:20px">
 			<span style="font-weight:bold; font-size:1.1em; cursor:pointer" onclick="loadAuthor(this.title)" id="info">Recent</span>
-			<button id="subscribe" onclick="subscribeHandler()" autocomplete="off" style="display:none; padding:2px 8px; margin:2px;" disabled>+</button>
+			<button id="subscribe" onclick="subscribeHandler()" autocomplete="off" style="display:none; padding:2px 8px; margin:2px;" disabled>+</button>			
+			<span id="loadingMsg" style="margin-left:10px; font-style:italic">Loading...</span>
 			</div>
 			<ul id="discovery"></ul>
 		</div>
@@ -102,21 +102,26 @@
 		</div>
 		
 		<div id="read" style="display:none; margin-top:20px">
-			<div id="readTitle" style="font-weight:bold; font-size:1.1em">Title</div>	
-			<div style="font-size:0.8em"><a id="author" onclick="loadAuthor(this.title)" style="cursor:pointer">Author</a> | <span id="creation">Post date</span><span id="modification"> - Modified date</span>
-			<button id="edit" onclick="editHandler()" autocomplete="off" style="display:none; padding:2px 8px; margin:2px; margin-left:5px;">Edit</button></div>
+			<div style="flex-basis:1px; flex-grow:2; margin-right:40px;">
+				<div id="readTitle" style="font-weight:bold; font-size:1.1em">Title</div>	
+				<div style="font-size:0.8em"><a id="author" onclick="loadAuthor(this.title)" style="cursor:pointer">Author</a> | <span id="creation">Post date</span><span id="modification"> - Modified date</span>
+				<button id="edit" onclick="editHandler()" autocomplete="off" style="display:none; padding:2px 8px; margin:2px; margin-left:5px;">Edit</button></div>
+				
+				<br>
+				<div id="readContent" style="white-space:pre-wrap;">Content</div>
+				
+				<textarea id="commentContent" style="height:80px; width:100%; margin-top:40px; display:none" autocomplete="off" placeholder="Comment..."></textarea>
+				<button id="comment" style="margin-top:40px; display:none;" onclick="comment()" disabled>Comment</button>
+				
+				<br>
+				<ul id="readComments" style="white-space:pre-wrap; margin-top:30px"><ul>	
+			</div>			
 			
-			<br>
-			<div id="readContent" style="white-space:pre-wrap; width:80%;">Content</div>
-			
-			
-			<div style="margin-top:40px;">Share: <a id="permalink" href="" target="_blank">Permalink</a></div>
-			<textarea id="commentContent" style="height:80px; width:80%; margin-top:40px; display:none" autocomplete="off" placeholder="Comment..."></textarea>
-			<br><button id="comment" style="margin-top:10px; display:none;" onclick="comment()" disabled>Comment</button>
-			
-			<br>
-			<ul id="readComments" style="white-space:pre-wrap; margin-top:30px"><ul>
-			
+	
+			<div style="flex-basis:1px; flex-grow:1; margin-top:20px; max-width:360px">
+				<strong>Map</strong>
+				<ul id="mapul"></ul>
+			</div>
 		</div>
 		
 	</div>
@@ -292,8 +297,10 @@ function setupWebsocket(restart) {
 	});
 	
 	ws.on('updateDisplayNameResponse', function(data) {
-		if (data && data.displayname) D('displayName').textContent = data.displayname;
-		else console.log(data);
+		if (data && data.displayname) {
+			D('displayName').textContent = data.displayname;
+			receiveDOMdisplayName(data.userid, data.displayname);
+		}
 	});
 	
 	ws.on('authenticateUserResponse', function(data) {
@@ -307,10 +314,8 @@ function setupWebsocket(restart) {
 		}
 		
 		if (data && data.displayname) {
-			D('displayName').textContent = data.displayname;
-			for (let i = 0; i < DOMdisplayNames[data.userid].length; i++) {
-				if (data.displayname) DOMdisplayNames[data.userid][i].textContent = data.displayname;
-			}
+			D('displayName').textContent = data.displayname;			
+			receiveDOMdisplayName(data.userid, data.displayname);
 			closeSubAccordion(D('editPanel'));
 		}
 		console.log("Authenticated! Requesting library...");
@@ -334,15 +339,20 @@ function setupWebsocket(restart) {
 		if (ws) ws.emit('queryUsers', {userids});
 	}
 	
+	function receiveDOMdisplayName(userid, displayname) {
+		if (displayname) cacheDisplayNames[userid] = displayname;
+		else delete cacheDisplayNames[userid];
+		if (DOMdisplayNames[userid]) {
+			for (let j = 0; j < DOMdisplayNames[userid].length; j++) {
+			DOMdisplayNames[userid][j].textContent = funName(userid);
+			}
+		}
+		delete DOMdisplayNames[userid];
+	}
+	
 	ws.on('queryUsersResponse', function(data) { 
 		for (let i = 0; i < data.length; i++) {
-			for (let j = 0; j < DOMdisplayNames[data[i].userid].length; j++) {
-				if (data[i].displayname) {
-					DOMdisplayNames[data[i].userid][j].textContent = data[i].displayname;
-					cacheDisplayNames[data[i].userid] = data[i].displayname;
-				} else delete cacheDisplayNames[data[i].userid];
-			}
-			delete DOMdisplayNames[data[i].userid];
+			receiveDOMdisplayName(data[i].userid, data[i].displayname);
 		}
 	});
 	
@@ -350,10 +360,10 @@ function setupWebsocket(restart) {
 		D('subscribe').style.display = "none";
 		D('info').textContent = "Recent";
 		D('info').title = "";
-		populateDiscovery(data); 
+		populateBrowse(data); 
 	});
 	
-	ws.on('queryPostsFromUser', function (data) { populateDiscovery(data); });
+	ws.on('queryPostsFromUser', function (data) { populateBrowse(data); });
 	
 	ws.on('queryPostResponse', function(data) { fillPost(data); });
 	
@@ -372,12 +382,38 @@ function setupWebsocket(restart) {
 	ws.on('updateCommentResponse', function(data) {	
 		addComment(data);
 	});
+	
+	ws.on('queryPostChainResponse', function(data) { 
+		console.log(data);
+		populateMap(data);
+	});
 }
 
 
 // Main panel UI interaction handlers ///////////////////////////////////////////////////////////////////////
 
-function populateDiscovery(data) {
+
+function populateMap(data) {
+	clearDOM(D('mapul'));
+	for (let x in data) {			
+		let libli = make('li');
+		let metaData = data[x];
+		
+		if (!metaData.title) libli.textContent = "Post by " + funName(metaData.userid);	
+		libli.onclick = function() {
+			loadPanel('read');
+			fillPost(metaData);
+			ws.emit('queryPost', { userid: metaData.userid, createdts: metaData.createdts });
+		}
+		libli.style = "cursor:pointer; white-space:nowrap; margin-bottom:10px";
+		
+		libli.appendChild(makeLabel(metaData));
+		D('mapul').appendChild(libli);	
+	}
+}
+
+
+function populateBrowse(data) {
 	data.sort(function(x, y) { return y.createdts - x.createdts; });
 	D('loadingMsg').style.display = "none";
 	clearDOM(D('discovery'));
@@ -414,11 +450,9 @@ function populateDiscovery(data) {
 
 function loadAuthor(userid) {
 	if (userid) {		
-		if (userid == XNO.address) {	
-			D('subscribe').style.display = "none";
-		} else {
-			D('subscribe').style.display = "";
-		}		
+		if (userid == XNO.address) D('subscribe').style.display = "none";
+		else D('subscribe').style.display = "";
+		
 		D('info').title = userid;
 		D('info').textContent = funName(userid);
 		if (ws) {
@@ -428,7 +462,7 @@ function loadAuthor(userid) {
 	} else if (D('browseButton').classList.contains('active')) {	
 		D('subscribe').style.display = "none";
 		D('info').title = "";
-		textContent = "Recent";
+		D('info').textContent = "Recent";
 		if (ws) {		
 			D('loadingMsg').style.display = "";
 			ws.emit('queryPostsRecent');
@@ -437,31 +471,41 @@ function loadAuthor(userid) {
 	loadPanel('browse');
 }
 
-function makeMetaLabel(userid, createdts, modifiedts) {
-	
+function makeMetaLabel(userid, createdts, modifiedts) {	
 	let postAuthor = make('a', funName(userid));
 	postAuthor.title = userid;
 	postAuthor.style.cursor = "pointer";
 	postAuthor.onclick = function() {
 		event.stopPropagation();
 		loadAuthor(userid);
-	};
-	if (!DOMdisplayNames[userid]) DOMdisplayNames[userid] = [postAuthor];
-	else DOMdisplayNames[userid].push(postAuthor);
+	};	
+	queueDOMdisplayName(userid, postAuthor);
 	
 	let postDate = make('span', " | " + new Date(createdts).toLocaleDateString());	
 	postDate.title = createdts;
-	
+		
 	let postMeta = make('div');
 	postMeta.style = "font-size:0.8em; overflow:hidden; text-overflow:ellipsis";
 	postMeta.appendChild(postAuthor);
-	postMeta.appendChild(postDate);
+	postMeta.appendChild(postDate);	
 	
 	if (modifiedts && modifiedts != createdts) {
 		let postModified = make('span', " - " + new Date(modifiedts).toLocaleDateString());
 		postModified.title = modifiedts;
 		postMeta.appendChild(postModified);
 	}
+	
+	postMeta.appendChild(make('span', " | "));
+	let postLink = make('span', "🔗");
+	postLink.style.opacity = "0.25";
+	postLink.onclick = function() {
+		let url = new URL(window.location);
+		url.search = new URLSearchParams({postid:userid + "-" + createdts.toString()});
+		clickCopy(this, url.href);
+		event.stopPropagation();
+	};
+	postMeta.appendChild(postLink);
+	
 	return postMeta;
 }
 
@@ -498,7 +542,6 @@ function comment() {
 		console.log(D('author').title + "-" + D('creation').title);
 		ws.emit('updateComment', {content:D('commentContent').value, postid: D('author').title + "-" + D('creation').title});
 		D('commentContent').value = "";
-		loadPanel('read');
 	}
 }
 
@@ -535,6 +578,7 @@ function loadPanel(type) {
 	D('browseButton').classList.remove('active');
 	
 	D(type).style.display = "";
+	if (type == "read") D(type).style.display = "flex";
 	D(type + "Button").classList.add('active');
 	if (type != "post") topPage = type;
 }
@@ -544,12 +588,7 @@ function fillPost(metaData) {
 	if (!postid) postid = metaData.userid + "-" + metaData.createdts.toString();
 	if (D(postid)) flash(D(postid));
 	
-	let url = new URL(window.location);
-	url.search = new URLSearchParams({postid});
-	D('permalink').href = url;
-	
-	if (!DOMdisplayNames[metaData.userid]) DOMdisplayNames[metaData.userid] = [D('author')];
-	else DOMdisplayNames[metaData.userid].push(D('author'));
+	queueDOMdisplayName(metaData.userid, D('author'));
 	
 	D('readTitle').textContent = metaData.title;
 	D('author').textContent = funName(metaData.userid);
@@ -591,6 +630,7 @@ function fillPost(metaData) {
 			addComment(metaData.comments[i]);
 		}	
 	}
+	ws.emit("queryPostChain", {userid:metaData.userid, createdts:metaData.createdts });
 }
 
 function addComment(commentData) {
@@ -754,11 +794,15 @@ function makeSubLi(userid, displayname) {
 	
 	subli.appendChild(unsubBut);
 	let nameSpan = make('span', name);
-	subli.appendChild(nameSpan);	
-	if (!DOMdisplayNames[userid]) DOMdisplayNames[userid] = [nameSpan];
-	else DOMdisplayNames[userid].push(nameSpan);
+	subli.appendChild(nameSpan);
+	queueDOMdisplayName(userid, nameSpan);
 	
 	D('subscriptions').appendChild(subli);
+}
+
+function queueDOMdisplayName(userid, elt) {
+	if (!DOMdisplayNames[userid]) DOMdisplayNames[userid] = [elt];
+	else DOMdisplayNames[userid].push(elt);
 }
 
 function makeLibLi(metaData, accessts) {
@@ -823,7 +867,6 @@ function clearSeed() {
 	clearDOM(D('subscriptions'));
 	clearDOM(D('library'));
 	cancelPost();
-	loadPanel("browse");
 }
 
 function clickClearSeed() {
