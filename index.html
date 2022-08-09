@@ -77,7 +77,7 @@
 	
 	<div id="secondDiv" class="secondDiv">
 	
-		<button id="browseButton" class="left active" style="margin-top:25px; margin-bottom:10px" onclick="loadAuthor()">Browse</button>	
+		<button id="browseButton" class="left active" style="margin-top:25px; margin-bottom:20px" onclick="loadAuthor()">Browse</button>	
 		<button id="readButton" style="font-size:0.85em; border-radius:5px;" onclick="loadPanel('read')" autocomplete="off">Read</button>
 		<button id="postButton" class="right" onclick="loadPanel('post')" autocomplete="off" disabled>Write</button>
 	
@@ -108,10 +108,10 @@
 				<button id="edit" onclick="editHandler()" autocomplete="off" style="display:none; padding:2px 8px; margin:2px; margin-left:5px;">Edit</button></div>
 				
 				<br>
-				<div id="readContent" style="white-space:pre-wrap;">Content</div>
+				<div id="readContent" style="white-space:pre-wrap; margin-bottom:40px">Content</div>
 				
-				<textarea id="commentContent" style="height:80px; width:100%; margin-top:40px; display:none" autocomplete="off" placeholder="Comment..."></textarea>
-				<button id="comment" style="margin-top:40px; display:none;" onclick="comment()" disabled>Comment</button>
+				<textarea id="commentContent" style="margin-top:10px; height:80px; width:100%; display:none" autocomplete="off" onkeydown="commentAction()" oninput="commentAction()" placeholder="Comment..."></textarea>
+				<button id="comment" style="margin-top:10px; display:none;" onclick="comment()" disabled>Comment</button>
 				
 				<br>
 				<ul id="readComments" style="white-space:pre-wrap; margin-top:30px"><ul>	
@@ -535,11 +535,24 @@ function post() {
 	loadPanel('read');
 }
 
-function comment() {
-	if (D('commentContent').style.display) D('commentContent').style.display = "";
-	else {
+function commentAction() {
+	if (event.keyCode == 27) {
+		D('commentContent').value = "";
 		D('commentContent').style.display = "none";
-		console.log(D('author').title + "-" + D('creation').title);
+		D("comment").textContent = "Comment";
+		event.stopPropagation();
+	} else if (D('commentContent').value) D("comment").textContent = "Comment";
+	else D("comment").textContent = "Cancel";
+}
+
+function comment() {
+	if (D('commentContent').style.display) {
+		D('commentContent').style.display = "";
+		D("comment").textContent = "Cancel";
+		D('commentContent').focus();
+	} else {
+		D('commentContent').style.display = "none";
+		D("comment").textContent = "Comment";
 		ws.emit('updateComment', {content:D('commentContent').value, postid: D('author').title + "-" + D('creation').title});
 		D('commentContent').value = "";
 	}
@@ -565,10 +578,7 @@ function editHandler() {
 	loadPanel('post');
 }
 
-function loadPanel(type) {
-	D('commentContent').style.display = 'none';
-	D('commentContent').value = "";
-	
+function loadPanel(type) {	
 	D('post').style.display = 'none';
 	D('read').style.display = 'none';
 	D('browse').style.display = 'none';
@@ -578,8 +588,14 @@ function loadPanel(type) {
 	D('browseButton').classList.remove('active');
 	
 	D(type).style.display = "";
-	if (type == "read") D(type).style.display = "flex";
 	D(type + "Button").classList.add('active');
+	
+	if (type == "read") {
+		D(type).style.display = "flex";
+		D('commentContent').style.display = 'none';
+		D('commentContent').value = "";
+		D('comment').textContent = "Comment";
+	}
 	if (type != "post") topPage = type;
 }
 
@@ -619,7 +635,7 @@ function fillPost(metaData) {
 		D('edit').style.display = "none";
 	}
 	
-	D('comment').style.display = "";
+	D("comment").style.display = "";
 	clearDOM(D('readComments'));
 	
 	if (metaData.comments) {
@@ -680,27 +696,40 @@ function addComment(commentData) {
 		D('readComments').appendChild(ulcomment);
 		
 		// reply editor
-		let repPanel = make('div');
-		repPanel.style.display = "none";
-		repPanel.innerHTML = '<textarea placeholder="Reply..." style="margin-left:20px; margin-bottom:10px; margin-top:10px; width:60%;"></textarea>';
+		let repPanel = make('textarea');
+		let repBut = make('button', "Reply");
+		repPanel.style = "display:none; margin-left:20px; margin-bottom:10px; margin-top:20px; width:60%;";
+		repPanel.placeholder = "Reply...";
+		repPanel.oninput = function() {
+			if (repPanel.value) repBut.textContent = "Reply";
+			else repBut.textContent = "Cancel";
+		};
+		repPanel.onkeydown = function() {
+			if (event.keyCode == 27) {
+				repPanel.value = "";
+				repPanel.style.display = "none";
+				repBut.textContent = "Reply";
+				event.stopPropagation();
+			}
+		}		
 		D('readComments').appendChild(repPanel);				
 		
 		// reply button
-		let repBut = make('button', "Reply");
 		repBut.style = "margin-left:20px;margin-bottom:20px; margin-top:5px; font-size:0.8em";
 		repBut.title = commentData.commentid;
 		if (!XNO.address) repBut.disabled = true;
 		
 		repBut.onclick = function() {
-			if (repPanel.style.display) {
-				repPanel.style.display = "";
-				this.textContent = "Send Reply";
+			if (repPanel.style.display == "none") {
+				repPanel.style.display = "block";
+				this.textContent = "Cancel";
+				repPanel.focus();
 			} else {
-				repPanel.style.display = "none";	
-				console.log({content:repPanel.children[0].value, postid: commentData.postid, parentid: commentData.commentid });
-				if (repPanel.children[0].value) ws.emit('updateComment', {content:repPanel.children[0].value, postid: commentData.postid, parentid: commentData.commentid });
-				repPanel.children[0].value = "";
+				repPanel.style.display = "none";
 				this.textContent = "Reply";	
+				console.log({content:repPanel.value, postid: commentData.postid, parentid: commentData.commentid });
+				if (repPanel.value) ws.emit('updateComment', {content:repPanel.value, postid: commentData.postid, parentid: commentData.commentid });
+				repPanel.value = "";
 			}
 		};
 		
@@ -752,7 +781,7 @@ function importSeed() {
 		if (XNO.address) makeSubLi(XNO.address);
 		D('libraryWarning').style.display = "none";
 		D('subscribe').disabled = false;
-		D('comment').disabled = false;
+		D("comment").disabled = false;
 		
 		localStorage.setItem("localSeed", XNO.seed);
 		if (keepAccount != XNO.address && ws) {
@@ -1009,7 +1038,8 @@ function showMsg(str, bold, hold) {
 	D('msg').style.transition = "";
 	if (msgTimer) clearTimeout(msgTimer);
 	D('msg').style.filter = "opacity(0.9)";
-	flash(D('msg'), e.toLocaleTimeString() + ": " + str);
+	// flash(D('msg'), e.toLocaleTimeString() + ": " + str);
+	flash(D('msg'), str);
 	if (bold) D('msg').style.backgroundColor = "#F00";
 	if (!hold) msgTimer = setTimeout(function() {
 		D('msg').style.transition = "filter 2s linear 0s";
