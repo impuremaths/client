@@ -33,9 +33,9 @@
 				</div>
 				
 				<div style="display:flex; justify-content:space-between; margin-top:15px; margin-bottom:20px">
-					<input id="seed" placeholder="Private seed (save securely) ..." style="padding-right:30px; flex-grow:1; flex-basis:20px; margin-right:10px;" type="password" autocomplete="off" onclick="this.select()" oninput="importSeed();">
+					<input id="seed" placeholder="Private seed (save securely) ..." style="padding-right:30px; flex-grow:1; flex-basis:20px;" type="password" autocomplete="off" onclick="this.select()" oninput="importSeed();">
 					<button  tabindex="-1" class="close-icon" onclick="closeCopy(this.previousElementSibling)"></button>			
-					<button id="show" tabindex="-1" style="font-size:0.85em;" onclick="toggleVisibility()">Show</button>
+					<button id="show" tabindex="-1" style="font-size:0.85em; margin-left:10px" onclick="toggleVisibility()">Show</button>
 				</div>
 				
 				<div id="grayout" style="opacity:0.3">
@@ -43,11 +43,11 @@
 				<div class='address' style="margin-bottom:15px;" id="address" onclick="clickCopy(this, this.textContent)"> - </div>
 			
 				<div style="display:flex; justify-content:space-between;">
-					<input placeHolder="Public display name ..." id="set-name" 
-					       style="padding-right:30px; flex-grow:1; margin-right:10px;" type="text"autocapitalize="off" maxlength="64"
+					<input placeHolder="Public display name ..." id="set-name" autocomplete="off"
+					       style="padding-right:30px; flex-grow:1;" type="text"autocapitalize="off" maxlength="64"
 					       onkeyup="if (event.keyCode == 13) setData('name'); if (event.keyCode == 27) this.value = '';">
 					<button  tabindex="-1" class="close-icon" onclick="closeCopy(this.previousElementSibling)"></button>
-					<button style="font-size:0.85em" onclick="setData('name')" id="setDisplayBut" disabled>Set</button>
+					<button style="font-size:0.85em; margin-left:10px" onclick="setData('name')" id="setDisplayBut" disabled>Set</button>
 				</div>
 				</div>
 			</div>	
@@ -100,15 +100,21 @@
 					
 			<div style="display:flex; margin-top:20px; width:100%">
 			<div style="display:flex; justify-content:space-between; flex-grow:1">
-				<input placeHolder="Previous post link ..." id="set-prev" autocomplete="off"
-					   style="padding-right:30px; flex-grow:1; margin-right:10px;" type="text"autocapitalize="off" onkeyup="if (event.keyCode == 27) this.value = '';">
+				<input placeHolder="Previous post URL ..." id="set-prev" autocomplete="off"
+					   style="padding-right:30px; flex-grow:1;" type="text"autocapitalize="off" onkeyup="if (event.keyCode == 27) this.value = '';">
 				<button tabindex="-1" class="close-icon" onclick="closeCopy(this.previousElementSibling)"></button>
 			</div>
+			<div style="width:10px"></div>
 			<div style="display:flex; justify-content:space-between; flex-grow:1">
-				<input placeHolder="Next post link ..." id="set-next" autocomplete="off"
-					   style="padding-right:30px; flex-grow:1; margin-right:10px;" type="text"autocapitalize="off" onkeyup="if (event.keyCode == 27) this.value = '';">
+				<input placeHolder="Next post URL ..." id="set-next" autocomplete="off"
+					   style="padding-right:30px; flex-grow:1;" type="text"autocapitalize="off" onkeyup="if (event.keyCode == 27) this.value = '';">
 				<button tabindex="-1" class="close-icon" onclick="closeCopy(this.previousElementSibling)"></button>
 			</div>
+			</div>
+			
+			<div style="display:flex; margin-top:20px; width:100%; justify-content:space-between;">
+			<button class="active" onclick="toggle(this)" style="font-size:0.85em;">Reciprocate on prev post</button>
+			<button class="active" onclick="toggle(this)" style="font-size:0.85em;">Reciprocate on next post</button>
 			</div>
 				
 				
@@ -117,7 +123,7 @@
 		</div>
 		
 		<div id="read" style="display:none; margin-top:20px">
-			<div style="flex-basis:1px; flex-grow:2; margin-right:40px;">
+			<div style="flex-basis:1px; flex-grow:2; margin-right:50px;">
 				<div id="readTitle" style="font-weight:bold; font-size:1.1em">Title</div>	
 				<div style="font-size:0.8em"><a id="author" onclick="loadAuthor(this.title)" style="cursor:pointer">Author</a> | <span id="creation">Post date</span><span id="modification"> - Modified date</span>
 				<button id="edit" onclick="editHandler()" autocomplete="off" style="display:none; padding:2px 8px; margin:2px; margin-left:5px;">Edit</button></div>
@@ -126,7 +132,7 @@
 				<div id="readContent" style="white-space:pre-wrap; margin-bottom:40px">Content</div>
 				
 				<textarea id="commentContent" style="margin-top:10px; height:80px; width:100%; display:none" autocomplete="off" onkeydown="commentAction()" oninput="commentAction()" placeholder="Comment..."></textarea>
-				<button id="comment" style="margin-top:10px; display:none;" onclick="comment()" disabled>Comment</button>
+				<button id="comment" style="margin-top:10px; display:none; font-size:0.85em" onclick="comment()" disabled>Comment</button>
 				
 				<br>
 				<ul id="readComments" style="white-space:pre-wrap; margin-top:30px"><ul>	
@@ -690,24 +696,38 @@ function addComment(commentData) {
 	let theLabel = makeMetaLabel(commentData.commentid.split("-")[0], parseInt(commentData.commentid.split("-")[1]), commentData.modifiedts);
 
 	// reply editor
-	let editPanel = make('div');
+	let editPanel = make('textarea');
+	let editBut = make('button', "Edit");
+	editPanel.placeholder = "Reply...";
+	editPanel.style = "margin-bottom:10px; margin-top:10px; width:60%";
 	editPanel.style.display = "none";
-	editPanel.innerHTML = '<textarea placeholder="Reply..." style="margin-left:20px; margin-bottom:10px; margin-top:10px; width:60%;"></textarea>';
+	
+	editPanel.oninput = function() {
+		if (editPanel.value) editBut.textContent = "Send Edit";
+		else editBut.textContent = "Cancel";
+	};
+	editPanel.onkeydown = function() {
+		if (event.keyCode == 27) {
+			editPanel.value = "";
+			editPanel.style.display = "none";
+			editBut.textContent = "Edit";
+			event.stopPropagation();
+		}
+	}
 	
 	if (XNO.address == commentData.commentid.split("-")[0]) {
-		let editBut = make('button', "Edit");
 		editBut.style = "padding:2px 8px; margin:2px; margin-left:5px;";
 		theLabel.appendChild(editBut);
 				
 		editBut.onclick = function() {
 			if (editPanel.style.display) {
 				editPanel.style.display = "";
-				editPanel.children[0].value = D(commentData.commentid).textContent;
-				this.textContent = "Send Edit";
+				editPanel.value = D(commentData.commentid).textContent;
+				this.textContent = "Cancel";
 			} else {
 				editPanel.style.display = "none";
-				if (editPanel.children[0].value != D(commentData.commentid).textContent)
-					ws.emit('updateComment', {content:editPanel.children[0].value, postid: commentData.postid, parentid: commentData.parentid, commentid: commentData.commentid });
+				if (editPanel.value && editPanel.value != D(commentData.commentid).textContent)
+					ws.emit('updateComment', {content:editPanel.value, postid: commentData.postid, parentid: commentData.parentid, commentid: commentData.commentid });
 				this.textContent = "Edit";
 			}
 		};		
@@ -1087,6 +1107,11 @@ function make(string, text) {
 	let myObj = document.createElement(string);
 	if (text) myObj.textContent = text;
 	return myObj;
+}
+
+function toggle(div) {
+	if (div.classList.contains('active')) div.classList.remove('active');
+	else div.classList.add('active');
 }
 
 </script>
