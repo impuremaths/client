@@ -90,13 +90,28 @@
 			<ul id="discovery"></ul>
 		</div>
 
-		<div id="post" style="display:none; margin-top:20px">
-			<textarea id="postTitle" style="width:80%" autocomplete="off" placeholder="Title..."></textarea>	
+		<div id="post" style="display:none; margin-top:20px; width:80%">
+			<textarea id="postTitle" style="width:100%" autocomplete="off" placeholder="Title..."></textarea>	
 			<div style="font-size:0.9em; margin-left:10px">
 			Created: <span id="creationEdit"> - </span> &nbsp;&nbsp; Modified: <span id="modificationEdit"> - </span>
 			</div>		
-			<br><textarea id="postContent" style="height:300px; width:80%" autocomplete="off" placeholder="Content..."></textarea>
+			<br><textarea id="postContent" style="height:300px; width:100%" autocomplete="off" placeholder="Content..."></textarea>
 					
+					
+			<div style="display:flex; margin-top:20px; width:100%">
+			<div style="display:flex; justify-content:space-between; flex-grow:1">
+				<input placeHolder="Previous post link ..." id="set-prev" autocomplete="off"
+					   style="padding-right:30px; flex-grow:1; margin-right:10px;" type="text"autocapitalize="off" onkeyup="if (event.keyCode == 27) this.value = '';">
+				<button tabindex="-1" class="close-icon" onclick="closeCopy(this.previousElementSibling)"></button>
+			</div>
+			<div style="display:flex; justify-content:space-between; flex-grow:1">
+				<input placeHolder="Next post link ..." id="set-next" autocomplete="off"
+					   style="padding-right:30px; flex-grow:1; margin-right:10px;" type="text"autocapitalize="off" onkeyup="if (event.keyCode == 27) this.value = '';">
+				<button tabindex="-1" class="close-icon" onclick="closeCopy(this.previousElementSibling)"></button>
+			</div>
+			</div>
+				
+				
 			<br><br><button onclick="post()">Post/Edit</button>
 			<button onclick="cancelPost()">Clear/Cancel</button>	
 		</div>
@@ -209,6 +224,7 @@ function hexToByteArray(hex) {
 
 // Global variables and macros; and initializers ///////////////////////////////////////////////////////////////////////
 
+var readMetaData;
 var topPage = "browse";
 var DOMdisplayNames = {};
 var cacheDisplayNames = {};
@@ -531,7 +547,15 @@ function subscribeHandler() {
 }
 
 function post() {
-	ws.emit('updatePost', {title:D('postTitle').value, content:D('postContent').value, visibility:"public", createdts: parseInt(D('creationEdit').title)});
+	let prev = "";
+	try { prev = new URLSearchParams((new URL(D('set-prev').value)).search).get('postid');} 
+	catch { prev = "" };
+	let next = "";	
+	try { next = new URLSearchParams((new URL(D('set-next').value)).search).get('postid');} 
+	catch { next = "" };
+	
+	console.log(prev, next);
+	ws.emit('updatePost', {prev_: prev, next_: next, title:D('postTitle').value, content:D('postContent').value, visibility:"public", createdts: parseInt(D('creationEdit').title)});
 	loadPanel('read');
 }
 
@@ -564,7 +588,9 @@ function cancelPost() {
 	D('modificationEdit').textContent = " - ";
 	D('modificationEdit').title = "";	
 	D('postContent').value = "";
-	D('postTitle').value = "";
+	D('postTitle').value = "";	
+	D('set-prev').value = "";
+	D('set-next').value = "";
 	loadPanel(topPage);
 }
 
@@ -575,6 +601,12 @@ function editHandler() {
 	D('modificationEdit').title = D('modification').title;
 	D('postContent').value = D('readContent').textContent;
 	D('postTitle').value = D('readTitle').textContent;
+	
+	let url = new URL(window.location);
+	url.search = new URLSearchParams({postid: readMetaData.prev_});
+	if (readMetaData.prev_) D('set-prev').value = url.href;
+	url.search = new URLSearchParams({postid: readMetaData.next_});	
+	if (readMetaData.next_) D('set-next').value = url.href;
 	loadPanel('post');
 }
 
@@ -603,6 +635,8 @@ function fillPost(metaData) {
 	let postid = metaData.postid;
 	if (!postid) postid = metaData.userid + "-" + metaData.createdts.toString();
 	if (D(postid)) flash(D(postid));
+	
+	readMetaData = metaData;
 	
 	queueDOMdisplayName(metaData.userid, D('author'));
 	
