@@ -131,8 +131,8 @@
 				<br>
 				<div id="readContent" style="white-space:pre-wrap; margin-bottom:40px">Content</div>
 				
-				<textarea id="commentContent" style="margin-top:10px; height:80px; width:100%; display:none" autocomplete="off" onkeydown="commentAction()" oninput="commentAction()" placeholder="Comment..."></textarea>
-				<button id="comment" style="margin-top:10px; display:none; font-size:0.85em" onclick="comment()" disabled>Comment</button>
+				<textarea id="commentContent" style="margin-top:10px; margin-bottom:10px; height:80px; width:100%; display:none" autocomplete="off" onkeydown="commentAction()" oninput="commentAction()" placeholder="Comment..."></textarea>
+				<button id="comment" style="margin-top:5px; display:none; font-size:0.85em" onclick="comment()" disabled>Comment</button>
 				
 				<br>
 				<ul id="readComments" style="white-space:pre-wrap; margin-top:30px"><ul>	
@@ -407,33 +407,18 @@ function setupWebsocket(restart) {
 	
 	ws.on('queryPostChainResponse', function(data) { 
 		console.log(data);
-		populateMap(data);
+		clearDOM(D('mapul'));
+		for (let x in data) {			
+			let postli = make('li');
+			postli.style = "white-space:nowrap";
+			postli.appendChild(fullLabel(data[x]));
+			D('mapul').appendChild(postli);	
+		}
 	});
 }
 
 
 // Main panel UI interaction handlers ///////////////////////////////////////////////////////////////////////
-
-
-function populateMap(data) {
-	clearDOM(D('mapul'));
-	for (let x in data) {			
-		let libli = make('li');
-		let metaData = data[x];
-		
-		if (!metaData.title) libli.textContent = "Post by " + funName(metaData.userid);	
-		libli.onclick = function() {
-			loadPanel('read');
-			fillPost(metaData);
-			ws.emit('queryPost', { userid: metaData.userid, createdts: metaData.createdts });
-		}
-		libli.style = "cursor:pointer; white-space:nowrap; margin-bottom:10px";
-		
-		libli.appendChild(makeLabel(metaData));
-		D('mapul').appendChild(libli);	
-	}
-}
-
 
 function populateBrowse(data) {
 	data.sort(function(x, y) { return y.createdts - x.createdts; });
@@ -447,25 +432,14 @@ function populateBrowse(data) {
 		let libBut = make('button', '+');
 		libBut.style = "margin-right:10px";
 		libBut.onclick = function() {
-			event.stopPropagation();				
 			if (!D(postid)) addToLib(data[i], true);
 			flash(D(postid));
 		};
-		
-		let readBut = makeLabel(data[i]);
-		readBut.style = "cursor:pointer";
-		readBut.onclick = function() {
-			loadPanel('read');
-			fillPost(data[i]);
-			ws.emit('queryPost', { userid: data[i].userid, createdts: data[i].createdts });
-			if (!D(postid)) addToLib(data[i]);
-			else D(postid).style.fontWeight = "";
-		}
-		
+			
 		let postli = make('li');
-		postli.style = "margin-bottom:10px; width:max-content; display:flex; align-items:center";
+		postli.style = "width:max-content; display:flex; align-items:center";
 		postli.appendChild(libBut);	
-		postli.appendChild(readBut);
+		postli.appendChild(fullLabel(data[i]));
 		D('discovery').appendChild(postli);
 	}
 }
@@ -529,19 +503,6 @@ function makeMetaLabel(userid, createdts, modifiedts) {
 	postMeta.appendChild(postLink);
 	
 	return postMeta;
-}
-
-function makeLabel(data) {
-	let postTitle = make('div', data.title);
-	postTitle.title = data.title;
-	postTitle.style.overflow = "hidden";
-	postTitle.style.textOverflow = "ellipsis";
-	
-	let postLabel = make('div');
-	postLabel.style.overflow = "hidden";
-	postLabel.appendChild(postTitle);
-	postLabel.appendChild(makeMetaLabel(data.userid, data.createdts, data.modifiedts));
-	return postLabel;
 }
 
 function subscribeHandler() {
@@ -888,6 +849,30 @@ function queueDOMdisplayName(userid, elt) {
 	else DOMdisplayNames[userid].push(elt);
 }
 
+function fullLabel(data) {
+	let postid = data.userid + "-" + data.createdts.toString();	
+	
+	let postTitle = make('div', data.title);
+	postTitle.title = data.title;
+	postTitle.style.overflow = "hidden";
+	postTitle.style.textOverflow = "ellipsis";
+	
+	let postLabel = make('div');
+	postLabel.appendChild(postTitle);
+	postLabel.appendChild(makeMetaLabel(data.userid, data.createdts, data.modifiedts));
+	
+	postLabel.style = "overflow:hidden; cursor:pointer; padding:5px; flex-grow:1";
+	postLabel.onclick = function() {
+		loadPanel('read');
+		fillPost(data);
+		ws.emit('queryPost', { userid: data.userid, createdts: data.createdts });
+		if (!D(postid)) addToLib(data);
+		else D(postid).style.fontWeight = "";
+		flash(this);
+	}
+	return postLabel;
+}
+
 function makeLibLi(metaData, accessts) {
 	let libli = make('li');
 	if (metaData.postid) {
@@ -897,27 +882,18 @@ function makeLibLi(metaData, accessts) {
 		metaData.createdts = parseInt(split[1]);
 	} else libli.id = metaData.userid + "-" + metaData.createdts.toString();
 	
-	if (!metaData.title) libli.textContent = "Post by " + funName(metaData.userid);	
-	libli.onclick = function() {
-		D(metaData.userid + "-" + metaData.createdts.toString()).style.fontWeight = "";	
-		loadPanel('read');
-		fillPost(metaData);
-		ws.emit('queryPost', { userid: metaData.userid, createdts: metaData.createdts });
-	}
-	libli.style = "cursor:pointer; white-space:nowrap; display:flex; align-items:center; margin-bottom:10px";
-	if (!accessts) libli.style.fontWeight = "bold";
-	
 	let unsubBut = make("button", "x");
-	unsubBut.style.marginRight = "10px";
+	unsubBut.style.marginRight = "5px";
 	unsubBut.onclick = function() {
-		event.stopPropagation();
 		libli.parentNode.removeChild(libli);
 		if (ws) ws.emit('deleteLibrary', {postid:libli.id});
 		if (!D('library').children[0]) D('libraryPlaceholder').style.display = "";
 	};	
 	
+	libli.style = "white-space:nowrap; display:flex; align-items:center;";
+	if (!accessts) libli.style.fontWeight = "bold";
 	libli.appendChild(unsubBut);	
-	libli.appendChild(makeLabel(metaData));	
+	libli.appendChild(fullLabel(metaData));	
 	if (D('library').children[0]) D('library').insertBefore(libli, D('library').children[0]);
 	else {
 		D('library').appendChild(libli);
