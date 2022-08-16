@@ -93,46 +93,46 @@
 		<div id="post" style="display:none; margin-top:20px; width:80%">
 			<textarea id="postTitle" style="width:100%" autocomplete="off" placeholder="Title..."></textarea>	
 			<div style="font-size:0.9em; margin-left:10px">
-			Created: <span id="creationEdit"> - </span> &nbsp;&nbsp; Modified: <span id="modificationEdit"> - </span>
+			Post date: <span id="creationEdit"> - </span> &nbsp;&nbsp; Modified date: <span id="modificationEdit"> - </span>
 			</div>		
 			<br><textarea id="postContent" style="height:300px; width:100%" autocomplete="off" placeholder="Content..."></textarea>
 					
 					
 			<div style="display:flex; margin-top:20px; width:100%">
 			<div style="display:flex; justify-content:space-between; flex-grow:1">
-				<input placeHolder="Previous post URL ..." id="set-prev" autocomplete="off"
+				<input placeHolder="Previous post link ..." id="set-prev" autocomplete="off"
 					   style="padding-right:30px; flex-grow:1;" type="text"autocapitalize="off" onkeyup="if (event.keyCode == 27) this.value = '';">
 				<button tabindex="-1" class="close-icon" onclick="closeCopy(this.previousElementSibling)"></button>
 			</div>
 			<div style="width:10px"></div>
 			<div style="display:flex; justify-content:space-between; flex-grow:1">
-				<input placeHolder="Next post URL ..." id="set-next" autocomplete="off"
+				<input placeHolder="Next post link ..." id="set-next" autocomplete="off"
 					   style="padding-right:30px; flex-grow:1;" type="text"autocapitalize="off" onkeyup="if (event.keyCode == 27) this.value = '';">
 				<button tabindex="-1" class="close-icon" onclick="closeCopy(this.previousElementSibling)"></button>
 			</div>
 			</div>
 			
 			<div style="display:flex; margin-top:20px; width:100%; justify-content:space-between;">
-			<button class="active" onclick="toggle(this)" style="font-size:0.85em;">Reciprocate on prev post</button>
-			<button class="active" onclick="toggle(this)" style="font-size:0.85em;">Reciprocate on next post</button>
+			<button class="active" onclick="toggle(this)" style="font-size:0.85em;">Reciprocate link on prev post</button>
+			<button class="active" onclick="toggle(this)" style="font-size:0.85em;">Reciprocate link on next post</button>
 			</div>
 				
 				
-			<br><br><button onclick="post()">Post/Edit</button>
-			<button onclick="cancelPost()">Clear/Cancel</button>	
+			<br><br><button id="submitButton" onclick="post()">Publish Post</button>
+			<button id="clearButton" style="margin-left:5px" onclick="cancelPost()">Clear Post</button>	
 		</div>
 		
 		<div id="read" style="display:none; margin-top:20px">
 			<div style="flex-basis:1px; flex-grow:2; margin-right:50px;">
 				<div id="readTitle" style="font-weight:bold; font-size:1.1em">Title</div>	
 				<div style="font-size:0.8em"><a id="author" onclick="loadAuthor(this.title)" style="cursor:pointer">Author</a> | <span id="creation">Post date</span><span id="modification"> - Modified date</span>
-				<button id="edit" onclick="editHandler()" autocomplete="off" style="display:none; padding:2px 8px; margin:2px; margin-left:5px;">Edit</button></div>
+				<button id="edit" onclick="fillEdit()" autocomplete="off" style="display:none; padding:2px 8px; margin:2px; margin-left:5px;">Edit</button></div>
 				
 				<br>
 				<div id="readContent" style="white-space:pre-wrap; margin-bottom:40px">Content</div>
 				
 				<textarea id="commentContent" style="margin-top:10px; margin-bottom:10px; height:80px; width:100%; display:none" autocomplete="off" onkeydown="commentAction()" oninput="commentAction()" placeholder="Comment..."></textarea>
-				<button id="comment" style="margin-top:5px; display:none; font-size:0.85em" onclick="comment()" disabled>Comment</button>
+				<button id="comment" style="margin-top:5px; font-size:0.85em" onclick="comment()" disabled>Comment</button>
 				
 				<br>
 				<ul id="readComments" style="white-space:pre-wrap; margin-top:30px"><ul>	
@@ -549,34 +549,6 @@ function comment() {
 	}
 }
 
-function cancelPost() {
-	D('creationEdit').textContent = " - ";
-	D('creationEdit').title = "";
-	D('modificationEdit').textContent = " - ";
-	D('modificationEdit').title = "";	
-	D('postContent').value = "";
-	D('postTitle').value = "";	
-	D('set-prev').value = "";
-	D('set-next').value = "";
-	loadPanel(topPage);
-}
-
-function editHandler() {
-	D('creationEdit').textContent = D('creation').textContent;
-	D('creationEdit').title = D('creation').title;
-	D('modificationEdit').textContent = D('modification').textContent.substr(3);
-	D('modificationEdit').title = D('modification').title;
-	D('postContent').value = D('readContent').textContent;
-	D('postTitle').value = D('readTitle').textContent;
-	
-	let url = new URL(window.location);
-	url.search = new URLSearchParams({postid: readMetaData.prev_});
-	if (readMetaData.prev_) D('set-prev').value = url.href;
-	url.search = new URLSearchParams({postid: readMetaData.next_});	
-	if (readMetaData.next_) D('set-next').value = url.href;
-	loadPanel('post');
-}
-
 function loadPanel(type) {	
 	D('post').style.display = 'none';
 	D('read').style.display = 'none';
@@ -599,12 +571,10 @@ function loadPanel(type) {
 }
 
 function fillPost(metaData) {
+	readMetaData = metaData;	
 	let postid = metaData.postid;
 	if (!postid) postid = metaData.userid + "-" + metaData.createdts.toString();
-	if (D(postid)) flash(D(postid));
-	
-	readMetaData = metaData;
-	
+	if (D(postid)) flash(D(postid));	
 	queueDOMdisplayName(metaData.userid, D('author'));
 	
 	D('readTitle').textContent = metaData.title;
@@ -630,13 +600,10 @@ function fillPost(metaData) {
 		D('readContent').style.fontStyle = "italic";
 	}
 	
-	if (metaData.userid == XNO.address) {
-		D('edit').style.display = "";
-	} else {
-		D('edit').style.display = "none";
-	}
+	if (metaData.userid == XNO.address) D('edit').style.display = "";
+	else D('edit').style.display = "none";
 	
-	D("comment").style.display = "";
+	if (XNO.address) D("comment").disabled = false;
 	clearDOM(D('readComments'));
 	
 	if (metaData.comments) {
@@ -650,6 +617,41 @@ function fillPost(metaData) {
 	ws.emit("queryPostChain", {userid:metaData.userid, createdts:metaData.createdts });
 }
 
+function fillEdit(metaData) {
+	if (!metaData) metaData = readMetaData;
+	D('creationEdit').textContent = new Date(metaData.createdts).toLocaleDateString();
+	D('creationEdit').title = metaData.createdts;
+	D('modificationEdit').textContent = " - " + new Date(metaData.modifiedts).toLocaleDateString();
+	D('modificationEdit').title = metaData.modifiedts;		
+	D('postContent').value = metaData.content;
+	D('postTitle').value = metaData.title;
+	
+	let url = new URL(window.location);
+	url.search = new URLSearchParams({postid: metaData.prev_});
+	if (metaData.prev_) D('set-prev').value = url.href;
+	url.search = new URLSearchParams({postid: metaData.next_});	
+	if (metaData.next_) D('set-next').value = url.href;
+	
+	D('submitButton').textContent = "Publish Edit";
+	D('clearButton').textContent = "Cancel Edit";
+	loadPanel('post');
+}
+
+function cancelPost() {
+	D('creationEdit').textContent = " - ";
+	D('creationEdit').title = "";
+	D('modificationEdit').textContent = " - ";
+	D('modificationEdit').title = "";	
+	D('postContent').value = "";
+	D('postTitle').value = "";	
+	D('set-prev').value = "";
+	D('set-next').value = "";
+	
+	D('submitButton').textContent = "Publish Post";
+	D('clearButton').textContent = "Clear Post";
+	loadPanel(topPage);
+}
+
 function addComment(commentData) {
 	let theComment = make('li', commentData.content);
 	theComment.id = commentData.commentid;
@@ -658,28 +660,26 @@ function addComment(commentData) {
 
 	// reply editor
 	let editPanel = make('textarea');
-	let editBut = make('button', "Edit");
-	editPanel.placeholder = "Reply...";
-	editPanel.style = "margin-bottom:10px; margin-top:10px; width:60%";
-	editPanel.style.display = "none";
 	
-	editPanel.oninput = function() {
-		if (editPanel.value) editBut.textContent = "Send Edit";
-		else editBut.textContent = "Cancel";
-	};
-	editPanel.onkeydown = function() {
-		if (event.keyCode == 27) {
-			editPanel.value = "";
-			editPanel.style.display = "none";
-			editBut.textContent = "Edit";
-			event.stopPropagation();
+	if (XNO.address == commentData.commentid.split("-")[0]) {	
+		let editBut = make('button', "Edit");
+		
+		editPanel.placeholder = "Reply...";
+		editPanel.style = "margin-bottom:10px; margin-top:10px; width:60%; display:none";		
+		editPanel.oninput = function() {
+			if (editPanel.value) editBut.textContent = "Send Edit";
+			else editBut.textContent = "Cancel";
+		};
+		editPanel.onkeydown = function() {
+			if (event.keyCode == 27) {
+				editPanel.value = "";
+				editPanel.style.display = "none";
+				editBut.textContent = "Edit";
+				event.stopPropagation();
+			}
 		}
-	}
-	
-	if (XNO.address == commentData.commentid.split("-")[0]) {
-		editBut.style = "padding:2px 8px; margin:2px; margin-left:5px;";
-		theLabel.appendChild(editBut);
-				
+		
+		editBut.style = "padding:2px 8px; margin:2px; margin-left:5px;";				
 		editBut.onclick = function() {
 			if (editPanel.style.display) {
 				editPanel.style.display = "";
@@ -691,7 +691,8 @@ function addComment(commentData) {
 					ws.emit('updateComment', {content:editPanel.value, postid: commentData.postid, parentid: commentData.parentid, commentid: commentData.commentid });
 				this.textContent = "Edit";
 			}
-		};		
+		};
+		theLabel.appendChild(editBut);
 	}	
 		
 	if (D(commentData.commentid)) D(commentData.commentid).textContent = commentData.content;
@@ -796,7 +797,6 @@ function importSeed() {
 		if (XNO.address) makeSubLi(XNO.address);
 		D('libraryWarning').style.display = "none";
 		D('subscribe').disabled = false;
-		D("comment").disabled = false;
 		
 		localStorage.setItem("localSeed", XNO.seed);
 		if (keepAccount != XNO.address && ws) {
@@ -857,12 +857,21 @@ function fullLabel(data) {
 	postTitle.style.overflow = "hidden";
 	postTitle.style.textOverflow = "ellipsis";
 	
-	let postLabel = make('div');
-	postLabel.appendChild(postTitle);
-	postLabel.appendChild(makeMetaLabel(data.userid, data.createdts, data.modifiedts));
+	let postMeta = makeMetaLabel(data.userid, data.createdts, data.modifiedts);
+	if (data.userid == XNO.address) {
+		let editBut = make('button', "Edit");
+		editBut.style = "padding:2px 8px; margin:2px; margin-left:5px;";
+		
+		// TODO		
+		// postMeta.appendChild(editBut);		
+	}
 	
-	postLabel.style = "overflow:hidden; cursor:pointer; padding:5px; flex-grow:1";
-	postLabel.onclick = function() {
+	let label = make('div');
+	label.appendChild(postTitle);
+	label.appendChild(postMeta);
+	
+	label.style = "overflow:hidden; cursor:pointer; padding:5px; flex-grow:1";
+	label.onclick = function() {
 		loadPanel('read');
 		fillPost(data);
 		ws.emit('queryPost', { userid: data.userid, createdts: data.createdts });
@@ -870,7 +879,7 @@ function fullLabel(data) {
 		else D(postid).style.fontWeight = "";
 		flash(this);
 	}
-	return postLabel;
+	return label;
 }
 
 function makeLibLi(metaData, accessts) {
