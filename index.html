@@ -355,14 +355,6 @@ function setupWebsocket(restart) {
 		requestNames();
 	});
 	
-	function requestNames() {
-		let userids = [];	
-		for (let name in DOMdisplayNames) {
-			userids.push(name);
-		}
-		if (ws) ws.emit('queryUsers', {userids});
-	}
-	
 	function receiveDOMdisplayName(userid, displayname) {
 		if (displayname) cacheDisplayNames[userid] = displayname;
 		else delete cacheDisplayNames[userid];
@@ -444,6 +436,8 @@ function populateBrowse(data) {
 		postli.appendChild(fullLabel(data[i]));
 		D('discovery').appendChild(postli);
 	}
+	
+	requestNames();
 }
 
 function loadAuthor(userid) {
@@ -849,6 +843,14 @@ function makeSubLi(userid, displayname) {
 function queueDOMdisplayName(userid, elt) {
 	if (!DOMdisplayNames[userid]) DOMdisplayNames[userid] = [elt];
 	else DOMdisplayNames[userid].push(elt);
+}
+
+function requestNames() {
+	let userids = [];	
+	for (let name in DOMdisplayNames) {
+		userids.push(name);
+	}
+	if (ws) ws.emit('queryUsers', {userids});
 }
 
 function fullLabel(data) {
