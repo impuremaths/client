@@ -64,10 +64,10 @@
 
 		<div class="objectWrapper" style="margin-bottom:10px; overflow:hidden; display:flex; flex-direction:column" onclick="openSubAccordion(this)">
 			<div class="clickFlash leftRightBase" style="margin-top:0px" onclick="toggleSubAccordion(this)">
-				<strong>Library</strong> <i id="libraryWarning" style="color:gray">Create an account to persist!</i>
+				<strong>Library</strong> <i id="libraryWarning" style="color:gray">- Create an account to persist -</i>
 			</div>
 			<div class="accordion">
-				<div id="libraryPlaceholder" style="font-style:italic; color:gray; text-align:center; margin-top:15px">Read something!</div>
+				<div id="libraryPlaceholder" style="font-style:italic; color:gray; text-align:center; margin-top:20px">- Read something -</div>
 				<ul id="library" style="margin-bottom:5px; overflow:auto; max-height:calc(100% - 15px)"></ul>
 			</div>
 		</div>
@@ -84,7 +84,7 @@
 		<div id="browse">
 			<div style="margin-top:20px; margin-bottom:20px">
 			<span style="font-weight:bold; font-size:1.1em; cursor:pointer" onclick="loadAuthor(this.title)" id="info">Recent</span>
-			<button id="subscribe" onclick="subscribeHandler()" autocomplete="off" style="display:none; padding:2px 8px; margin:2px;" disabled>+</button>			
+			<button id="subscribe" onclick="subscribeHandler()" autocomplete="off" style="display:none; padding:2px 8px; margin:2px; margin-left:5px" disabled>+</button>			
 			<span id="loadingMsg" style="margin-left:10px; font-style:italic">Loading...</span>
 			</div>
 			<ul id="discovery"></ul>
@@ -131,7 +131,7 @@
 				<br>
 				<div id="readContent" style="white-space:pre-wrap; margin-bottom:40px">Content</div>
 				
-				<div style="background-color:#ccc; height:3px; border-radius:20px; margin:30px;"></div>
+				<div style="background-color:#ddd; height:3px; border-radius:20px; margin:30px;"></div>
 				
 				<textarea id="commentContent" style="margin-top:10px; margin-bottom:10px; height:80px; width:100%; display:none" autocomplete="off" onkeydown="commentAction()" oninput="commentAction()" placeholder="Comment..."></textarea>
 				<button id="comment" style="margin-top:5px; font-size:0.85em" onclick="comment()" disabled>Comment</button>
@@ -405,6 +405,7 @@ function setupWebsocket(restart) {
 		for (let x in data) {			
 			let postli = make('li');
 			postli.style = "white-space:nowrap";
+			if (readMetaData.postid == data[x].userid + "-" + data[x].createdts.toString()) postli.style.paddingLeft = "15px";
 			postli.appendChild(fullLabel(data[x]));
 			D('mapul').appendChild(postli);	
 		}
@@ -568,8 +569,8 @@ function loadPanel(type) {
 
 function fillPost(metaData) {
 	readMetaData = metaData;	
+	if (!metaData.postid) metaData.postid = metaData.userid + "-" + metaData.createdts.toString();	
 	let postid = metaData.postid;
-	if (!postid) postid = metaData.userid + "-" + metaData.createdts.toString();
 	if (D(postid)) flash(D(postid));	
 	queueDOMdisplayName(metaData.userid, D('author'));
 	
