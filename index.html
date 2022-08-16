@@ -29,7 +29,7 @@
 				<div style="text-align:center; margin-top:10px">
 					<button tabindex="-1" class="left" onclick="generateSeed()">Create Account</button>
 					<button id="current" tabindex="-1" style="font-size:0.85em; border-radius:5px" onclick="showCurrent()" autocomplete="off" disabled>Current Seed</button>
-					<button id="clear" class="right" onclick="if (confirm('Log out of the current account? (Check that you have saved your account seed elsewhere!)')) clickClearSeed();" autocomplete="off" disabled>Log Out</button>
+					<button id="clear" class="right" onclick="if (confirm('Log out of the current account? (Have you saved your account seed elsewhere?!)')) clickClearSeed();" autocomplete="off" disabled>Log Out</button>
 				</div>
 				
 				<div style="display:flex; justify-content:space-between; margin-top:15px; margin-bottom:20px">
@@ -130,6 +130,8 @@
 				
 				<br>
 				<div id="readContent" style="white-space:pre-wrap; margin-bottom:40px">Content</div>
+				
+				<div style="background-color:#ccc; height:3px; border-radius:20px; margin:30px;"></div>
 				
 				<textarea id="commentContent" style="margin-top:10px; margin-bottom:10px; height:80px; width:100%; display:none" autocomplete="off" onkeydown="commentAction()" oninput="commentAction()" placeholder="Comment..."></textarea>
 				<button id="comment" style="margin-top:5px; font-size:0.85em" onclick="comment()" disabled>Comment</button>
@@ -763,7 +765,7 @@ function testFunction() {
 var clipboardText;
 
 function generateSeed() {
-	if (XNO.address && !confirm('Log out of the current account? (Check that you have saved your account seed elsewhere!)')) return false;
+	if (XNO.address && !confirm('Log out of the current account? (Have you have saved your account seed elsewhere?!)')) return false;
 	let newSeed = XNO.generateSeed();
 	inputEvent(D("seed"), newSeed);
 	navigator.clipboard.writeText(newSeed);
