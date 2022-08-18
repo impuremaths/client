@@ -91,30 +91,30 @@
 		</div>
 
 		<div id="post" style="display:none; margin-top:20px; width:80%">
-			<textarea id="postTitle" style="width:100%" autocomplete="off" placeholder="Title..."></textarea>	
-			<div style="font-size:0.9em; margin-left:10px">
+			<input id="postTitle" style="width:100%;  margin-bottom:10px;" autocomplete="off" placeholder="Title ..." type="text" autocomplete="off" onkeyup="if (event.keyCode == 27) this.value = '';">
+			<div id="editid" style="font-size:0.9em; margin-left:10px; display:none">
 			Post date: <span id="creationEdit"> - </span> &nbsp;&nbsp; Modified date: <span id="modificationEdit"> - </span>
 			</div>		
-			<br><textarea id="postContent" style="height:300px; width:100%" autocomplete="off" placeholder="Content..."></textarea>
+			<textarea id="postContent" style="margin-top:20px; height:300px; width:100%" autocomplete="off" placeholder="Content..."></textarea>
 					
 					
 			<div style="display:flex; margin-top:20px; width:100%">
 			<div style="display:flex; justify-content:space-between; flex-grow:1">
 				<input placeHolder="Previous post link ..." id="set-prev" autocomplete="off"
-					   style="padding-right:30px; flex-grow:1;" type="text"autocapitalize="off" onkeyup="if (event.keyCode == 27) this.value = '';">
+					   style="padding-right:30px; flex-grow:1;" type="text" autocapitalize="off" onkeyup="if (event.keyCode == 27) this.value = '';">
 				<button tabindex="-1" class="close-icon" onclick="closeCopy(this.previousElementSibling)"></button>
 			</div>
 			<div style="width:10px"></div>
 			<div style="display:flex; justify-content:space-between; flex-grow:1">
 				<input placeHolder="Next post link ..." id="set-next" autocomplete="off"
-					   style="padding-right:30px; flex-grow:1;" type="text"autocapitalize="off" onkeyup="if (event.keyCode == 27) this.value = '';">
+					   style="padding-right:30px; flex-grow:1;" type="text" autocapitalize="off" onkeyup="if (event.keyCode == 27) this.value = '';">
 				<button tabindex="-1" class="close-icon" onclick="closeCopy(this.previousElementSibling)"></button>
 			</div>
 			</div>
 			
 			<div style="display:flex; margin-top:20px; width:100%; justify-content:space-between;">
-			<button class="active" onclick="toggle(this)" style="font-size:0.85em;">Reciprocate link on prev post</button>
-			<button class="active" onclick="toggle(this)" style="font-size:0.85em;">Reciprocate link on next post</button>
+			<button class="active" onclick="toggle(this)" style="font-size:0.85em;">Reciprocate on prev post</button>
+			<button class="active" onclick="toggle(this)" style="font-size:0.85em;">Reciprocate on next post</button>
 			</div>
 				
 				
@@ -616,6 +616,7 @@ function fillPost(metaData) {
 
 function fillEdit(metaData) {
 	if (!metaData) metaData = readMetaData;
+	D('editid').style.display = "";
 	D('creationEdit').textContent = new Date(metaData.createdts).toLocaleDateString();
 	D('creationEdit').title = metaData.createdts;
 	D('modificationEdit').textContent = " - " + new Date(metaData.modifiedts).toLocaleDateString();
@@ -635,6 +636,7 @@ function fillEdit(metaData) {
 }
 
 function cancelPost() {
+	D('editid').style.display = "none";
 	D('creationEdit').textContent = " - ";
 	D('creationEdit').title = "";
 	D('modificationEdit').textContent = " - ";
