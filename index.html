@@ -130,6 +130,7 @@
 				
 				<br>
 				<div id="readContent" style="white-space:pre-wrap; margin-bottom:40px">Content</div>
+				<iframe id="readContentFrame" style="width:100%; height:60vh" sandbox></iframe>
 				
 				<div style="background-color:#ddd; height:3px; border-radius:20px; margin:30px;"></div>
 				
@@ -592,9 +593,13 @@ function fillPost(metaData) {
 	if (metaData.content) {
 		D('readContent').textContent = metaData.content;
 		D('readContent').style.fontStyle = "";
+		
+		D('readContentFrame').srcdoc = metaData.content;
 	} else {
 		D('readContent').textContent = "Loading...";
 		D('readContent').style.fontStyle = "italic";
+		
+		D('readContentFrame').srcdoc = "";
 	}
 	
 	if (metaData.userid == XNO.address) D('edit').style.display = "";
