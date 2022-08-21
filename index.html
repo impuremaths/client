@@ -663,11 +663,23 @@ function appendBlock(type, parent) {
 	}
 	textbox.title = type;
 	
+	let buttonParent = make('div');
+	buttonParent.style.margin = "10px";
+	buttonParent.style.display = "flex";
+	buttonParent.style.justifyContent = "space-between";
+	
+	let sponsBut = make('button', "Sponsor Only");
+	sponsBut.style.marginRight = "20px";
+	sponsBut.style.float = "left";
+	sponsBut.style.fontSize = "0.85em";
+	sponsBut.onclick = function() { toggle(this); }
+	buttonParent.appendChild(sponsBut);
+	
 	let buttonPanel = make('div');
-	buttonPanel.style.margin = "10px";
 	buttonPanel.style.display = "flex";
 	buttonPanel.style.justifyContent = "right";
 	block.appendChild(textbox);
+	
 	
 	let textBut = make('button', "Add Text");
 	textBut.classList.add("left");
@@ -687,7 +699,8 @@ function appendBlock(type, parent) {
 	};
 	buttonPanel.appendChild(delBut);
 	
-	block.appendChild(buttonPanel);
+	buttonParent.appendChild(buttonPanel);
+	block.appendChild(buttonParent);
 	if (parent && parent.nextElementSibling) D('postContent').insertBefore(block, parent.nextElementSibling);
 	else D('postContent').appendChild(block);	
 	
