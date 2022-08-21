@@ -27,9 +27,7 @@
 
 			<div id="editPanel" class="accordion" style="max-height:0px">
 				<div style="text-align:center; margin-top:10px">
-					<button tabindex="-1" class="left" onclick="generateSeed()">Create Account</button>
-					<button id="current" tabindex="-1" style="font-size:0.85em; border-radius:5px" onclick="showCurrent()" autocomplete="off" disabled>Current Seed</button>
-					<button id="clear" class="right" onclick="if (confirm('Log out of the current account? (Have you saved your account seed elsewhere?!)')) clickClearSeed();" autocomplete="off" disabled>Log Out</button>
+					<button tabindex="-1" class="left" onclick="generateSeed()">Create Account</button><button id="current" class="center" tabindex="-1" onclick="showCurrent()" autocomplete="off" disabled>Current Seed</button><button id="clear" class="right" onclick="if (confirm('Log out of the current account? (Have you saved your account seed elsewhere?!)')) clickClearSeed();" autocomplete="off" disabled>Log Out</button>
 				</div>
 				
 				<div style="display:flex; justify-content:space-between; margin-top:15px; margin-bottom:20px">
@@ -77,9 +75,7 @@
 	
 	<div id="secondDiv" class="secondDiv">
 	
-		<button id="browseButton" class="left active" style="margin-top:25px; margin-bottom:20px" onclick="browseAuthor()">Browse</button>	
-		<button id="readButton" style="font-size:0.85em; border-radius:5px;" onclick="loadPanel('read')" autocomplete="off">Read</button>
-		<button id="postButton" class="right" onclick="loadPanel('post')" autocomplete="off" disabled>Write</button>
+		<button id="browseButton" class="left active" style="margin-top:25px; margin-bottom:20px" onclick="browseAuthor()">Browse</button><button id="readButton" class="center" onclick="loadPanel('read')" autocomplete="off">Read</button><button id="postButton" class="right" onclick="loadPanel('post')" autocomplete="off" disabled>Write</button>
 	
 		<div id="browse">
 			<div style="margin-top:20px; margin-bottom:20px">
@@ -474,7 +470,7 @@ function makeMetaLabel(userid, createdts, modifiedts) {
 	};	
 	queueDOMdisplayName(userid, postAuthor);
 	
-	let postDate = make('span', " | " + new Date(createdts).toLocaleDateString());	
+	let postDate = make('span', " | " + unixToDate(createdts));	
 	postDate.title = createdts;
 		
 	let postMeta = make('div');
@@ -483,7 +479,7 @@ function makeMetaLabel(userid, createdts, modifiedts) {
 	postMeta.appendChild(postDate);	
 	
 	if (modifiedts && modifiedts != createdts) {
-		let postModified = make('span', " - " + new Date(modifiedts).toLocaleDateString());
+		let postModified = make('span', " - " + unixToDate(modifiedts));
 		postModified.title = modifiedts;
 		postMeta.appendChild(postModified);
 	}
@@ -685,26 +681,23 @@ function appendBlock(type, parent) {
 	buttonPanel.style.justifyContent = "right";
 	block.appendChild(textbox);
 	
+	let textBut = make('button', "Add Text");
+	textBut.classList.add("left");
+	textBut.onclick = function() { appendBlock("text", block); }
+	buttonPanel.appendChild(textBut);
+	
+	let jsBut = make('button', "Add HTML/JS");
+	jsBut.classList.add("center");
+	jsBut.onclick = function() { appendBlock("js", block) };
+	buttonPanel.appendChild(jsBut);
+	
 	let delBut = make('button', "Delete");
-	delBut.classList.add("left");
+	delBut.classList.add("right");
 	delBut.onclick = function() {
 		if (D('postContent').children.length > 1) D('postContent').removeChild(block);
 		else alert("You can't remove the last element! Add another first.");
 	};
 	buttonPanel.appendChild(delBut);
-	
-	let textBut = make('button', "Add Text");
-	textBut.style.borderRadius = "5px";
-	textBut.style.marginLeft = "4px";
-	textBut.style.marginRight = "4px";
-	textBut.style.fontSize = "0.85em";
-	textBut.onclick = function() { appendBlock("text", block); }
-	buttonPanel.appendChild(textBut);
-	
-	let jsBut = make('button', "Add HTML/JS");
-	jsBut.classList.add("right");
-	jsBut.onclick = function() { appendBlock("js", block) };
-	buttonPanel.appendChild(jsBut);
 	
 	block.appendChild(buttonPanel);
 	if (parent && parent.nextElementSibling) D('postContent').insertBefore(block, parent.nextElementSibling);
@@ -1175,6 +1168,12 @@ function showMsg(str, bold, hold) {
 		D('msg').style.transition = "filter 2s linear 0s";
 		D('msg').style.filter = "opacity(0)";
 	}, 5000);
+}
+
+function unixToDate(time) {
+	let str = new Date(time);
+	if (str.getYear() == (new Date(Date.now())).getYear()) return str.toLocaleDateString().slice(0, -5); 
+	else return str.toLocaleDateString();	
 }
 
 function clearDOM(myNode) {	while (myNode.firstChild) { myNode.removeChild(myNode.lastChild); } }
