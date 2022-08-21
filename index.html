@@ -667,13 +667,15 @@ function fillEdit(metaData) {
 function appendBlock(type, parent) {
 	let block = make('div');
 	let textbox = make('textarea');
-	textbox.style = "margin-top:20px; height:300px; width:100%";
-	textbox.placeholder = "Content...";
+	textbox.style = "margin-top:20px; height:150px; width:100%";
 	
-	if (type == "text" || !type) {
+	if (!type) type = "text";
+	if (type == "text") {
 		textbox.style.fontFamily = "Segoe UI, Source Sans Pro, Roboto, Helvetica, sans-serif";
+		textbox.placeholder = "Text...";
+	} else if (type == "js") {
+		textbox.placeholder = "HTML (js scripts allowed)...";	
 	}
-	if (!type) type = "";
 	textbox.title = type;
 	
 	let buttonPanel = make('div');
@@ -685,7 +687,7 @@ function appendBlock(type, parent) {
 	
 	let delBut = make('button', "Delete");
 	delBut.onclick = function() {
-		D('postContent').removeChild(block);
+		if (D('postContent').children.length > 1) D('postContent').removeChild(block);
 	};
 	buttonPanel.appendChild(delBut);
 	
