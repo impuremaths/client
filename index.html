@@ -91,7 +91,7 @@
 		</div>
 
 		<div id="post" style="display:none; margin-top:20px; width:80%">
-			<input id="postTitle" style="font-weight:bold; font-size:1.1em; width:100%;  margin-bottom:10px;" autocomplete="off" placeholder="Title ..." type="text" autocomplete="off" onkeyup="if (event.keyCode == 27) this.value = '';">
+			<input id="postTitle" style="font-weight:bold; font-size:1.1em; width:100%;  margin-bottom:10px;" autocomplete="off" placeholder="Title..." type="text" autocomplete="off" onkeyup="if (event.keyCode == 27) this.value = '';">
 			<div id="editid" style="font-size:0.8em; margin-left:10px; display:none">
 			<span id="creationEdit"></span><span id="modificationEdit"></span>
 			</div>		
@@ -112,9 +112,9 @@
 			</div>
 			</div>
 			
-			<div style="display:flex; margin-top:20px; width:100%; justify-content:space-between;">
-			<button class="active" onclick="toggle(this)" style="font-size:0.85em;">Reciprocate on prev post</button>
-			<button class="active" onclick="toggle(this)" style="font-size:0.85em;">Reciprocate on next post</button>
+			<div style="display:flex; margin-top:15px; width:100%; justify-content:space-between;">
+			<button class="active" onclick="toggle(this)" style="font-size:0.85em;">Reciprocate Link</button>
+			<button class="active" onclick="toggle(this)" style="font-size:0.85em;">Reciprocate Link </button>
 			</div>
 				
 				
@@ -672,9 +672,9 @@ function appendBlock(type, parent) {
 	if (!type) type = "text";
 	if (type == "text") {
 		textbox.style.fontFamily = "Segoe UI, Source Sans Pro, Roboto, Helvetica, sans-serif";
-		textbox.placeholder = "Text...";
+		textbox.placeholder = "Simple text...";
 	} else if (type == "js") {
-		textbox.placeholder = "HTML (js scripts allowed)...";	
+		textbox.placeholder = "HTML (JS scripts allowed)...";	
 	}
 	textbox.title = type;
 	
@@ -688,10 +688,11 @@ function appendBlock(type, parent) {
 	delBut.classList.add("left");
 	delBut.onclick = function() {
 		if (D('postContent').children.length > 1) D('postContent').removeChild(block);
+		else alert("You can't remove the last element! Add another first.");
 	};
 	buttonPanel.appendChild(delBut);
 	
-	let textBut = make('button', "Add text");
+	let textBut = make('button', "Add Text");
 	textBut.style.borderRadius = "5px";
 	textBut.style.marginLeft = "4px";
 	textBut.style.marginRight = "4px";
@@ -699,7 +700,7 @@ function appendBlock(type, parent) {
 	textBut.onclick = function() { appendBlock("text", block); }
 	buttonPanel.appendChild(textBut);
 	
-	let jsBut = make('button', "Add JS");
+	let jsBut = make('button', "Add HTML/JS");
 	jsBut.classList.add("right");
 	jsBut.onclick = function() { appendBlock("js", block) };
 	buttonPanel.appendChild(jsBut);
