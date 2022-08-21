@@ -93,7 +93,7 @@
 		<div id="post" style="display:none; margin-top:20px; width:80%">
 			<input id="postTitle" style="font-weight:bold; font-size:1.1em; width:100%;  margin-bottom:10px;" autocomplete="off" placeholder="Title ..." type="text" autocomplete="off" onkeyup="if (event.keyCode == 27) this.value = '';">
 			<div id="editid" style="font-size:0.8em; margin-left:10px; display:none">
-			<span id="creationEdit"> - </span> - <span id="modificationEdit"> - </span>
+			<span id="creationEdit"></span><span id="modificationEdit"></span>
 			</div>		
 			<div id="postContent">
 			</div>
@@ -130,7 +130,6 @@
 				
 				<br>
 				<div id="readContent" style="white-space:pre-wrap; margin-bottom:40px">Content</div>
-				<iframe id="readContentFrame" style="width:100%; height:60vh" sandbox="allow-scripts"></iframe>
 				
 				<div style="background-color:#ddd; height:3px; border-radius:20px; margin:30px;"></div>
 				
@@ -521,7 +520,7 @@ function post() {
 	console.log(prev, next);
 	let content = [];
 	for (let i = 0; i < D('postContent').children.length; i++) {
-		content.push({content:D('postContent').children[i].firstChild.value, type:"js"});
+		content.push({content:D('postContent').children[i].firstChild.value, type:D('postContent').children[i].firstChild.title});
 	}
 	ws.emit('updatePost', {prev_: prev, next_: next, title:D('postTitle').value, content:content, visibility:"public", createdts: parseInt(D('creationEdit').title)});
 	loadPanel('read');
@@ -594,24 +593,26 @@ function fillPost(metaData) {
 	}
 	
 	if (metaData.content) {
-		if (typeof metaData.content === "string") {
-			D('readContent').textContent = metaData.content;			
-			D('readContentFrame').srcdoc = metaData.content;
-		} else {
+		if (typeof metaData.content === "string") D('readContent').textContent = metaData.content;
+		else {
 			console.log("array content!!!");
 			clearDOM(D('readContent'));
 			for (let i = 0; i < metaData.content.length; i++) {
 				if (metaData.content[i].type == "js") {
+					let jsbox = make("iframe");
+					jsbox.style = "width:100%; height:60vh";
+					jsbox.sandbox = "allow-scripts";			
+					jsbox.srcdoc = metaData.content[i].content;
+					jsbox.style.marginBottom = "20px";
+					D('readContent').appendChild(jsbox);
+				} else {
 					let textbox = make("div", metaData.content[i].content);
 					textbox.style.marginBottom = "20px";
 					D('readContent').appendChild(textbox);
 				}
 			}
 		}
-	} else {
-		D('readContent').innerHTML = "<i>Loading...</i>";		
-		D('readContentFrame').srcdoc = "";
-	}
+	} else D('readContent').innerHTML = "<i>Loading...</i>";
 	
 	if (metaData.userid == XNO.address) D('edit').style.display = "";
 	else D('edit').style.display = "none";
@@ -635,16 +636,18 @@ function fillEdit(metaData) {
 	D('editid').style.display = "";
 	D('creationEdit').textContent = new Date(metaData.createdts).toLocaleDateString();
 	D('creationEdit').title = metaData.createdts;
-	D('modificationEdit').textContent = new Date(metaData.modifiedts).toLocaleDateString();
-	D('modificationEdit').title = metaData.modifiedts;		
+	if (metaData.createdts != metaData.modifiedts) {
+		D('modificationEdit').textContent = " - " + new Date(metaData.modifiedts).toLocaleDateString();
+		D('modificationEdit').title = metaData.modifiedts;
+	}	
 	
+	clearDOM(D('postContent'));
 	if (typeof metaData.content === "string") {	
 		let block = appendBlock();
 		block.firstChild.value = metaData.content;
 	} else {
-		clearDOM(D('postContent'));
 		for (let i = 0; i < metaData.content.length; i++) {
-			let block = appendBlock();
+			let block = appendBlock(metaData.content[i].type);
 			block.firstChild.value = metaData.content[i].content;
 		}
 	}
@@ -661,11 +664,17 @@ function fillEdit(metaData) {
 	loadPanel('post');
 }
 
-function appendBlock(type) {
+function appendBlock(type, parent) {
 	let block = make('div');
 	let textbox = make('textarea');
 	textbox.style = "margin-top:20px; height:300px; width:100%";
 	textbox.placeholder = "Content...";
+	
+	if (type == "text" || !type) {
+		textbox.style.fontFamily = "Segoe UI, Source Sans Pro, Roboto, Helvetica, sans-serif";
+	}
+	if (!type) type = "";
+	textbox.title = type;
 	
 	let buttonPanel = make('div');
 	buttonPanel.style.fontSize = "0.85em";
@@ -673,11 +682,28 @@ function appendBlock(type) {
 	buttonPanel.style.display = "flex";
 	buttonPanel.style.justifyContent = "center";
 	block.appendChild(textbox);
-	buttonPanel.appendChild(make('button', "Delete"));
-	buttonPanel.appendChild(make('button', "Append text"));
-	buttonPanel.appendChild(make('button', "Append JS"));
+	
+	let delBut = make('button', "Delete");
+	delBut.onclick = function() {
+		D('postContent').removeChild(block);
+	};
+	buttonPanel.appendChild(delBut);
+	
+	let textBut = make('button', "Append text");
+	textBut.onclick = function() { appendBlock("text", block); }
+	buttonPanel.appendChild(textBut);
+	
+	let jsBut = make('button', "Append JS");
+	jsBut.onclick = function() { appendBlock("js", block) };
+	buttonPanel.appendChild(jsBut);
+	
 	block.appendChild(buttonPanel);
-	D('postContent').appendChild(block);
+	if (parent && parent.nextElementSibling) D('postContent').insertBefore(block, parent.nextElementSibling);
+	else D('postContent').appendChild(block);	
+	
+	for (let i = 0; i < buttonPanel.children.length; i++) {
+		buttonPanel.children[i].tabIndex = -1;
+	}
 	return block;
 }
 
@@ -685,7 +711,7 @@ function cancelPost() {
 	D('editid').style.display = "none";
 	D('creationEdit').textContent = " - ";
 	D('creationEdit').title = "";
-	D('modificationEdit').textContent = " - ";
+	D('modificationEdit').textContent = "";
 	D('modificationEdit').title = "";	
 	
 	clearDOM(D('postContent'));	
