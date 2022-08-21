@@ -77,13 +77,13 @@
 	
 	<div id="secondDiv" class="secondDiv">
 	
-		<button id="browseButton" class="left active" style="margin-top:25px; margin-bottom:20px" onclick="loadAuthor()">Browse</button>	
+		<button id="browseButton" class="left active" style="margin-top:25px; margin-bottom:20px" onclick="browseAuthor()">Browse</button>	
 		<button id="readButton" style="font-size:0.85em; border-radius:5px;" onclick="loadPanel('read')" autocomplete="off">Read</button>
 		<button id="postButton" class="right" onclick="loadPanel('post')" autocomplete="off" disabled>Write</button>
 	
 		<div id="browse">
 			<div style="margin-top:20px; margin-bottom:20px">
-			<span style="font-weight:bold; font-size:1.1em; cursor:pointer" onclick="loadAuthor(this.title)" id="info">Recent</span>
+			<span style="font-weight:bold; font-size:1.1em; cursor:pointer" onclick="browseAuthor(this.title)" id="info">Recent</span>
 			<button id="subscribe" onclick="subscribeHandler()" autocomplete="off" style="display:none; padding:2px 8px; margin:2px; margin-left:5px" disabled>+</button>			
 			<span id="loadingMsg" style="margin-left:10px; font-style:italic">Loading...</span>
 			</div>
@@ -91,14 +91,14 @@
 		</div>
 
 		<div id="post" style="display:none; margin-top:20px; width:80%">
-			<input id="postTitle" style="width:100%;  margin-bottom:10px;" autocomplete="off" placeholder="Title ..." type="text" autocomplete="off" onkeyup="if (event.keyCode == 27) this.value = '';">
-			<div id="editid" style="font-size:0.9em; margin-left:10px; display:none">
-			Post date: <span id="creationEdit"> - </span> &nbsp;&nbsp; Modified date: <span id="modificationEdit"> - </span>
+			<input id="postTitle" style="font-weight:bold; font-size:1.1em; width:100%;  margin-bottom:10px;" autocomplete="off" placeholder="Title ..." type="text" autocomplete="off" onkeyup="if (event.keyCode == 27) this.value = '';">
+			<div id="editid" style="font-size:0.8em; margin-left:10px; display:none">
+			<span id="creationEdit"> - </span> - <span id="modificationEdit"> - </span>
 			</div>		
-			<textarea id="postContent" style="margin-top:20px; height:300px; width:100%" autocomplete="off" placeholder="Content..."></textarea>
+			<div id="postContent">
+			</div>
 					
-					
-			<div style="display:flex; margin-top:20px; width:100%">
+			<div style="display:flex; margin-top:40px; width:100%">
 			<div style="display:flex; justify-content:space-between; flex-grow:1">
 				<input placeHolder="Previous post link ..." id="set-prev" autocomplete="off"
 					   style="padding-right:30px; flex-grow:1;" type="text" autocapitalize="off" onkeyup="if (event.keyCode == 27) this.value = '';">
@@ -125,7 +125,7 @@
 		<div id="read" style="display:none; margin-top:20px">
 			<div style="flex-basis:1px; flex-grow:2; margin-right:50px;">
 				<div id="readTitle" style="font-weight:bold; font-size:1.1em">Title</div>	
-				<div style="font-size:0.8em"><a id="author" onclick="loadAuthor(this.title)" style="cursor:pointer">Author</a> | <span id="creation">Post date</span><span id="modification"> - Modified date</span>
+				<div style="font-size:0.8em"><a id="author" onclick="browseAuthor(this.title)" style="cursor:pointer">Author</a> | <span id="creation">Post date</span><span id="modification"> - Modified date</span>
 				<button id="edit" onclick="fillEdit()" autocomplete="off" style="display:none; padding:2px 8px; margin:2px; margin-left:5px;">Edit</button></div>
 				
 				<br>
@@ -134,7 +134,7 @@
 				
 				<div style="background-color:#ddd; height:3px; border-radius:20px; margin:30px;"></div>
 				
-				<textarea id="commentContent" style="margin-top:10px; margin-bottom:10px; height:80px; width:100%; display:none" autocomplete="off" onkeydown="commentAction()" oninput="commentAction()" placeholder="Comment..."></textarea>
+				<textarea id="commentContent" style="margin-top:10px; margin-bottom:10px; height:80px; width:100%; display:none" autocomplete="off" onkeydown="commentKeypress()" oninput="commentKeypress()" placeholder="Comment..."></textarea>
 				<button id="comment" style="margin-top:5px; font-size:0.85em" onclick="comment()" disabled>Comment</button>
 				
 				<br>
@@ -277,7 +277,7 @@ function setupWebsocket(restart) {
 	ws.onopen = function() { 
 		console.log("Connected to server!"); 
 		if (!restart) {
-			loadAuthor(D('info').title);
+			browseAuthor(D('info').title);
 			D('loadingMsg').style.display = "";
 		}
 		if (XNO.address) {
@@ -386,9 +386,8 @@ function setupWebsocket(restart) {
 	
 	ws.on('updatePostResponse', function(data) { 
 		if (!data.errMsg) {
-			fillPost(data); 
-			D('postContent').value = "";
-			D('postTitle').value = "";
+			fillPost(data);
+			cancelPost();
 		} else console.log(data);
 	});
 	
@@ -442,7 +441,7 @@ function populateBrowse(data) {
 	requestNames();
 }
 
-function loadAuthor(userid) {
+function browseAuthor(userid) {
 	if (userid) {		
 		if (userid == XNO.address) D('subscribe').style.display = "none";
 		else D('subscribe').style.display = "";
@@ -471,7 +470,7 @@ function makeMetaLabel(userid, createdts, modifiedts) {
 	postAuthor.style.cursor = "pointer";
 	postAuthor.onclick = function() {
 		event.stopPropagation();
-		loadAuthor(userid);
+		browseAuthor(userid);
 	};	
 	queueDOMdisplayName(userid, postAuthor);
 	
@@ -520,11 +519,15 @@ function post() {
 	catch { next = "" };
 	
 	console.log(prev, next);
-	ws.emit('updatePost', {prev_: prev, next_: next, title:D('postTitle').value, content:D('postContent').value, visibility:"public", createdts: parseInt(D('creationEdit').title)});
+	let content = [];
+	for (let i = 0; i < D('postContent').children.length; i++) {
+		content.push({content:D('postContent').children[i].firstChild.value, type:"js"});
+	}
+	ws.emit('updatePost', {prev_: prev, next_: next, title:D('postTitle').value, content:content, visibility:"public", createdts: parseInt(D('creationEdit').title)});
 	loadPanel('read');
 }
 
-function commentAction() {
+function commentKeypress() {
 	if (event.keyCode == 27) {
 		D('commentContent').value = "";
 		D('commentContent').style.display = "none";
@@ -591,14 +594,22 @@ function fillPost(metaData) {
 	}
 	
 	if (metaData.content) {
-		D('readContent').textContent = metaData.content;
-		D('readContent').style.fontStyle = "";
-		
-		D('readContentFrame').srcdoc = metaData.content;
+		if (typeof metaData.content === "string") {
+			D('readContent').textContent = metaData.content;			
+			D('readContentFrame').srcdoc = metaData.content;
+		} else {
+			console.log("array content!!!");
+			clearDOM(D('readContent'));
+			for (let i = 0; i < metaData.content.length; i++) {
+				if (metaData.content[i].type == "js") {
+					let textbox = make("div", metaData.content[i].content);
+					textbox.style.marginBottom = "20px";
+					D('readContent').appendChild(textbox);
+				}
+			}
+		}
 	} else {
-		D('readContent').textContent = "Loading...";
-		D('readContent').style.fontStyle = "italic";
-		
+		D('readContent').innerHTML = "<i>Loading...</i>";		
 		D('readContentFrame').srcdoc = "";
 	}
 	
@@ -624,9 +635,19 @@ function fillEdit(metaData) {
 	D('editid').style.display = "";
 	D('creationEdit').textContent = new Date(metaData.createdts).toLocaleDateString();
 	D('creationEdit').title = metaData.createdts;
-	D('modificationEdit').textContent = " - " + new Date(metaData.modifiedts).toLocaleDateString();
+	D('modificationEdit').textContent = new Date(metaData.modifiedts).toLocaleDateString();
 	D('modificationEdit').title = metaData.modifiedts;		
-	D('postContent').value = metaData.content;
+	
+	if (typeof metaData.content === "string") {	
+		let block = appendBlock();
+		block.firstChild.value = metaData.content;
+	} else {
+		clearDOM(D('postContent'));
+		for (let i = 0; i < metaData.content.length; i++) {
+			let block = appendBlock();
+			block.firstChild.value = metaData.content[i].content;
+		}
+	}
 	D('postTitle').value = metaData.title;
 	
 	let url = new URL(window.location);
@@ -640,13 +661,36 @@ function fillEdit(metaData) {
 	loadPanel('post');
 }
 
+function appendBlock(type) {
+	let block = make('div');
+	let textbox = make('textarea');
+	textbox.style = "margin-top:20px; height:300px; width:100%";
+	textbox.placeholder = "Content...";
+	
+	let buttonPanel = make('div');
+	buttonPanel.style.fontSize = "0.85em";
+	buttonPanel.style.margin = "10px";
+	buttonPanel.style.display = "flex";
+	buttonPanel.style.justifyContent = "center";
+	block.appendChild(textbox);
+	buttonPanel.appendChild(make('button', "Delete"));
+	buttonPanel.appendChild(make('button', "Append text"));
+	buttonPanel.appendChild(make('button', "Append JS"));
+	block.appendChild(buttonPanel);
+	D('postContent').appendChild(block);
+	return block;
+}
+
 function cancelPost() {
 	D('editid').style.display = "none";
 	D('creationEdit').textContent = " - ";
 	D('creationEdit').title = "";
 	D('modificationEdit').textContent = " - ";
 	D('modificationEdit').title = "";	
-	D('postContent').value = "";
+	
+	clearDOM(D('postContent'));	
+	appendBlock();	
+	
 	D('postTitle').value = "";	
 	D('set-prev').value = "";
 	D('set-next').value = "";
