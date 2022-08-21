@@ -672,6 +672,7 @@ function appendBlock(type, parent) {
 	sponsBut.style.marginRight = "20px";
 	sponsBut.style.float = "left";
 	sponsBut.style.fontSize = "0.85em";
+	sponsBut.tabindex = "-1";
 	sponsBut.onclick = function() { toggle(this); }
 	buttonParent.appendChild(sponsBut);
 	
