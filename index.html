@@ -229,6 +229,7 @@ function hexToByteArray(hex) {
 // Global variables and macros; and initializers ///////////////////////////////////////////////////////////////////////
 
 var readMetaData;
+var editMetaData;
 var topPage = "browse";
 var DOMdisplayNames = {};
 var cacheDisplayNames = {};
@@ -378,7 +379,12 @@ function setupWebsocket(restart) {
 	
 	ws.on('queryPostsFromUser', function (data) { populateBrowse(data); });
 	
-	ws.on('queryPostResponse', function(data) { fillPost(data); });
+	ws.on('queryPostResponse', function(data) { 
+		if (editMetaData && editMetaData.postid == data.userid + "-" + data.createdts.toString()) {
+			fillEdit(data); 
+			editMetaData = "";
+		} else fillPost(data);
+	});
 	
 	ws.on('updatePostResponse', function(data) { 
 		if (!data.errMsg) {
@@ -418,18 +424,9 @@ function populateBrowse(data) {
 	
 	for (let i = 0; i < data.length; i++) {		
 		let postid = data[i].userid + "-" + data[i].createdts.toString();
-
-		// add to library button
-		let libBut = make('button', '+');
-		libBut.style = "margin-right:10px";
-		libBut.onclick = function() {
-			if (!D(postid)) addToLib(data[i], true);
-			flash(D(postid));
-		};
 			
 		let postli = make('li');
-		postli.style = "width:max-content; display:flex; align-items:center";
-		postli.appendChild(libBut);	
+		postli.style = "width:max-content; display:flex; align-items:center; min-width:360px";
 		postli.appendChild(fullLabel(data[i]));
 		D('discovery').appendChild(postli);
 	}
@@ -483,17 +480,6 @@ function makeMetaLabel(userid, createdts, modifiedts) {
 		postModified.title = modifiedts;
 		postMeta.appendChild(postModified);
 	}
-	
-	postMeta.appendChild(make('span', " | "));
-	let postLink = make('span', "🔗");
-	postLink.style.opacity = "0.25";
-	postLink.onclick = function() {
-		let url = new URL(window.location);
-		url.search = new URLSearchParams({postid:userid + "-" + createdts.toString()});
-		clickCopy(this, url.href);
-		event.stopPropagation();
-	};
-	postMeta.appendChild(postLink);
 	
 	return postMeta;
 }
@@ -630,10 +616,12 @@ function fillPost(metaData) {
 
 function fillEdit(metaData) {
 	if (!metaData) metaData = readMetaData;
+	if (!metaData.postid) metaData.postid = metaData.userid + "-" + metaData.createdts.toString();	
+	editMetaData = metaData;	
 	D('editid').style.display = "";
 	D('creationEdit').textContent = new Date(metaData.createdts).toLocaleDateString();
 	D('creationEdit').title = metaData.createdts;
-	if (metaData.createdts != metaData.modifiedts) {
+	if (metaData.modifiedts && metaData.createdts != metaData.modifiedts) {
 		D('modificationEdit').textContent = " - " + new Date(metaData.modifiedts).toLocaleDateString();
 		D('modificationEdit').title = metaData.modifiedts;
 	}	
@@ -642,12 +630,12 @@ function fillEdit(metaData) {
 	if (typeof metaData.content === "string") {	
 		let block = appendBlock();
 		block.firstChild.value = metaData.content;
-	} else {
+	} else if (metaData.content) {
 		for (let i = 0; i < metaData.content.length; i++) {
 			let block = appendBlock(metaData.content[i].type);
 			block.firstChild.value = metaData.content[i].content;
 		}
-	}
+	} 
 	D('postTitle').value = metaData.title;
 	
 	let url = new URL(window.location);
@@ -710,6 +698,7 @@ function appendBlock(type, parent) {
 }
 
 function cancelPost() {
+	editMetaData = null;	
 	D('editid').style.display = "none";
 	D('creationEdit').textContent = " - ";
 	D('creationEdit').title = "";
@@ -755,7 +744,7 @@ function addComment(commentData) {
 			}
 		}
 		
-		editBut.style = "padding:2px 8px; margin:2px; margin-left:5px;";				
+		editBut.style = "padding:2px 8px; margin:2px; margin-left:10px;";				
 		editBut.onclick = function() {
 			if (editPanel.style.display) {
 				editPanel.style.display = "";
@@ -933,7 +922,7 @@ function requestNames() {
 	if (ws) ws.emit('queryUsers', {userids});
 }
 
-function fullLabel(data) {
+function fullLabel(data, library) {
 	let postid = data.userid + "-" + data.createdts.toString();	
 	
 	let postTitle = make('div', data.title);
@@ -942,19 +931,74 @@ function fullLabel(data) {
 	postTitle.style.textOverflow = "ellipsis";
 	
 	let postMeta = makeMetaLabel(data.userid, data.createdts, data.modifiedts);
+	
+	let actions = make('div');
+	actions.style = "position:absolute; top:0px; right:0px; display:none";
+	
 	if (data.userid == XNO.address) {
 		let editBut = make('button', "Edit");
-		editBut.style = "padding:2px 8px; margin:2px; margin-left:5px;";
+		editBut.classList.add("left");
+		//editBut.style = "padding:2px 8px; margin:2px; margin-left:5px;";
 		
 		// TODO		
-		// postMeta.appendChild(editBut);		
+		
+		editBut.onclick = function() {
+			event.stopPropagation();
+			fillEdit(data);
+			console.log(data);
+			ws.emit('queryPost', { userid: data.userid, createdts: data.createdts });
+		}
+		actions.appendChild(editBut);		
+	}
+	
+	let postLink = make('button', "Link");
+	if (data.userid == XNO.address) postLink.classList.add("center");
+	else {
+		postLink.classList.add("left");
+		postLink.style.marginRight = "4px";
+	}
+	postLink.onclick = function() {
+		event.stopPropagation();
+		let url = new URL(window.location);
+		url.search = new URLSearchParams({postid});
+		clickCopy(this, url.href);
+	};
+	actions.appendChild(postLink);
+	
+	if (!library) {
+		let addBut = make('button', "+");
+		addBut.classList.add("right");
+		
+		addBut.onclick = function() {
+			event.stopPropagation();
+			if (!D(postid)) addToLib(data, true);
+			flash(D(postid));
+		}
+		actions.appendChild(addBut);	
+	} else {
+		let unsubBut = make("button", "x");
+		unsubBut.classList.add("right");
+		unsubBut.onclick = function() {
+			event.stopPropagation();
+			label.parentNode.parentNode.removeChild(label.parentNode);
+			if (ws) ws.emit('deleteLibrary', {postid:label.parentNode.id});
+			if (!D('library').children[0]) D('libraryPlaceholder').style.display = "";
+		};
+		actions.appendChild(unsubBut);
 	}
 	
 	let label = make('div');
 	label.appendChild(postTitle);
 	label.appendChild(postMeta);
+	label.appendChild(actions);
 	
-	label.style = "overflow:hidden; cursor:pointer; padding:5px; flex-grow:1";
+	label.style = "overflow:hidden; cursor:pointer; padding:5px; flex-grow:1; position:relative";
+	label.onmouseenter = function() {
+		actions.style.display = "";
+	}
+	label.onmouseleave = function() {
+		actions.style.display = "none";
+	}
 	label.onclick = function() {
 		loadPanel('read');
 		fillPost(data);
@@ -975,18 +1019,9 @@ function makeLibLi(metaData, accessts) {
 		metaData.createdts = parseInt(split[1]);
 	} else libli.id = metaData.userid + "-" + metaData.createdts.toString();
 	
-	let unsubBut = make("button", "x");
-	unsubBut.style.marginRight = "5px";
-	unsubBut.onclick = function() {
-		libli.parentNode.removeChild(libli);
-		if (ws) ws.emit('deleteLibrary', {postid:libli.id});
-		if (!D('library').children[0]) D('libraryPlaceholder').style.display = "";
-	};	
-	
 	libli.style = "white-space:nowrap; display:flex; align-items:center;";
 	if (!accessts) libli.style.fontWeight = "bold";
-	libli.appendChild(unsubBut);	
-	libli.appendChild(fullLabel(metaData));	
+	libli.appendChild(fullLabel(metaData, true));	
 	if (D('library').children[0]) D('library').insertBefore(libli, D('library').children[0]);
 	else {
 		D('library').appendChild(libli);
