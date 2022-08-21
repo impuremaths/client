@@ -348,7 +348,8 @@ function setupWebsocket(restart) {
 	
 	ws.on('queryLibraryResponse', function(data) {
 		clearDOM(D('library'));
-		data.sort(function(x, y) { return x.pushedts - y.pushedts});
+		data.sort(function(x, y) { return Math.round(x.pushedts - y.pushedts); });
+		console.log(data);
 		for (let i = 0; i < data.length; i++) {
 			makeLibLi(data[i], data[i].lastaccessedts);
 		}
@@ -600,7 +601,7 @@ function fillPost(metaData) {
 			for (let i = 0; i < metaData.content.length; i++) {
 				if (metaData.content[i].type == "js") {
 					let jsbox = make("iframe");
-					jsbox.style = "width:100%; height:60vh";
+					jsbox.style = "width:100%; height:60vh; border:3px solid #ddd; border-radius:5px";
 					jsbox.sandbox = "allow-scripts";			
 					jsbox.srcdoc = metaData.content[i].content;
 					jsbox.style.marginBottom = "20px";
