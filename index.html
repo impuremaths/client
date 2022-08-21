@@ -679,23 +679,28 @@ function appendBlock(type, parent) {
 	textbox.title = type;
 	
 	let buttonPanel = make('div');
-	buttonPanel.style.fontSize = "0.85em";
 	buttonPanel.style.margin = "10px";
 	buttonPanel.style.display = "flex";
-	buttonPanel.style.justifyContent = "center";
+	buttonPanel.style.justifyContent = "right";
 	block.appendChild(textbox);
 	
 	let delBut = make('button', "Delete");
+	delBut.classList.add("left");
 	delBut.onclick = function() {
 		if (D('postContent').children.length > 1) D('postContent').removeChild(block);
 	};
 	buttonPanel.appendChild(delBut);
 	
-	let textBut = make('button', "Append text");
+	let textBut = make('button', "Add text");
+	textBut.style.borderRadius = "5px";
+	textBut.style.marginLeft = "4px";
+	textBut.style.marginRight = "4px";
+	textBut.style.fontSize = "0.85em";
 	textBut.onclick = function() { appendBlock("text", block); }
 	buttonPanel.appendChild(textBut);
 	
-	let jsBut = make('button', "Append JS");
+	let jsBut = make('button', "Add JS");
+	jsBut.classList.add("right");
 	jsBut.onclick = function() { appendBlock("js", block) };
 	buttonPanel.appendChild(jsBut);
 	
