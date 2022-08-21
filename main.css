@@ -195,6 +195,13 @@ button.left {
 	border-bottom-right-radius:5px;
 }
 
+button.center {
+	font-size:0.85em;
+	border-radius:5px;
+	margin-left:4px;
+	margin-right:4px;
+}
+
 button.right {
 	font-size:0.85em;
 	border-top-left-radius:5px;
