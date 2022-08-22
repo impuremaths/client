@@ -31,7 +31,7 @@
 				</div>
 				
 				<div style="display:flex; justify-content:space-between; margin-top:15px; margin-bottom:20px">
-					<input id="seed" placeholder="Private seed (save securely) ..." style="padding-right:30px; flex-grow:1; flex-basis:20px;" type="password" autocomplete="off" onclick="this.select()" oninput="importSeed();">
+					<input id="seed" placeholder="Private seed (save securely)..." style="padding-right:30px; flex-grow:1; flex-basis:20px;" type="password" autocomplete="off" onclick="this.select()" oninput="importSeed();">
 					<button  tabindex="-1" class="close-icon" onclick="closeCopy(this.previousElementSibling)"></button>			
 					<button id="show" tabindex="-1" style="font-size:0.85em; margin-left:10px" onclick="toggleVisibility()">Show</button>
 				</div>
@@ -41,7 +41,7 @@
 				<div class='address' style="margin-bottom:15px;" id="address" onclick="clickCopy(this, this.textContent)"> - </div>
 			
 				<div style="display:flex; justify-content:space-between;">
-					<input placeHolder="Public display name ..." id="set-name" autocomplete="off"
+					<input placeHolder="Public display name..." id="set-name" autocomplete="off"
 					       style="padding-right:30px; flex-grow:1;" type="text"autocapitalize="off" maxlength="64"
 					       onkeyup="if (event.keyCode == 13) setData('name'); if (event.keyCode == 27) this.value = '';">
 					<button  tabindex="-1" class="close-icon" onclick="closeCopy(this.previousElementSibling)"></button>
@@ -96,19 +96,19 @@
 					
 			<div style="display:flex; margin-top:40px; width:100%">
 			<div style="display:flex; justify-content:space-between; flex-grow:1">
-				<input placeHolder="Previous post link ..." id="set-prev" autocomplete="off"
+				<input placeHolder="Previous post link..." id="set-prev" autocomplete="off"
 					   style="padding-right:30px; flex-grow:1;" type="text" autocapitalize="off" onkeyup="if (event.keyCode == 27) this.value = '';">
 				<button tabindex="-1" class="close-icon" onclick="closeCopy(this.previousElementSibling)"></button>
 			</div>
 			<div style="width:10px"></div>
 			<div style="display:flex; justify-content:space-between; flex-grow:1">
-				<input placeHolder="Next post link ..." id="set-next" autocomplete="off"
+				<input placeHolder="Next post link..." id="set-next" autocomplete="off"
 					   style="padding-right:30px; flex-grow:1;" type="text" autocapitalize="off" onkeyup="if (event.keyCode == 27) this.value = '';">
 				<button tabindex="-1" class="close-icon" onclick="closeCopy(this.previousElementSibling)"></button>
 			</div>
 			</div>
 			
-			<div style="display:flex; margin-top:15px; width:100%; justify-content:space-between;">
+			<div style="display:flex; margin:10px; justify-content:space-between;">
 			<button class="active" onclick="toggle(this)" style="font-size:0.85em;">Reciprocate Link</button>
 			<button class="active" onclick="toggle(this)" style="font-size:0.85em;">Reciprocate Link </button>
 			</div>
@@ -122,12 +122,11 @@
 			<div style="flex-basis:1px; flex-grow:2; margin-right:50px;">
 				<div id="readTitle" style="font-weight:bold; font-size:1.1em">Title</div>	
 				<div style="font-size:0.8em"><a id="author" onclick="browseAuthor(this.title)" style="cursor:pointer">Author</a> | <span id="creation">Post date</span><span id="modification"> - Modified date</span>
-				<button id="edit" onclick="fillEdit()" autocomplete="off" style="display:none; padding:2px 8px; margin:2px; margin-left:5px;">Edit</button></div>
+				<button id="edit" onclick="fillEdit()" autocomplete="off" style="display:none; padding:2px 8px; margin:2px; margin-left:10px;">Edit</button></div>
 				
-				<br>
-				<div id="readContent" style="white-space:pre-wrap; margin-bottom:40px">Content</div>
+				<div id="readContent" style="white-space:pre-wrap; margin-bottom:40px; margin-top:40px">Content</div>
 				
-				<div style="background-color:#ddd; height:3px; border-radius:20px; margin:30px;"></div>
+				<div style="background-color:#e4e7e7; height:2px; border-radius:20px; margin:30px;"></div>
 				
 				<textarea id="commentContent" style="margin-top:10px; margin-bottom:10px; height:80px; width:100%; display:none" autocomplete="off" onkeydown="commentKeypress()" oninput="commentKeypress()" placeholder="Comment..."></textarea>
 				<button id="comment" style="margin-top:5px; font-size:0.85em" onclick="comment()" disabled>Comment</button>
@@ -583,7 +582,7 @@ function fillPost(metaData) {
 			for (let i = 0; i < metaData.content.length; i++) {
 				if (metaData.content[i].type == "js") {
 					let jsbox = make("iframe");
-					jsbox.style = "width:100%; height:60vh; border:3px solid #ddd; border-radius:5px";
+					jsbox.style = "width:100%; height:60vh; border:2px solid #e4e7e7; border-radius:5px";
 					jsbox.sandbox = "allow-scripts";			
 					jsbox.srcdoc = metaData.content[i].content;
 					jsbox.style.marginBottom = "20px";
@@ -696,7 +695,7 @@ function appendBlock(type, parent) {
 	delBut.classList.add("right");
 	delBut.onclick = function() {
 		if (D('postContent').children.length > 1) D('postContent').removeChild(block);
-		else alert("You can't remove the last element! Add another first.");
+		else alert("At least one element required! Add a replacement first.");
 	};
 	buttonPanel.appendChild(delBut);
 	
