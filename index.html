@@ -120,9 +120,6 @@
 		
 		<div id="read" style="display:none; margin-top:20px">
 			<div style="flex-basis:1px; flex-grow:2; margin-right:50px;">
-				<div id="readTitle" style="font-weight:bold; font-size:1.1em">Title</div>	
-				<div style="font-size:0.8em"><a id="author" onclick="browseAuthor(this.title)" style="cursor:pointer">Author</a> | <span id="creation">Post date</span><span id="modification"> - Modified date</span>
-				<button id="edit" onclick="fillEdit()" autocomplete="off" style="display:none; padding:2px 8px; margin:2px; margin-left:10px;">Edit</button></div>
 				
 				<div id="readContent" style="white-space:pre-wrap; margin-bottom:40px; margin-top:40px">Content</div>
 				
@@ -136,8 +133,11 @@
 			</div>			
 			
 	
-			<div style="flex-basis:1px; flex-grow:1; margin-top:20px; max-width:360px">
-				<strong>Map</strong>
+			<div style="flex-basis:1px; flex-grow:1; max-width:360px">
+			
+				<div id="readTitle" style="font-weight:bold; font-size:1.1em">Title</div>	
+				<div style="font-size:0.8em"><a id="author" onclick="browseAuthor(this.title)" style="cursor:pointer">Author</a> | <span id="creation">Post date</span><span id="modification"> - Modified date</span><button id="edit" onclick="fillEdit()" autocomplete="off" style="display:none; padding:2px 8px; margin:2px; margin-left:10px;">Edit</button></div>
+				
 				<ul id="mapul"></ul>
 			</div>
 		</div>
@@ -227,11 +227,12 @@ function hexToByteArray(hex) {
 
 // Global variables and macros; and initializers ///////////////////////////////////////////////////////////////////////
 
-var readMetaData;
-var editMetaData;
+var readPostid = "";
+var editPostid = "";
 var topPage = "browse";
 var DOMdisplayNames = {};
 var cacheDisplayNames = {};
+var postCache = {};
 const enc = new TextEncoder();
 const dec = new TextDecoder();
 function D(string) { return document.getElementById(string); }
@@ -254,8 +255,7 @@ if (localSeed) {
 var queryString = window.location.search;
 console.log(queryString);
 var urlParams = new URLSearchParams(queryString);
-var postid = urlParams.get('postid');
-console.log(postid);
+var urlPostid = urlParams.get('postid');
 
 
 // Websocket code ///////////////////////////////////////////////////////////////////////
@@ -281,13 +281,13 @@ function setupWebsocket(restart) {
 			ws.emit('authenticateUser', loginPacket);
 			console.log(loginPacket);
 		}
-		if (postid) {
+		if (urlPostid) {
 			loadPanel("read");
-			let split = postid.split("-");
+			let split = urlPostid.split("-");
 			let userid = split[0];
 			let createdts = parseInt(split[1]);		
 			ws.emit('queryPost', { userid: userid, createdts: createdts });	
-			postid = "";
+			urlPostid = "";
 		}
 	};
 	ws.onclose = function() { 
@@ -347,7 +347,8 @@ function setupWebsocket(restart) {
 		data.sort(function(x, y) { return Math.round(x.pushedts - y.pushedts); });
 		console.log(data);
 		for (let i = 0; i < data.length; i++) {
-			makeLibLi(data[i], data[i].lastaccessedts);
+			cachePost(data[i]);
+			makeLibLi(data[i].postid, data[i].lastaccessedts);
 		}
 		requestNames();
 	});
@@ -379,15 +380,17 @@ function setupWebsocket(restart) {
 	ws.on('queryPostsFromUser', function (data) { populateBrowse(data); });
 	
 	ws.on('queryPostResponse', function(data) { 
-		if (editMetaData && editMetaData.postid == data.userid + "-" + data.createdts.toString()) {
-			fillEdit(data); 
-			editMetaData = "";
-		} else fillPost(data);
+		cachePost(data);
+		if (editPostid == data.postid) {
+			fillEdit(data.postid); 
+			editPostid = "";
+		} else fillPost(data.postid);
 	});
 	
 	ws.on('updatePostResponse', function(data) { 
+		cachePost(data);
 		if (!data.errMsg) {
-			fillPost(data);
+			fillPost(data.postid);
 			cancelPost();
 		} else console.log(data);
 	});
@@ -401,13 +404,13 @@ function setupWebsocket(restart) {
 	});
 	
 	ws.on('queryPostChainResponse', function(data) { 
-		console.log(data);
 		clearDOM(D('mapul'));
-		for (let x in data) {			
+		for (let x in data) {	
+			cachePost(data[x]);		
 			let postli = make('li');
 			postli.style = "white-space:nowrap";
-			if (readMetaData.postid == data[x].userid + "-" + data[x].createdts.toString()) postli.style.paddingLeft = "15px";
-			postli.appendChild(fullLabel(data[x]));
+			if (readPostid == data[x].postid) activeBar(postli);
+			postli.appendChild(fullLabel(data[x].postid));
 			D('mapul').appendChild(postli);	
 		}
 	});
@@ -421,12 +424,13 @@ function populateBrowse(data) {
 	D('loadingMsg').style.display = "none";
 	clearDOM(D('discovery'));
 	
-	for (let i = 0; i < data.length; i++) {		
-		let postid = data[i].userid + "-" + data[i].createdts.toString();
-			
+	for (let i = 0; i < data.length; i++) {	
+		cachePost(data[i]);			
 		let postli = make('li');
+		postli.id = data[i].postid + "-disc";
 		postli.style = "width:max-content; display:flex; align-items:center; min-width:360px";
-		postli.appendChild(fullLabel(data[i]));
+		if (readPostid == data[i].postid) activeBar(postli);
+		postli.appendChild(fullLabel(data[i].postid));
 		D('discovery').appendChild(postli);
 	}
 	
@@ -552,11 +556,46 @@ function loadPanel(type) {
 	if (type != "post") topPage = type;
 }
 
-function fillPost(metaData) {
-	readMetaData = metaData;	
+function cachePost(metaData) {
 	if (!metaData.postid) metaData.postid = metaData.userid + "-" + metaData.createdts.toString();	
-	let postid = metaData.postid;
-	if (D(postid)) flash(D(postid));	
+	if (!metaData.userid) {
+		let split = metaData.postid.split("-");
+		metaData.userid = split[0];
+		metaData.createdts = parseInt(split[1]);
+	}
+	
+	if (!postCache[metaData.postid]) postCache[metaData.postid] = {};
+
+	postCache[metaData.postid].title = metaData.title;
+	postCache[metaData.postid].userid = metaData.userid;
+	postCache[metaData.postid].createdts = metaData.createdts;
+	postCache[metaData.postid].postid = metaData.postid;
+
+	if (metaData.modifiedts) postCache[metaData.postid].modifiedts = metaData.modifiedts;
+	if (metaData.content) postCache[metaData.postid].content = metaData.content;
+	if (metaData.comments) postCache[metaData.postid].comments = metaData.comments;
+	if (metaData.prev_) postCache[metaData.postid].prev_ = metaData.prev_;
+	if (metaData.next_) postCache[metaData.postid].next_ = metaData.next_;
+}
+
+function activeBar(elt) {
+	elt.style.borderLeft = "solid 4px #888";		
+	elt.style.paddingLeft = "5px";
+}
+
+function removeActiveBar(elt) {
+	elt.style.borderLeft = "";	
+	elt.style.paddingLeft = "";
+}
+
+function fillPost(postid) {
+	if (D(readPostid)) removeActiveBar(D(readPostid));
+	if (D(readPostid + "-disc")) removeActiveBar(D(readPostid + "-disc"));
+	readPostid = postid;
+	if (D(postid)) activeBar(D(postid));
+	if (D(postid + "-disc")) activeBar(D(postid + "-disc"));
+	
+	let metaData = postCache[postid];
 	queueDOMdisplayName(metaData.userid, D('author'));
 	
 	D('readTitle').textContent = metaData.title;
@@ -613,10 +652,10 @@ function fillPost(metaData) {
 	ws.emit("queryPostChain", {userid:metaData.userid, createdts:metaData.createdts });
 }
 
-function fillEdit(metaData) {
-	if (!metaData) metaData = readMetaData;
-	if (!metaData.postid) metaData.postid = metaData.userid + "-" + metaData.createdts.toString();	
-	editMetaData = metaData;	
+function fillEdit(postid) {
+	if (!postid) postid = readPostid;
+	editPostid = postid;
+	let metaData = postCache[postid];
 	D('editid').style.display = "";
 	D('creationEdit').textContent = new Date(metaData.createdts).toLocaleDateString();
 	D('creationEdit').title = metaData.createdts;
@@ -658,7 +697,7 @@ function appendBlock(type, parent) {
 		textbox.style.fontFamily = "Segoe UI, Source Sans Pro, Roboto, Helvetica, sans-serif";
 		textbox.placeholder = "Simple text...";
 	} else if (type == "js") {
-		textbox.placeholder = "HTML (JS scripts allowed)...";	
+		textbox.placeholder = "HTML (JS scripts enabled)...";	
 	}
 	textbox.title = type;
 	
@@ -667,7 +706,7 @@ function appendBlock(type, parent) {
 	buttonParent.style.display = "flex";
 	buttonParent.style.justifyContent = "space-between";
 	
-	let sponsBut = make('button', "Sponsor Only");
+	let sponsBut = make('button', "Sponsors Only");
 	sponsBut.style.marginRight = "20px";
 	sponsBut.style.float = "left";
 	sponsBut.style.fontSize = "0.85em";
@@ -678,8 +717,8 @@ function appendBlock(type, parent) {
 	let buttonPanel = make('div');
 	buttonPanel.style.display = "flex";
 	buttonPanel.style.justifyContent = "right";
-	block.appendChild(textbox);
-	
+	buttonPanel.style.opacity = "0.8";
+	block.appendChild(textbox);	
 	
 	let textBut = make('button', "Add Text");
 	textBut.classList.add("left");
@@ -711,7 +750,7 @@ function appendBlock(type, parent) {
 }
 
 function cancelPost() {
-	editMetaData = null;	
+	editPostid = "";
 	D('editid').style.display = "none";
 	D('creationEdit').textContent = " - ";
 	D('creationEdit').title = "";
@@ -892,13 +931,10 @@ function makeSubLi(userid, displayname) {
 	subli.id = userid;
 	subli.onclick = function() {
 		loadPanel('browse');
-		if (ws) {		
+		if (ws) {
 			D('loadingMsg').style.display = "";
-			if (userid == XNO.address) {
-				D('subscribe').style.display = "none";
-			} else {
-				D('subscribe').style.display = "";
-			}
+			if (userid == XNO.address) D('subscribe').style.display = "none";
+			else D('subscribe').style.display = "";
 			D('info').textContent = funName(userid);
 			D('info').title = userid;
 			ws.emit("queryPostsFromUser", {userid});
@@ -935,9 +971,8 @@ function requestNames() {
 	if (ws) ws.emit('queryUsers', {userids});
 }
 
-function fullLabel(data, library) {
-	let postid = data.userid + "-" + data.createdts.toString();	
-	
+function fullLabel(postid, library) {
+	let data = postCache[postid];
 	let postTitle = make('div', data.title);
 	postTitle.title = data.title;
 	postTitle.style.overflow = "hidden";
@@ -951,14 +986,10 @@ function fullLabel(data, library) {
 	if (data.userid == XNO.address) {
 		let editBut = make('button', "Edit");
 		editBut.classList.add("left");
-		//editBut.style = "padding:2px 8px; margin:2px; margin-left:5px;";
-		
-		// TODO		
 		
 		editBut.onclick = function() {
 			event.stopPropagation();
-			fillEdit(data);
-			console.log(data);
+			fillEdit(postid);
 			ws.emit('queryPost', { userid: data.userid, createdts: data.createdts });
 		}
 		actions.appendChild(editBut);		
@@ -984,7 +1015,7 @@ function fullLabel(data, library) {
 		
 		addBut.onclick = function() {
 			event.stopPropagation();
-			if (!D(postid)) addToLib(data, true);
+			if (!D(postid)) addToLib(postid, true);
 			flash(D(postid));
 		}
 		actions.appendChild(addBut);	
@@ -1014,27 +1045,21 @@ function fullLabel(data, library) {
 	}
 	label.onclick = function() {
 		loadPanel('read');
-		fillPost(data);
+		fillPost(postid);
 		ws.emit('queryPost', { userid: data.userid, createdts: data.createdts });
-		if (!D(postid)) addToLib(data);
+		if (!D(postid)) addToLib(postid);
 		else D(postid).style.fontWeight = "";
 		flash(this);
 	}
 	return label;
 }
 
-function makeLibLi(metaData, accessts) {
+function makeLibLi(postid, accessts) {
 	let libli = make('li');
-	if (metaData.postid) {
-		libli.id = metaData.postid;
-		let split = metaData.postid.split("-");
-		metaData.userid = split[0];
-		metaData.createdts = parseInt(split[1]);
-	} else libli.id = metaData.userid + "-" + metaData.createdts.toString();
-	
-	libli.style = "white-space:nowrap; display:flex; align-items:center;";
+	libli.id = postid;
+	libli.style = "white-space:nowrap";
 	if (!accessts) libli.style.fontWeight = "bold";
-	libli.appendChild(fullLabel(metaData, true));	
+	libli.appendChild(fullLabel(postid, true));	
 	if (D('library').children[0]) D('library').insertBefore(libli, D('library').children[0]);
 	else {
 		D('library').appendChild(libli);
@@ -1042,7 +1067,8 @@ function makeLibLi(metaData, accessts) {
 	}
 }
 
-function addToLib(metaData, addOnly) {
+function addToLib(postid, addOnly) {
+	let metaData = postCache[postid];
 	let ts = Date.now();
 	if (XNO.address && ws) {
 		let libdata = { posts: [{ userid:metaData.userid, createdts:metaData.createdts, pushedts:ts }] };
@@ -1053,7 +1079,7 @@ function addToLib(metaData, addOnly) {
 	}
 	let accessedts;
 	if (!addOnly) accessedts = ts;
-	makeLibLi(metaData, accessedts);
+	makeLibLi(postid, accessedts);
 }
 
 function showCurrent() {
