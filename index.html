@@ -589,8 +589,8 @@ function removeActiveBar(elt) {
 }
 
 function fillPost(postid) {
-	if (D(readPostid)) removeActiveBar(D(readPostid));
-	if (D(readPostid + "-disc")) removeActiveBar(D(readPostid + "-disc"));
+	if (readPostid && D(readPostid)) removeActiveBar(D(readPostid));
+	if (readPostid && D(readPostid + "-disc")) removeActiveBar(D(readPostid + "-disc"));
 	readPostid = postid;
 	if (D(postid)) activeBar(D(postid));
 	if (D(postid + "-disc")) activeBar(D(postid + "-disc"));
@@ -1171,7 +1171,10 @@ function funName(userid, pencil) {
 											+ animals[parseInt(XNO.pubFromAddr(userid).substring(0, 10), 16) % animals.length];
 }
 
-function D(string) { return document.getElementById(string); }
+function D(string) { 
+if (!string) console.error("Empty dom string");
+return document.getElementById(string); 
+}
 
 function toggleSubAccordion(but) {
 	let obj = but.parentNode.lastElementChild;
