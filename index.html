@@ -1155,7 +1155,10 @@ window.addEventListener('copy', function(e) {
 });
 
 window.addEventListener('keydown', function(evt) {
-	if (evt.keyCode == 27) loadPanel('browse');		
+	if (document.activeElement.tagName.toLowerCase() != 'input' && document.activeElement.tagName.toLowerCase() != 'textarea' && (evt.keyCode == 27 || evt.keyCode == 8)) {
+		evt.preventDefault();
+		loadPanel('browse');		
+	}
 });
 
 // UI helper library ///////////////////////////////////////////////////////////////////////
