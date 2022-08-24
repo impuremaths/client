@@ -579,7 +579,7 @@ function cachePost(metaData) {
 }
 
 function activeBar(elt) {
-	elt.style.borderLeft = "solid 4px #888";		
+	elt.style.borderLeft = "solid 4px #aaa";		
 	elt.style.paddingLeft = "5px";
 }
 
@@ -621,7 +621,13 @@ function fillPost(postid) {
 			for (let i = 0; i < metaData.content.length; i++) {
 				if (metaData.content[i].type == "js") {
 					let jsbox = make("iframe");
-					jsbox.style = "width:100%; height:60vh; border-top:0px; border-bottom:0px; border-left:2px solid #e4e7e7; border-right:0px;";
+					jsbox.style = "width:100%; height:60vh; border-top:0px; border-bottom:0px; border-left:4px solid white; border-right:0px; border-radius:5px";
+					jsbox.onmouseenter = function() {
+						jsbox.style.borderColor = "#aaa";
+					}
+					jsbox.onmouseleave = function() {
+						jsbox.style.borderColor = "transparent";
+					}
 					jsbox.sandbox = "allow-scripts";			
 					jsbox.srcdoc = metaData.content[i].content;
 					jsbox.style.marginBottom = "20px";
