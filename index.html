@@ -621,7 +621,7 @@ function fillPost(postid) {
 			for (let i = 0; i < metaData.content.length; i++) {
 				if (metaData.content[i].type == "js") {
 					let jsbox = make("iframe");
-					jsbox.style = "width:100%; height:60vh; border:2px solid #e4e7e7; border-radius:5px";
+					jsbox.style = "width:100%; height:60vh; border-top:0px; border-bottom:0px; border-left:2px solid #e4e7e7; border-right:0px;";
 					jsbox.sandbox = "allow-scripts";			
 					jsbox.srcdoc = metaData.content[i].content;
 					jsbox.style.marginBottom = "20px";
@@ -1058,7 +1058,8 @@ function makeLibLi(postid, accessts) {
 	let libli = make('li');
 	libli.id = postid;
 	libli.style = "white-space:nowrap";
-	if (!accessts) libli.style.fontWeight = "bold";
+	if (!accessts) libli.style.fontWeight = "bold";	
+	if (postid == readPostid) activeBar(libli);
 	libli.appendChild(fullLabel(postid, true));	
 	if (D('library').children[0]) D('library').insertBefore(libli, D('library').children[0]);
 	else {
