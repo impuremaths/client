@@ -135,7 +135,7 @@
 	
 			<div style="flex-basis:1px; flex-grow:1; max-width:360px">
 			
-				<div id="readTitle" style="font-weight:bold; font-size:1.1em">Title</div>	
+				<div id="readTitle" style="font-weight:bold; font-size:1.1em; margin-bottom:5px;">Title</div>	
 				<div style="font-size:0.8em"><a id="author" onclick="browseAuthor(this.title)" style="cursor:pointer">Author</a> | <span id="creation">Post date</span><span id="modification"> - Modified date</span><button id="edit" onclick="fillEdit(); queryPost()" autocomplete="off" style="display:none; padding:2px 8px; margin:2px; margin-left:10px;">Edit</button></div>
 				
 				<ul id="mapul"></ul>
@@ -711,6 +711,7 @@ function appendBlock(type, parent) {
 		textbox.placeholder = "Markdown...";
 	}
 	textbox.title = type;
+	block.appendChild(textbox);	
 	
 	let buttonParent = make('div');
 	buttonParent.style.margin = "10px";
@@ -729,19 +730,19 @@ function appendBlock(type, parent) {
 	buttonPanel.style.display = "flex";
 	buttonPanel.style.justifyContent = "right";
 	buttonPanel.style.opacity = "0.8";
-	block.appendChild(textbox);	
 	
 	let textBut = make('button', "Add Text");
 	textBut.classList.add("left");
 	textBut.onclick = function() { appendBlock("text", block); }
 	buttonPanel.appendChild(textBut);
 	
-	let mdBut = make('button', "Add Markdown");
+	let mdBut = make('button', "Markdown");
 	mdBut.classList.add("center");
+	mdBut.style.marginRight = "0px";
 	mdBut.onclick = function() { appendBlock("md", block); }
 	buttonPanel.appendChild(mdBut);
 	
-	let jsBut = make('button', "Add HTML/JS");
+	let jsBut = make('button', "HTML/JS");
 	jsBut.classList.add("center");
 	jsBut.onclick = function() { appendBlock("js", block) };
 	buttonPanel.appendChild(jsBut);
@@ -762,6 +763,7 @@ function appendBlock(type, parent) {
 	for (let i = 0; i < buttonPanel.children.length; i++) {
 		buttonPanel.children[i].tabIndex = -1;
 	}
+	textbox.focus();
 	return block;
 }
 
