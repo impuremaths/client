@@ -729,7 +729,6 @@ function appendBlock(type, parent) {
 	let buttonPanel = make('div');
 	buttonPanel.style.display = "flex";
 	buttonPanel.style.justifyContent = "right";
-	buttonPanel.style.opacity = "0.8";
 	
 	let textBut = make('button', "Add Text");
 	textBut.classList.add("left");
@@ -942,40 +941,6 @@ function importSeed() {
 	}
 }
 
-function makeSubLi(userid, displayname) {
-	let name = funName(userid);
-	if (displayname) name = displayname;
-	let subli = make("li");
-	subli.id = userid;
-	subli.onclick = function() {
-		loadPanel('browse');
-		if (ws) {
-			D('loadingMsg').style.display = "";
-			if (userid == XNO.address) D('subscribe').style.display = "none";
-			else D('subscribe').style.display = "";
-			D('info').textContent = funName(userid);
-			D('info').title = userid;
-			ws.emit("queryPostsFromUser", {userid});
-		}
-	};
-	subli.style = "cursor:pointer; width:max-content;";
-	
-	let unsubBut = make("button", "x");
-	unsubBut.style.marginRight = "10px";
-	unsubBut.onclick = function() {
-		event.stopPropagation();
-		subli.parentNode.removeChild(subli);
-		if (ws) ws.emit('unsubscribe', {userid});
-	};	
-	
-	subli.appendChild(unsubBut);
-	let nameSpan = make('span', name);
-	subli.appendChild(nameSpan);
-	queueDOMdisplayName(userid, nameSpan);
-	
-	D('subscriptions').appendChild(subli);
-}
-
 function queueDOMdisplayName(userid, elt) {
 	if (!DOMdisplayNames[userid]) DOMdisplayNames[userid] = [elt];
 	else DOMdisplayNames[userid].push(elt);
@@ -997,6 +962,55 @@ function queryPost(postid) {
 	ws.emit('queryPost', { userid: userid, createdts: createdts });	
 }
 
+function makeSubLi(userid, displayname) {
+	let name = funName(userid);
+	if (displayname) name = displayname;
+	let subli = make("li");
+	subli.id = userid;
+	subli.onclick = function() {
+		loadPanel('browse');
+		if (ws) {
+			D('loadingMsg').style.display = "";
+			if (userid == XNO.address) D('subscribe').style.display = "none";
+			else D('subscribe').style.display = "";
+			D('info').textContent = funName(userid);
+			D('info').title = userid;
+			ws.emit("queryPostsFromUser", {userid});
+		}
+	};
+	subli.style = "cursor:pointer; width:100%; padding:3px; position:relative";
+	
+	
+	let actions = make('div');
+	actions.style = "position:absolute; top:0px; right:0px; display:none; opacity:0.8";
+	
+	if (userid != XNO.address) {
+		let unsubBut = make("button", "x");
+		unsubBut.style.marginRight = "10px";
+		unsubBut.onclick = function() {
+			event.stopPropagation();
+			subli.parentNode.removeChild(subli);
+			if (ws) ws.emit('unsubscribe', {userid});
+		};	
+		actions.appendChild(unsubBut);
+	}
+	
+	subli.appendChild(actions);
+	
+	subli.onmouseenter = function() {
+		actions.style.display = "";
+	}
+	subli.onmouseleave = function() {
+		actions.style.display = "none";
+	}
+	
+	let nameSpan = make('span', name);
+	subli.appendChild(nameSpan);
+	queueDOMdisplayName(userid, nameSpan);
+	
+	D('subscriptions').appendChild(subli);
+}
+
 function fullLabel(postid, library) {
 	let data = postCache[postid];
 	let postTitle = make('div', data.title);
@@ -1007,7 +1021,7 @@ function fullLabel(postid, library) {
 	let postMeta = makeMetaLabel(data.userid, data.createdts, data.modifiedts);
 	
 	let actions = make('div');
-	actions.style = "position:absolute; top:0px; right:0px; display:none";
+	actions.style = "position:absolute; top:0px; right:0px; display:none; opacity:0.8";
 	
 	if (data.userid == XNO.address) {
 		let editBut = make('button', "Edit");
