@@ -136,7 +136,7 @@
 			<div style="flex-basis:1px; flex-grow:1; max-width:360px">
 			
 				<div id="readTitle" style="font-weight:bold; font-size:1.1em">Title</div>	
-				<div style="font-size:0.8em"><a id="author" onclick="browseAuthor(this.title)" style="cursor:pointer">Author</a> | <span id="creation">Post date</span><span id="modification"> - Modified date</span><button id="edit" onclick="fillEdit()" autocomplete="off" style="display:none; padding:2px 8px; margin:2px; margin-left:10px;">Edit</button></div>
+				<div style="font-size:0.8em"><a id="author" onclick="browseAuthor(this.title)" style="cursor:pointer">Author</a> | <span id="creation">Post date</span><span id="modification"> - Modified date</span><button id="edit" onclick="fillEdit(); queryPost()" autocomplete="off" style="display:none; padding:2px 8px; margin:2px; margin-left:10px;">Edit</button></div>
 				
 				<ul id="mapul"></ul>
 			</div>
@@ -283,10 +283,7 @@ function setupWebsocket(restart) {
 		}
 		if (urlPostid) {
 			loadPanel("read");
-			let split = urlPostid.split("-");
-			let userid = split[0];
-			let createdts = parseInt(split[1]);		
-			ws.emit('queryPost', { userid: userid, createdts: createdts });	
+			queryPost(urlPostid);
 			urlPostid = "";
 		}
 	};
@@ -621,7 +618,7 @@ function fillPost(postid) {
 			for (let i = 0; i < metaData.content.length; i++) {
 				if (metaData.content[i].type == "js") {
 					let jsbox = make("iframe");
-					jsbox.style = "width:100%; height:60vh; border-top:0px; border-bottom:0px; border-left:4px solid white; border-right:0px; border-radius:5px";
+					jsbox.style = "width:100%; height:60vh; border-top:0px; border-bottom:0px; border-left:4px solid white; border-right:0px; border-radius:4px 0px 0px 4px";
 					jsbox.onmouseenter = function() {
 						jsbox.style.borderColor = "#aaa";
 					}
@@ -632,6 +629,12 @@ function fillPost(postid) {
 					jsbox.srcdoc = metaData.content[i].content;
 					jsbox.style.marginBottom = "20px";
 					D('readContent').appendChild(jsbox);
+				} else if (metaData.content[i].type == "md") {				
+					let mdbox = make("div");
+					mdbox.innerHTML = parseMd(metaData.content[i].content);
+					mdbox.style.marginBottom = "20px";
+					mdbox.style.whiteSpace = "initial";
+					D('readContent').appendChild(mdbox);				
 				} else {
 					let textbox = make("div", metaData.content[i].content);
 					textbox.style.marginBottom = "20px";
@@ -704,6 +707,8 @@ function appendBlock(type, parent) {
 		textbox.placeholder = "Simple text...";
 	} else if (type == "js") {
 		textbox.placeholder = "HTML (JS scripts enabled)...";	
+	} else if (type == "md") {
+		textbox.placeholder = "Markdown...";
 	}
 	textbox.title = type;
 	
@@ -730,6 +735,11 @@ function appendBlock(type, parent) {
 	textBut.classList.add("left");
 	textBut.onclick = function() { appendBlock("text", block); }
 	buttonPanel.appendChild(textBut);
+	
+	let mdBut = make('button', "Add Markdown");
+	mdBut.classList.add("center");
+	mdBut.onclick = function() { appendBlock("md", block); }
+	buttonPanel.appendChild(mdBut);
 	
 	let jsBut = make('button', "Add HTML/JS");
 	jsBut.classList.add("center");
@@ -977,6 +987,14 @@ function requestNames() {
 	if (ws) ws.emit('queryUsers', {userids});
 }
 
+function queryPost(postid) {
+	if (!postid) postid = readPostid;
+	let split = postid.split("-");
+	let userid = split[0];
+	let createdts = parseInt(split[1]);		
+	ws.emit('queryPost', { userid: userid, createdts: createdts });	
+}
+
 function fullLabel(postid, library) {
 	let data = postCache[postid];
 	let postTitle = make('div', data.title);
@@ -996,7 +1014,7 @@ function fullLabel(postid, library) {
 		editBut.onclick = function() {
 			event.stopPropagation();
 			fillEdit(postid);
-			ws.emit('queryPost', { userid: data.userid, createdts: data.createdts });
+			queryPost(postid);
 		}
 		actions.appendChild(editBut);		
 	}
@@ -1052,7 +1070,7 @@ function fullLabel(postid, library) {
 	label.onclick = function() {
 		loadPanel('read');
 		fillPost(postid);
-		ws.emit('queryPost', { userid: data.userid, createdts: data.createdts });
+		queryPost(postid);
 		if (!D(postid)) addToLib(postid);
 		else D(postid).style.fontWeight = "";
 		flash(this);
@@ -1275,6 +1293,63 @@ function toggle(div) {
 	if (div.classList.contains('active')) div.classList.remove('active');
 	else div.classList.add('active');
 }
+
+function parseMd(md){  
+  //ul
+  md = md.replace(/^\s*\n\*/gm, '<ul>\n*');
+  md = md.replace(/^(\*.+)\s*\n([^\*])/gm, '$1\n</ul>\n\n$2');
+  md = md.replace(/^\*(.+)/gm, '<li>$1</li>');
+  
+  //ol
+  md = md.replace(/^\s*\n\d\./gm, '<ol>\n1.');
+  md = md.replace(/^(\d\..+)\s*\n([^\d\.])/gm, '$1\n</ol>\n\n$2');
+  md = md.replace(/^\d\.(.+)/gm, '<li>$1</li>');
+  
+  //blockquote
+  md = md.replace(/^\>(.+)/gm, '<blockquote>$1</blockquote>');
+  
+  //h
+  md = md.replace(/[\#]{6}(.+)/g, '<h6>$1</h6>');
+  md = md.replace(/[\#]{5}(.+)/g, '<h5>$1</h5>');
+  md = md.replace(/[\#]{4}(.+)/g, '<h4>$1</h4>');
+  md = md.replace(/[\#]{3}(.+)/g, '<h3>$1</h3>');
+  md = md.replace(/[\#]{2}(.+)/g, '<h2>$1</h2>');
+  md = md.replace(/[\#]{1}(.+)/g, '<h1>$1</h1>');
+  
+  //alt h
+  md = md.replace(/^(.+)\n\=+/gm, '<h1>$1</h1>');
+  md = md.replace(/^(.+)\n\-+/gm, '<h2>$1</h2>');
+  
+  //images
+  md = md.replace(/\!\[([^\]]+)\]\(([^\)]+)\)/g, '<img src="$2" alt="$1" />');
+  
+  //links
+  md = md.replace(/[\[]{1}([^\]]+)[\]]{1}[\(]{1}([^\)\"]+)(\"(.+)\")?[\)]{1}/g, '<a href="$2" title="$4">$1</a>');
+  
+  //font styles
+  md = md.replace(/[\*\_]{2}([^\*\_]+)[\*\_]{2}/g, '<b>$1</b>');
+  md = md.replace(/[\*\_]{1}([^\*\_]+)[\*\_]{1}/g, '<i>$1</i>');
+  md = md.replace(/[\~]{2}([^\~]+)[\~]{2}/g, '<del>$1</del>');
+  
+  //pre
+  md = md.replace(/^\s*\n\`\`\`(([^\s]+))?/gm, '<pre class="$2">');
+  md = md.replace(/^\`\`\`\s*\n/gm, '</pre>\n\n');
+  
+  //code
+  md = md.replace(/[\`]{1}([^\`]+)[\`]{1}/g, '<code>$1</code>');
+  
+  //p
+  md = md.replace(/^\s*(\n)?(.+)/gm, function(m){
+    return  /\<(\/)?(h\d|ul|ol|li|blockquote|pre|img)/.test(m) ? m : '<p>'+m+'</p>';
+  });
+  
+  //strip p from pre
+  md = md.replace(/(\<pre.+\>)\s*\n\<p\>(.+)\<\/p\>/gm, '$1$2');
+  
+  return md;
+  
+}
+
 
 </script>
 
