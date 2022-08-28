@@ -127,15 +127,14 @@
 				
 				<textarea id="commentContent" style="margin-top:10px; margin-bottom:10px; height:80px; width:100%; display:none" autocomplete="off" onkeydown="commentKeypress()" oninput="commentKeypress()" placeholder="Comment..."></textarea>
 				<button id="comment" style="margin-top:5px; font-size:0.85em" onclick="comment()" disabled>Comment</button>
-				
 				<br>
-				<ul id="readComments" style="white-space:pre-wrap; margin-top:30px"><ul>	
-			</div>			
+				<ul id="readComments" style="white-space:pre-wrap; margin-top:30px"><ul>
+			</div>
 			
 	
 			<div style="flex-basis:1px; flex-grow:1; max-width:360px">
 			
-				<div id="readTitle" style="font-weight:bold; font-size:1.1em; margin-bottom:5px;">Title</div>	
+				<div id="readTitle" style="font-weight:bold; font-size:1.1em; margin-bottom:3px;">Title</div>	
 				<div style="font-size:0.8em"><a id="author" onclick="browseAuthor(this.title)" style="cursor:pointer">Author</a> | <span id="creation">Post date</span><span id="modification"> - Modified date</span><button id="edit" onclick="fillEdit(); queryPost()" autocomplete="off" style="display:none; padding:2px 8px; margin:2px; margin-left:10px;">Edit</button></div>
 				
 				<ul id="mapul"></ul>
@@ -149,6 +148,7 @@
 <script src="nacl.js"></script>
 <script src="xno.js"></script>
 <script src="tweetnacl.js"></script>
+<script src="dompurify.js"></script>
 <script>
 
 // crypto methods ///////////////////////////////////////////////////////////////////////
@@ -631,7 +631,7 @@ function fillPost(postid) {
 					D('readContent').appendChild(jsbox);
 				} else if (metaData.content[i].type == "md") {				
 					let mdbox = make("div");
-					mdbox.innerHTML = parseMd(metaData.content[i].content);
+					mdbox.innerHTML = DOMPurify.sanitize(parseMd(metaData.content[i].content));
 					mdbox.style.marginBottom = "20px";
 					mdbox.style.whiteSpace = "initial";
 					D('readContent').appendChild(mdbox);				
