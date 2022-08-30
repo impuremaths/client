@@ -444,7 +444,7 @@ function populateBrowse(data) {
 	requestNames();
 }
 
-function browseAuthor(userid) {
+function browseAuthor(userid, tag) {
 	if (userid) {		
 		if (userid == XNO.address) D('subscribe').style.display = "none";
 		else D('subscribe').style.display = "";
@@ -455,6 +455,20 @@ function browseAuthor(userid) {
 			D('loadingMsg').style.display = "";
 			ws.emit("queryPostsFromUser", {userid});
 		}
+		D('info').onclick = function() {
+			browseAuthor(userid);
+		};
+	} else if (tag) {	
+		D('subscribe').style.display = "none";		
+		D('info').title = tag;
+		D('info').textContent = tag;
+		if (ws) {
+			D('loadingMsg').style.display = "";
+			ws.emit("queryTag", {tag});
+		}
+		D('info').onclick = function() {
+			browseAuthor(null, tag);
+		};
 	} else if (D('browseButton').classList.contains('active')) {	
 		D('subscribe').style.display = "none";
 		D('info').title = "";
@@ -463,8 +477,16 @@ function browseAuthor(userid) {
 			D('loadingMsg').style.display = "";
 			ws.emit('queryPostsRecent');
 		}
+		D('info').onclick = function() {
+			browseAuthor();
+		};
 	}
 	loadPanel('browse');
+}
+
+function browseTag(tag) {
+
+
 }
 
 function makeMetaLabel(userid, createdts, modifiedts) {	
@@ -1126,7 +1148,7 @@ function fullLabel(postid, library) {
 			tags.appendChild(tag);
 			tag.onclick = function() {
 				event.stopPropagation();
-				if (ws) ws.emit("queryTag", {tag:data.tags[i]});
+				browseAuthor(null, data.tags[i]);
 			};
 		}
 	}
