@@ -666,7 +666,8 @@ function fillPost(postid) {
 					}
 					jsbox.sandbox = "allow-scripts";
 					let str = `<script>window.onload = function() {
-						window.parent.postMessage({height:Math.max( document.body.scrollHeight, document.body.offsetHeight, document.body.clientHeight )}, '*');
+						window.parent.postMessage({height:Math.max( document.body.scrollHeight, document.body.offsetHeight, document.body.clientHeight,
+						document.body.parentElement.scrollHeight, document.body.parentElement.offsetHeight, document.body.parentElement.clientHeight)}, '*');
 					};<` + "/" + `script>`;
 					jsbox.srcdoc = metaData.content[i].content + str;
 					jsbox.style.marginBottom = "20px";
@@ -1275,7 +1276,7 @@ window.addEventListener('message', function (e) {
 	if (e.data.height) {
 		Array.from(document.getElementsByTagName('iframe')).filter(iframe => {
 			return iframe.contentWindow === event.source;
-		})[0].style.height = (e.data.height + 20) + "px";
+		})[0].style.height = e.data.height + "px";
 	}
 
     // If you encode the message in JSON before sending them,
