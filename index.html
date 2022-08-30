@@ -459,7 +459,7 @@ function browseAuthor(userid, tag) {
 			browseAuthor(userid);
 		};
 	} else if (tag) {	
-		D('subscribe').style.display = "none";		
+		D('subscribe').style.display = "";		
 		D('info').title = tag;
 		D('info').textContent = tag;
 		if (ws) {
@@ -520,6 +520,7 @@ function subscribeHandler() {
 	if (D(D('info').title)) flash(D(D('info').title));
 	else {
 		makeSubLi(D('info').title);
+		console.log(D('info').title);
 		if (ws) ws.emit("subscribe", {userid: D('info').title});
 	}
 }
@@ -1006,8 +1007,11 @@ function queryPost(postid) {
 }
 
 function makeSubLi(userid, displayname) {
-	let name = funName(userid);
+	let tag = (userid.substring(0, 5) != "nano_");
+	let name = userid;
+	if (!tag) name = funName(userid);
 	if (displayname) name = displayname;
+	
 	let subli = make("li");
 	subli.id = userid;
 	subli.onclick = function() {
@@ -1016,9 +1020,11 @@ function makeSubLi(userid, displayname) {
 			D('loadingMsg').style.display = "";
 			if (userid == XNO.address) D('subscribe').style.display = "none";
 			else D('subscribe').style.display = "";
-			D('info').textContent = funName(userid);
+			if (!tag) browseAuthor(userid);
+			else browseAuthor(null, userid);
 			D('info').title = userid;
-			ws.emit("queryPostsFromUser", {userid});
+			if (!tag) ws.emit("queryPostsFromUser", {userid});
+			else ws.emit("queryTag", {tag:userid});
 		}
 	};
 	subli.style = "cursor:pointer; width:100%; padding:3px; position:relative";
@@ -1049,7 +1055,7 @@ function makeSubLi(userid, displayname) {
 	
 	let nameSpan = make('span', name);
 	subli.appendChild(nameSpan);
-	queueDOMdisplayName(userid, nameSpan);
+	if (!tag) queueDOMdisplayName(userid, nameSpan);
 	
 	D('subscriptions').appendChild(subli);
 }
