@@ -75,7 +75,7 @@
 	
 	<div id="secondDiv" class="secondDiv">
 	
-		<button id="browseButton" class="left active" style="margin-top:25px; margin-bottom:20px" onclick="browseAuthor()">Browse</button><button id="readButton" class="center" onclick="loadPanel('read')" autocomplete="off">Read</button><button id="postButton" class="right" onclick="loadPanel('post')" autocomplete="off" disabled>Write</button>
+		<button id="browseButton" class="left active" style="margin-top:25px; margin-bottom:20px" onclick="browseAuthor()">Browse</button><button id="readButton" class="center" onclick="loadPanel('read')" autocomplete="off">Read</button><button id="postButton" class="right" onclick="loadPanel('post')" autocomplete="off">Write</button>
 	
 		<div id="browse">
 			<div style="margin-top:20px; margin-bottom:20px">
@@ -88,7 +88,7 @@
 
 		<div id="post" style="display:none; margin-top:20px; width:80%">
 			<input id="postTitle" style="font-weight:bold; font-size:1.1em; width:100%;  margin-bottom:10px;" autocomplete="off" placeholder="Title..." type="text" autocomplete="off" onkeyup="if (event.keyCode == 27) this.value = '';">
-			<div id="editid" style="font-size:0.8em; margin-left:10px; display:none">
+			<div id="editid" style="font-size:0.85em; margin-left:10px; display:none">
 			<span id="creationEdit"></span><span id="modificationEdit"></span>
 			</div>		
 			<div id="postContent">
@@ -114,7 +114,7 @@
 			</div>
 				
 				
-			<br><br><button id="submitButton" onclick="post()">Publish Post</button>
+			<br><br><button id="submitButton" onclick="post()" disabled>Publish Post</button>
 			<button id="clearButton" style="margin-left:5px" onclick="cancelPost()">Clear Post</button>	
 		</div>
 		
@@ -135,7 +135,7 @@
 			<div style="flex-basis:1px; flex-grow:1; max-width:360px">
 			
 				<div id="readTitle" style="font-weight:bold; font-size:1.1em; margin-bottom:3px;">Title</div>	
-				<div style="font-size:0.8em"><a id="author" onclick="browseAuthor(this.title)" style="cursor:pointer">Author</a> | <span id="creation">Post date</span><span id="modification"> - Modified date</span><button id="edit" onclick="fillEdit(); queryPost()" autocomplete="off" style="display:none; padding:2px 8px; margin:2px; margin-left:10px;">Edit</button></div>
+				<div style="font-size:0.85em"><a id="author" onclick="browseAuthor(this.title)" style="cursor:pointer">Author</a> | <span id="creation">Post date</span><span id="modification"> - Modified date</span><button id="edit" onclick="fillEdit(); queryPost()" autocomplete="off" style="display:none; padding:2px 8px; margin:2px; margin-left:10px;">Edit</button></div>
 				
 				<ul id="mapul"></ul>
 			</div>
@@ -237,6 +237,10 @@ const enc = new TextEncoder();
 const dec = new TextDecoder();
 function D(string) { return document.getElementById(string); }
 
+let browseHeight = 0;
+let readHeight = 0;
+let postHeight = 0;
+
 const adj = ["Disillusioned", "Nihilistic", "Disenchanted", "Embittered", "Worldly", "Embattled", "Cynical", "Skeptical", "Contemplative", 
 				"Introspective", "Meditative", "Pensive", "Philosophical", "Stoic", "Apathetic", "Analytical", "Scholarly", "Erudite", "Composed", "Detached"];
 const animals = ["Puppy", "Kitten", "Bunny", "Hamster", "Panda", "Otter", "Hedgehog", "Penguin", "Squirrel", "Turtle", "Koala", "Hatchling", "Kit", "Joey", "Fledgling", 
@@ -256,6 +260,8 @@ var queryString = window.location.search;
 console.log(queryString);
 var urlParams = new URLSearchParams(queryString);
 var urlPostid = urlParams.get('postid');
+
+cancelPost();
 
 
 // Websocket code ///////////////////////////////////////////////////////////////////////
@@ -376,7 +382,11 @@ function setupWebsocket(restart) {
 	
 	ws.on('queryPostsFromUser', function (data) { populateBrowse(data); });
 	
+	
+	ws.on('queryTagResponse', function (data) { console.log(data); populateBrowse(data); });
+	
 	ws.on('queryPostResponse', function(data) { 
+		console.log(data);
 		cachePost(data);
 		if (editPostid == data.postid) {
 			fillEdit(data.postid); 
@@ -471,7 +481,7 @@ function makeMetaLabel(userid, createdts, modifiedts) {
 	postDate.title = createdts;
 		
 	let postMeta = make('div');
-	postMeta.style = "font-size:0.8em; overflow:hidden; text-overflow:ellipsis";
+	postMeta.style = "font-size:0.85em; overflow:hidden; text-overflow:ellipsis";
 	postMeta.appendChild(postAuthor);
 	postMeta.appendChild(postDate);	
 	
@@ -533,6 +543,10 @@ function comment() {
 }
 
 function loadPanel(type) {	
+	if (D('browse').style.display != 'none') browseHeight = Math.ceil(D('secondDiv').scrollTop);
+	if (D('read').style.display != 'none') readHeight = Math.ceil(D('secondDiv').scrollTop);
+	if (D('post').style.display != 'none') postHeight = Math.ceil(D('secondDiv').scrollTop);
+	
 	D('post').style.display = 'none';
 	D('read').style.display = 'none';
 	D('browse').style.display = 'none';
@@ -549,7 +563,9 @@ function loadPanel(type) {
 		D('commentContent').style.display = 'none';
 		D('commentContent').value = "";
 		D('comment').textContent = "Comment";
+		D('secondDiv').scrollTo(0, 0);
 	}
+	if (type == "browse") D('secondDiv').scrollTo(0, browseHeight);
 	if (type != "post") topPage = type;
 }
 
@@ -570,6 +586,7 @@ function cachePost(metaData) {
 
 	if (metaData.modifiedts) postCache[metaData.postid].modifiedts = metaData.modifiedts;
 	if (metaData.content) postCache[metaData.postid].content = metaData.content;
+	if (metaData.tags) postCache[metaData.postid].tags = metaData.tags;
 	if (metaData.comments) postCache[metaData.postid].comments = metaData.comments;
 	if (metaData.prev_) postCache[metaData.postid].prev_ = metaData.prev_;
 	if (metaData.next_) postCache[metaData.postid].next_ = metaData.next_;
@@ -618,15 +635,18 @@ function fillPost(postid) {
 			for (let i = 0; i < metaData.content.length; i++) {
 				if (metaData.content[i].type == "js") {
 					let jsbox = make("iframe");
-					jsbox.style = "width:100%; height:60vh; border-top:0px; border-bottom:0px; border-left:4px solid white; border-right:0px; border-radius:4px 0px 0px 4px";
+					jsbox.style = "width:100%; height:0px; border-top:0px; border-bottom:0px; border-left:4px solid white; border-right:0px; border-radius:4px 0px 0px 4px";
 					jsbox.onmouseenter = function() {
 						jsbox.style.borderColor = "#aaa";
 					}
 					jsbox.onmouseleave = function() {
 						jsbox.style.borderColor = "transparent";
 					}
-					jsbox.sandbox = "allow-scripts";			
-					jsbox.srcdoc = metaData.content[i].content;
+					jsbox.sandbox = "allow-scripts";
+					let str = `<script>window.onload = function() {
+						window.parent.postMessage({height:Math.max( document.body.scrollHeight, document.body.offsetHeight, document.body.clientHeight )}, '*');
+					};<` + "/" + `script>`;
+					jsbox.srcdoc = metaData.content[i].content + str;
 					jsbox.style.marginBottom = "20px";
 					D('readContent').appendChild(jsbox);
 				} else if (metaData.content[i].type == "md") {				
@@ -865,7 +885,7 @@ function addComment(commentData) {
 		D('readComments').appendChild(repPanel);				
 		
 		// reply button
-		repBut.style = "margin-left:20px;margin-bottom:20px; margin-top:5px; font-size:0.8em";
+		repBut.style = "margin-left:20px;margin-bottom:20px; margin-top:5px; font-size:0.85em";
 		repBut.title = commentData.commentid;
 		if (!XNO.address) repBut.disabled = true;
 		
@@ -920,7 +940,7 @@ function importSeed() {
 		
 		D("current").disabled = false;
 		D("clear").disabled = false;
-		D("postButton").disabled = false;
+		D("submitButton").disabled = false;
 		//D("profilePanel").style.display = "";
 		D("setDisplayBut").disabled = false;
 		D("grayout").style.opacity = "";
@@ -1017,9 +1037,23 @@ function fullLabel(postid, library) {
 	postTitle.title = data.title;
 	postTitle.style.overflow = "hidden";
 	postTitle.style.textOverflow = "ellipsis";
+	// postTitle.style.fontWeight = "600";
 	
-	let postMeta = makeMetaLabel(data.userid, data.createdts, data.modifiedts);
+	// dates
+	let postDate = make('span', unixToDate(data.createdts));	
+	postDate.title = data.createdts;
+		
+	let postMeta = make('div');
+	postMeta.style = "font-size:0.85em; overflow:hidden; text-overflow:ellipsis";
+	postMeta.appendChild(postDate);	
 	
+	if (data.modifiedts && data.modifiedts != data.createdts) {
+		let postModified = make('span', " - " + unixToDate(data.modifiedts));
+		postModified.title = data.modifiedts;
+		postMeta.appendChild(postModified);
+	}	
+	
+	// hover
 	let actions = make('div');
 	actions.style = "position:absolute; top:0px; right:0px; display:none; opacity:0.8";
 	
@@ -1071,8 +1105,35 @@ function fullLabel(postid, library) {
 		actions.appendChild(unsubBut);
 	}
 	
+	// author and tags
+	let tags = make('div');
+	tags.style.fontSize = "0.85em";
+	
+	let postAuthor = make('a', funName(data.userid));
+	postAuthor.title = data.userid;
+	postAuthor.style.cursor = "pointer";
+	postAuthor.onclick = function() {
+		event.stopPropagation();
+		browseAuthor(data.userid);
+	};	
+	queueDOMdisplayName(data.userid, postAuthor);
+	tags.appendChild(postAuthor);
+	
+	if (data.tags) {
+		for (let i = 0; i < data.tags.length; i++) {
+			let tag = make('a', " | " + data.tags[i]);
+			//tag.style.margin = "0px 10px 0px 10px";
+			tags.appendChild(tag);
+			tag.onclick = function() {
+				event.stopPropagation();
+				if (ws) ws.emit("queryTag", {tag:data.tags[i]});
+			};
+		}
+	}
+	
 	let label = make('div');
 	label.appendChild(postTitle);
+	label.appendChild(tags);
 	label.appendChild(postMeta);
 	label.appendChild(actions);
 	
@@ -1149,7 +1210,7 @@ function clickClearSeed() {
 	
 	D("current").disabled = true;	
 	D("clear").disabled = true;
-	D("postButton").disabled = true;
+	D("submitButton").disabled = true;
 	D("comment").disabled = true;
 	D('subscribe').disabled = true;
 	closeSubAccordion(D('editPanel'));
@@ -1184,6 +1245,21 @@ function setData(type) {
 }
 
 // Global event listeners ///////////////////////////////////////////////////////////////////////
+
+window.addEventListener('message', function (e) {
+    // Get the sent data
+    console.log(e.data);
+	console.log(e.origin);
+	if (e.data.height) {
+		Array.from(document.getElementsByTagName('iframe')).filter(iframe => {
+			return iframe.contentWindow === event.source;
+		})[0].style.height = (e.data.height + 20) + "px";
+	}
+
+    // If you encode the message in JSON before sending them,
+    // then decode here
+    // const decoded = JSON.parse(data);
+});
 
 window.addEventListener('copy', function(e) { 
 	if (document.activeElement.tagName.toLowerCase() == 'input') clipboardText = document.activeElement.value.substring(document.activeElement.selectionStart, document.activeElement.selectionEnd);
