@@ -75,9 +75,11 @@
 	
 	<div id="secondDiv" class="secondDiv">
 	
-		<button id="browseButton" class="left active" style="margin-top:25px; margin-bottom:20px" onclick="browseAuthor()">Browse</button><button id="readButton" class="center" onclick="loadPanel('read')" autocomplete="off">Read</button><button id="postButton" class="right" onclick="loadPanel('post')" autocomplete="off">Write</button>
+		<button id="browseButton" class="left active" style="margin-top:25px; margin-bottom:20px" onclick="loadPanel('browse')">Browse</button><button id="readButton" class="center" onclick="loadPanel('read')" autocomplete="off">Read</button><button id="postButton" class="right" onclick="loadPanel('post')" autocomplete="off">Write</button>
 	
 		<div id="browse">
+			<span style="font-size:0.85em">Tags:</span>
+			<span id="popularTags"></span>
 			<div style="margin-top:20px; margin-bottom:20px">
 			<span style="font-weight:bold; font-size:1.1em; cursor:pointer" onclick="browseAuthor(this.title)" id="info">Recent</span>
 			<button id="subscribe" onclick="subscribeHandler()" autocomplete="off" style="display:none; padding:2px 8px; margin:2px; margin-left:5px" disabled>+</button>			
@@ -113,7 +115,11 @@
 			<button class="active" onclick="toggle(this)" style="font-size:0.85em;">Reciprocate Link </button>
 			</div>
 				
-				
+			<input placeHolder="tag (lowercase only)..." id="set-tag" autocomplete="off"
+				   style="padding-right:30px; flex-grow:1; margin-top:20px;" type="text" autocapitalize="off" onkeyup="if (event.keyCode == 27) this.value = ''; if (event.keyCode == 13) addTag()">
+				   <button style="font-size:0.85em;" onclick="addTag()">Add</button>
+			<div id="editTags" style="margin-top:20px; font-size:0.85em"></div>
+			
 			<br><br><button id="submitButton" onclick="post()" disabled>Publish Post</button>
 			<button id="clearButton" style="margin-left:5px" onclick="cancelPost()">Clear Post</button>	
 		</div>
@@ -257,7 +263,6 @@ if (localSeed) {
 }
 
 var queryString = window.location.search;
-console.log(queryString);
 var urlParams = new URLSearchParams(queryString);
 var urlPostid = urlParams.get('postid');
 
@@ -421,6 +426,33 @@ function setupWebsocket(restart) {
 			D('mapul').appendChild(postli);	
 		}
 	});
+	
+	ws.on('queryTagCountsResponse', function(data) {
+		console.log(data);
+		clearDOM(D('popularTags'));
+
+		let tagElt = make('span', 'Recent');
+		tagElt.style.margin = "10px"
+		tagElt.style.fontSize = "0.85em";
+		tagElt.style.cursor = "pointer";
+		tagElt.onclick = function() {
+			browseAuthor(null, null);
+		};
+		D('popularTags').appendChild(tagElt);
+		
+		for (let tag in data) {
+			if (data[tag] > 0) {
+				let tagElt = make('span', tag);
+				tagElt.style.margin = "10px"
+				tagElt.style.fontSize = "0.85em";
+				tagElt.style.cursor = "pointer";
+				tagElt.onclick = function() {
+					browseAuthor(null, tag);
+				};
+				D('popularTags').appendChild(tagElt);
+			}
+		}
+	});
 }
 
 
@@ -469,13 +501,14 @@ function browseAuthor(userid, tag) {
 		D('info').onclick = function() {
 			browseAuthor(null, tag);
 		};
-	} else if (D('browseButton').classList.contains('active')) {	
+	} else {	
 		D('subscribe').style.display = "none";
 		D('info').title = "";
 		D('info').textContent = "Recent";
 		if (ws) {		
 			D('loadingMsg').style.display = "";
 			ws.emit('queryPostsRecent');
+			ws.emit('queryTagCounts');
 		}
 		D('info').onclick = function() {
 			browseAuthor();
@@ -525,6 +558,25 @@ function subscribeHandler() {
 	}
 }
 
+function addTag() {
+	let newTag = make('span', D('set-tag').value.toLowerCase().trim());
+	newTag.onclick = function() {
+		this.parentNode.removeChild(this);
+	}
+	newTag.style.cursor = "pointer";
+	newTag.style.margin = "10px";
+	
+	let newTagFlag = true;
+	for (let i = 0; i < D('editTags').children.length; i++) {
+		if (D('editTags').children[i].textContent == newTag.textContent) {
+			newTagFlag = false;
+			flash(D('editTags').children[i]);
+		}
+	}
+	if (newTagFlag)	D('editTags').appendChild(newTag);
+	D('set-tag').value = "";	
+}
+
 function post() {
 	let prev = "";
 	try { prev = new URLSearchParams((new URL(D('set-prev').value)).search).get('postid');} 
@@ -538,7 +590,14 @@ function post() {
 	for (let i = 0; i < D('postContent').children.length; i++) {
 		content.push({content:D('postContent').children[i].firstChild.value, type:D('postContent').children[i].firstChild.title});
 	}
-	ws.emit('updatePost', {prev_: prev, next_: next, title:D('postTitle').value, content:content, visibility:"public", createdts: parseInt(D('creationEdit').title)});
+	
+	let tags = [];
+	while (D('editTags').children.length) {
+		tags.push(D('editTags').children[0].textContent);
+		D('editTags').removeChild(D('editTags').children[0]);
+	}
+	
+	ws.emit('updatePost', {tags, prev_: prev, next_: next, title:D('postTitle').value, content:content, visibility:"public", createdts: parseInt(D('creationEdit').title)});
 	loadPanel('read');
 }
 
@@ -626,6 +685,7 @@ function removeActiveBar(elt) {
 }
 
 function fillPost(postid) {
+	let newPost = !readPostid || (JSON.stringify(postCache[readPostid].content) != JSON.stringify(postCache[postid].content));
 	if (readPostid && D(readPostid)) removeActiveBar(D(readPostid));
 	if (readPostid && D(readPostid + "-disc")) removeActiveBar(D(readPostid + "-disc"));
 	readPostid = postid;
@@ -651,38 +711,40 @@ function fillPost(postid) {
 	}
 	
 	if (metaData.content) {
-		if (typeof metaData.content === "string") D('readContent').textContent = metaData.content;
-		else {
-			console.log("array content!!!");
-			clearDOM(D('readContent'));
-			for (let i = 0; i < metaData.content.length; i++) {
-				if (metaData.content[i].type == "js") {
-					let jsbox = make("iframe");
-					jsbox.style = "width:100%; height:0px; border-top:0px; border-bottom:0px; border-left:4px solid white; border-right:0px; border-radius:4px 0px 0px 4px";
-					jsbox.onmouseenter = function() {
-						jsbox.style.borderColor = "#aaa";
+		if (newPost) {
+			if (typeof metaData.content === "string") D('readContent').textContent = metaData.content;
+			else {
+				console.log("array content!!!");
+				clearDOM(D('readContent'));
+				for (let i = 0; i < metaData.content.length; i++) {
+					if (metaData.content[i].type == "js") {
+						let jsbox = make("iframe");
+						jsbox.style = "width:100%; height:0px; border-top:0px; border-bottom:0px; border-left:4px solid white; border-right:0px; border-radius:4px 0px 0px 4px";
+						jsbox.onmouseenter = function() {
+							jsbox.style.borderColor = "#aaa";
+						}
+						jsbox.onmouseleave = function() {
+							jsbox.style.borderColor = "transparent";
+						}
+						jsbox.sandbox = "allow-scripts";
+						let str = `<script>window.onload = function() {
+							window.parent.postMessage({height:Math.max( document.body.scrollHeight, document.body.offsetHeight, document.body.clientHeight,
+							document.body.parentElement.scrollHeight, document.body.parentElement.offsetHeight, document.body.parentElement.clientHeight)}, '*');
+						};<` + "/" + `script>`;
+						jsbox.srcdoc = metaData.content[i].content + str;
+						jsbox.style.marginBottom = "20px";
+						D('readContent').appendChild(jsbox);
+					} else if (metaData.content[i].type == "md") {				
+						let mdbox = make("div");
+						mdbox.innerHTML = DOMPurify.sanitize(parseMd(metaData.content[i].content));
+						mdbox.style.marginBottom = "20px";
+						mdbox.style.whiteSpace = "initial";
+						D('readContent').appendChild(mdbox);				
+					} else {
+						let textbox = make("div", metaData.content[i].content);
+						textbox.style.marginBottom = "20px";
+						D('readContent').appendChild(textbox);
 					}
-					jsbox.onmouseleave = function() {
-						jsbox.style.borderColor = "transparent";
-					}
-					jsbox.sandbox = "allow-scripts";
-					let str = `<script>window.onload = function() {
-						window.parent.postMessage({height:Math.max( document.body.scrollHeight, document.body.offsetHeight, document.body.clientHeight,
-						document.body.parentElement.scrollHeight, document.body.parentElement.offsetHeight, document.body.parentElement.clientHeight)}, '*');
-					};<` + "/" + `script>`;
-					jsbox.srcdoc = metaData.content[i].content + str;
-					jsbox.style.marginBottom = "20px";
-					D('readContent').appendChild(jsbox);
-				} else if (metaData.content[i].type == "md") {				
-					let mdbox = make("div");
-					mdbox.innerHTML = DOMPurify.sanitize(parseMd(metaData.content[i].content));
-					mdbox.style.marginBottom = "20px";
-					mdbox.style.whiteSpace = "initial";
-					D('readContent').appendChild(mdbox);				
-				} else {
-					let textbox = make("div", metaData.content[i].content);
-					textbox.style.marginBottom = "20px";
-					D('readContent').appendChild(textbox);
 				}
 			}
 		}
@@ -734,6 +796,14 @@ function fillEdit(postid) {
 	if (metaData.prev_) D('set-prev').value = url.href;
 	url.search = new URLSearchParams({postid: metaData.next_});	
 	if (metaData.next_) D('set-next').value = url.href;
+	
+	clearDOM(D('editTags'));
+	if (metaData.tags) {
+		for (let i = 0; i < metaData.tags.length; i++) {
+			D('set-tag').value = metaData.tags[i];
+			addTag();
+		}
+	}
 	
 	D('submitButton').textContent = "Publish Edit";
 	D('clearButton').textContent = "Cancel Edit";
@@ -1279,7 +1349,7 @@ window.addEventListener('message', function (e) {
     // Get the sent data
     console.log(e.data);
 	console.log(e.origin);
-	if (e.data.height) {
+	if (e.data.height && e.data.height > 0 && e.data.height < 4096) {
 		Array.from(document.getElementsByTagName('iframe')).filter(iframe => {
 			return iframe.contentWindow === event.source;
 		})[0].style.height = e.data.height + "px";
