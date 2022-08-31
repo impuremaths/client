@@ -505,6 +505,7 @@ function makeMetaLabel(userid, createdts, modifiedts) {
 	let postAuthor = make('a', funName(userid));
 	postAuthor.title = userid;
 	postAuthor.style.cursor = "pointer";
+	postAuthor.style.color = funColor(userid);
 	postAuthor.onclick = function() {
 		event.stopPropagation();
 		queryBrowse(userid);
@@ -699,6 +700,7 @@ function fillPost(postid, oldPost) {
 	
 	D('readTitle').textContent = metaData.title;
 	D('author').textContent = funName(metaData.userid);
+	D('author').style.color = funColor(metaData.userid);
 	D('author').title = metaData.userid;
 	D('creation').textContent = new Date(metaData.createdts).toLocaleDateString();
 	D('creation').title = metaData.createdts;
@@ -1127,6 +1129,7 @@ function makeSubLi(userid, displayname) {
 	
 	let nameSpan = make('span', name);
 	subli.appendChild(nameSpan);
+	if (!tag) nameSpan.style.color = funColor(userid);
 	if (!tag) queueDOMdisplayName(userid, nameSpan);
 	
 	D('subscriptions').appendChild(subli);
@@ -1215,6 +1218,7 @@ function fullLabel(postid, library) {
 	let postAuthor = make('a', funName(data.userid));
 	postAuthor.title = data.userid;
 	postAuthor.style.cursor = "pointer";
+	postAuthor.style.color = funColor(data.userid);
 	postAuthor.onclick = function() {
 		event.stopPropagation();
 		queryBrowse(data.userid);
@@ -1398,6 +1402,10 @@ function funName(userid, pencil) {
 	if (cacheDisplayNames[userid]) return pencilLiteral + cacheDisplayNames[userid];
 	return pencilLiteral + adj[parseInt(XNO.pubFromAddr(userid).substring(0, 10), 16) % adj.length] + " " 
 											+ animals[parseInt(XNO.pubFromAddr(userid).substring(0, 10), 16) % animals.length];
+}
+
+function funColor(userid) {
+	return "hsl(" + parseInt(XNO.pubFromAddr(userid).substring(0, 10), 16) % 360 + ", 100%, 30%)";
 }
 
 function D(string) { 
