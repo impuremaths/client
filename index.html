@@ -22,7 +22,7 @@
 	<div id="firstDiv" class="firstDiv" style="background-color:steelblue">		
 		<div id="profilePanel" class="objectWrapper" style="margin-bottom:15px; margin-top:50px" onclick="openSubAccordion(this)">
 			<div class="clickFlash" style="display:flex; justify-content:space-between;" onclick="toggleSubAccordion(this)">
-				<strong style="overflow:hidden"><div id="displayName" style="text-overflow:ellipsis; overflow:hidden; font-size:1.2em;" class="flash">✏️ Just Reading</div></strong>
+				<strong style="overflow:hidden"><div id="displayName" style="text-overflow:ellipsis; overflow:hidden; font-size:1.2em;" class="flash">✏️ Unaccounted</div></strong>
 			</div>
 
 			<div id="editPanel" class="accordion" style="max-height:0px">
@@ -141,7 +141,7 @@
 			<div style="flex-basis:1px; flex-grow:1; max-width:360px">
 			
 				<div id="readTitle" style="font-weight:bold; font-size:1.1em; margin-bottom:3px;">Title</div>	
-				<div style="font-size:0.85em"><a id="author" onclick="browseAuthor(this.title)" style="cursor:pointer">Author</a> | <span id="creation">Post date</span><span id="modification"> - Modified date</span><button id="edit" onclick="fillEdit(); queryPost()" autocomplete="off" style="display:none; padding:2px 8px; margin:2px; margin-left:10px;">Edit</button></div>
+				<div style="font-size:0.85em"><a id="author" onclick="browseAuthor(this.title)" style="cursor:pointer">Author</a> • <span id="creation">Post date</span><span id="modification"> - Modified date</span><button id="edit" onclick="fillEdit(); queryPost()" autocomplete="off" style="display:none; padding:2px 8px; margin:2px; margin-left:10px;">Edit</button></div>
 				
 				<ul id="mapul"></ul>
 			</div>
@@ -467,7 +467,7 @@ function populateBrowse(data) {
 		cachePost(data[i]);			
 		let postli = make('li');
 		postli.id = data[i].postid + "-disc";
-		postli.style = "width:max-content; display:flex; align-items:center; min-width:600px";
+		postli.style = "width:max-content; display:flex; align-items:center; min-width:550px";
 		if (readPostid == data[i].postid) activeBar(postli);
 		postli.appendChild(fullLabel(data[i].postid));
 		D('discovery').appendChild(postli);
@@ -532,7 +532,7 @@ function makeMetaLabel(userid, createdts, modifiedts) {
 	};	
 	queueDOMdisplayName(userid, postAuthor);
 	
-	let postDate = make('span', " | " + unixToDate(createdts));	
+	let postDate = make('span', " • " + unixToDate(createdts));	
 	postDate.title = createdts;
 		
 	let postMeta = make('div');
@@ -541,7 +541,7 @@ function makeMetaLabel(userid, createdts, modifiedts) {
 	postMeta.appendChild(postDate);	
 	
 	if (modifiedts && modifiedts != createdts) {
-		let postModified = make('span', " - " + unixToDate(modifiedts));
+		let postModified = make('span', "-" + timeSince(modifiedts));
 		postModified.title = modifiedts;
 		postMeta.appendChild(postModified);
 	}
@@ -1139,7 +1139,7 @@ function fullLabel(postid, library) {
 	// postTitle.style.fontWeight = "600";
 	
 	// dates
-	let postDate = make('span', unixToDate(data.createdts));	
+	let postDate = make('span', timeSince(data.createdts));	
 	postDate.title = data.createdts;
 		
 	let postMeta = make('div');
@@ -1147,10 +1147,12 @@ function fullLabel(postid, library) {
 	postMeta.appendChild(postDate);	
 	
 	if (data.modifiedts && data.modifiedts != data.createdts) {
-		let postModified = make('span', " - " + unixToDate(data.modifiedts));
+		let postModified = make('span', " - " + timeSince(data.modifiedts));
 		postModified.title = data.modifiedts;
 		postMeta.appendChild(postModified);
-	}	
+	}
+
+	//	postMeta.appendChild(make('span', " ago"));
 	
 	// hover
 	let actions = make('div');
@@ -1220,7 +1222,7 @@ function fullLabel(postid, library) {
 	
 	if (data.tags) {
 		for (let i = 0; i < data.tags.length; i++) {
-			let tag = make('a', " | " + data.tags[i]);
+			let tag = make('a', " • " + data.tags[i]);
 			//tag.style.margin = "0px 10px 0px 10px";
 			tags.appendChild(tag);
 			tag.onclick = function() {
@@ -1320,7 +1322,7 @@ function clickClearSeed() {
 	
 	D("subPanel").style.display = "none";
 	
-	D('displayName').textContent = "✏️ Just Reading";
+	D('displayName').textContent = "✏️ Unaccounted";
 	D('libraryWarning').style.display = "";
 	
 	localStorage.removeItem("localSeed");
@@ -1541,6 +1543,49 @@ function parseMd(md){
   
 }
 
+
+ function timeSince(date) {
+  if (typeof date !== 'object') {
+    date = new Date(date);
+  }
+
+  var seconds = Math.floor((new Date() - date) / 1000);
+  var intervalType;
+
+  var interval = Math.floor(seconds / 31536000);
+  if (interval >= 1) {
+    intervalType = 'y';
+  } else {
+    interval = Math.floor(seconds / 2592000);
+    if (interval >= 1) {
+      intervalType = 'mo';
+    } else {
+      interval = Math.floor(seconds / 86400);
+      if (interval >= 1) {
+        intervalType = 'd';
+      } else {
+        interval = Math.floor(seconds / 3600);
+        if (interval >= 1) {
+          intervalType = "h";
+        } else {
+          interval = Math.floor(seconds / 60);
+          if (interval >= 1) {
+            intervalType = "m";
+          } else {
+            interval = seconds;
+            intervalType = "s";
+          }
+        }
+      }
+    }
+  }
+
+//  if (interval > 1 || interval === 0) {
+ //   intervalType += 's';
+//  }
+
+  return interval + intervalType;
+}
 
 </script>
 
