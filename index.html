@@ -1,7 +1,7 @@
 <!DOCTYPE html><html lang="en">
 <head>
 	<meta charset="UTF-8">
-	<title>mktplc client</title>	
+	<title>mktplc</title>	
 	<link rel="stylesheet" type="text/css" href="main.css">
 	<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Source+Sans+Pro:wght@400;700&display=swap"> 
 	
@@ -667,6 +667,7 @@ function fillBrowse(data) {
 		let url = new URL(window.location);
 		url.search = new URLSearchParams();
 		window.history.pushState(null, "", url);
+		document.title = "mktplc"
 	}
 	
 	data.sort(function(x, y) { return y.createdts - x.createdts; });
@@ -691,6 +692,7 @@ function fillPost(postid, oldPost) {
 		let url = new URL(window.location);
 		url.search = new URLSearchParams({postid});
 		window.history.pushState(null, "", url);
+		document.title = postCache[postid].title + " - mktplc";
 	}
 	
 	if (readPostid && D(readPostid)) removeActiveBar(D(readPostid));
