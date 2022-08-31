@@ -467,7 +467,7 @@ function populateBrowse(data) {
 		cachePost(data[i]);			
 		let postli = make('li');
 		postli.id = data[i].postid + "-disc";
-		postli.style = "width:max-content; display:flex; align-items:center; min-width:360px";
+		postli.style = "width:max-content; display:flex; align-items:center; min-width:600px";
 		if (readPostid == data[i].postid) activeBar(postli);
 		postli.appendChild(fullLabel(data[i].postid));
 		D('discovery').appendChild(postli);
@@ -573,7 +573,7 @@ function addTag() {
 			flash(D('editTags').children[i]);
 		}
 	}
-	if (newTagFlag)	D('editTags').appendChild(newTag);
+	if (newTagFlag && newTag.textContent) D('editTags').appendChild(newTag);
 	D('set-tag').value = "";	
 }
 
