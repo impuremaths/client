@@ -263,9 +263,7 @@ if (localSeed) {
 	importSeed();
 }
 
-var queryString = window.location.search;
-var urlParams = new URLSearchParams(queryString);
-var urlPostid = urlParams.get('postid');
+var urlPostid = new URLSearchParams(window.location.search).get('postid');
 
 cancelPost();
 
@@ -383,13 +381,13 @@ function setupWebsocket(restart) {
 		D('subscribe').style.display = "none";
 		D('info').textContent = "Recent";
 		D('info').title = "";
-		populateBrowse(data); 
+		fillBrowse(data); 
 	});
 	
-	ws.on('queryPostsFromUser', function (data) { populateBrowse(data); });
+	ws.on('queryPostsFromUser', function (data) { fillBrowse(data); });
 	
 	
-	ws.on('queryTagResponse', function (data) { console.log(data); populateBrowse(data); });
+	ws.on('queryTagResponse', function (data) { console.log(data); fillBrowse(data); });
 	
 	ws.on('queryPostResponse', function(data) { 
 		console.log(data);
@@ -406,6 +404,7 @@ function setupWebsocket(restart) {
 		cachePost(data);
 		if (!data.errMsg) {
 			fillPost(data.postid);
+			loadPanel('read');
 			cancelPost();
 		} else console.log(data);
 	});
@@ -461,24 +460,6 @@ function setupWebsocket(restart) {
 
 // Main panel UI interaction handlers ///////////////////////////////////////////////////////////////////////
 
-function populateBrowse(data) {
-	data.sort(function(x, y) { return y.createdts - x.createdts; });
-	D('loadingMsg').style.display = "none";
-	clearDOM(D('discovery'));
-	
-	for (let i = 0; i < data.length; i++) {	
-		cachePost(data[i]);			
-		let postli = make('li');
-		postli.id = data[i].postid + "-disc";
-		postli.style = "width:max-content; display:flex; align-items:center; min-width:550px";
-		if (readPostid == data[i].postid) activeBar(postli);
-		postli.appendChild(fullLabel(data[i].postid));
-		D('discovery').appendChild(postli);
-	}
-	
-	requestNames();
-}
-
 function browseAuthor(userid, tag) {
 	if (userid) {		
 		if (userid == XNO.address) D('subscribe').style.display = "none";
@@ -518,11 +499,6 @@ function browseAuthor(userid, tag) {
 		};
 	}
 	loadPanel('browse');
-}
-
-function browseTag(tag) {
-
-
 }
 
 function makeMetaLabel(userid, createdts, modifiedts) {	
@@ -601,7 +577,6 @@ function post() {
 	}
 	
 	ws.emit('updatePost', {tags, prev_: prev, next_: next, title:D('postTitle').value, content:content, visibility:"public", createdts: parseInt(D('creationEdit').title)});
-	loadPanel('read');
 }
 
 function commentKeypress() {
@@ -648,7 +623,7 @@ function loadPanel(type) {
 		D('commentContent').style.display = 'none';
 		D('commentContent').value = "";
 		D('comment').textContent = "Comment";
-		D('secondDiv').scrollTo(0, 0);
+		D('secondDiv').scrollTo(0, 0);		
 	}
 	if (type == "browse") D('secondDiv').scrollTo(0, browseHeight);
 	if (type != "post") topPage = type;
@@ -687,7 +662,37 @@ function removeActiveBar(elt) {
 	elt.style.paddingLeft = "";
 }
 
+function fillBrowse(data) {
+	if (new URLSearchParams(window.location.search).get('postid')) {		
+		let url = new URL(window.location);
+		url.search = new URLSearchParams();
+		window.history.pushState(null, "", url);
+	}
+	
+	data.sort(function(x, y) { return y.createdts - x.createdts; });
+	D('loadingMsg').style.display = "none";
+	clearDOM(D('discovery'));
+	
+	for (let i = 0; i < data.length; i++) {	
+		cachePost(data[i]);			
+		let postli = make('li');
+		postli.id = data[i].postid + "-disc";
+		postli.style = "width:max-content; display:flex; align-items:center; min-width:550px";
+		if (readPostid == data[i].postid) activeBar(postli);
+		postli.appendChild(fullLabel(data[i].postid));
+		D('discovery').appendChild(postli);
+	}
+	
+	requestNames();
+}
+
 function fillPost(postid, oldPost) {
+	if (new URLSearchParams(window.location.search).get('postid') != postid) {		
+		let url = new URL(window.location);
+		url.search = new URLSearchParams({postid});
+		window.history.pushState(null, "", url);
+	}
+	
 	if (readPostid && D(readPostid)) removeActiveBar(D(readPostid));
 	if (readPostid && D(readPostid + "-disc")) removeActiveBar(D(readPostid + "-disc"));
 	readPostid = postid;
@@ -1248,8 +1253,8 @@ function fullLabel(postid, library) {
 		actions.style.display = "none";
 	}
 	label.onclick = function() {
-		loadPanel('read');
 		fillPost(postid);
+		loadPanel('read');
 		queryPost(postid);
 		if (!D(postid)) addToLib(postid);
 		else D(postid).style.fontWeight = "";
@@ -1349,6 +1354,15 @@ function setData(type) {
 
 // Global event listeners ///////////////////////////////////////////////////////////////////////
 
+window.addEventListener('popstate', function (event) {
+	let postid = new URLSearchParams(window.location.search).get('postid')
+	if (postid) {
+		fillPost(postid);
+		loadPanel('read');
+	} else loadPanel('browse');
+});
+
+
 window.addEventListener('message', function (e) {
     // Get the sent data
     console.log(e.data);
@@ -1375,7 +1389,7 @@ window.addEventListener('copy', function(e) {
 });
 
 window.addEventListener('keydown', function(evt) {
-	if (document.activeElement.tagName.toLowerCase() != 'input' && document.activeElement.tagName.toLowerCase() != 'textarea' && (evt.keyCode == 27 || evt.keyCode == 8)) {
+	if (document.activeElement.tagName.toLowerCase() != 'input' && document.activeElement.tagName.toLowerCase() != 'textarea' && evt.keyCode == 27) {
 		evt.preventDefault();
 		loadPanel('browse');		
 	}
