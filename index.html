@@ -81,7 +81,7 @@
 			<span style="font-size:0.85em; margin-top:10px; display:inline-block">Tags:</span>
 			<span id="popularTags"></span>
 			<div style="margin-top:20px; margin-bottom:20px">
-			<span style="font-weight:bold; font-size:1.1em; cursor:pointer" onclick="browseAuthor(this.title)" id="info">Recent</span>
+			<span style="font-weight:bold; font-size:1.1em; cursor:pointer" onclick="queryBrowse()" id="info">Recent</span>
 			<button id="subscribe" onclick="subscribeHandler()" autocomplete="off" style="display:none; padding:2px 8px; margin:2px; margin-left:5px" disabled>+</button>			
 			<span id="loadingMsg" style="margin-left:10px; font-style:italic">Loading...</span>
 			</div>
@@ -141,7 +141,7 @@
 			<div style="flex-basis:1px; flex-grow:1; max-width:360px">
 			
 				<div id="readTitle" style="font-weight:bold; font-size:1.1em; margin-bottom:3px;">Title</div>	
-				<div style="font-size:0.85em"><a id="author" onclick="browseAuthor(this.title)" style="cursor:pointer">Author</a> • <span id="creation">Post date</span><span id="modification"> - Modified date</span><button id="edit" onclick="fillEdit(); queryPost()" autocomplete="off" style="display:none; padding:2px 8px; margin:2px; margin-left:10px;">Edit</button></div>
+				<div style="font-size:0.85em"><a id="author" onclick="queryBrowse(this.title)" style="cursor:pointer">Author</a> • <span id="creation">Post date</span><span id="modification"> - Modified date</span><button id="edit" onclick="fillEdit(); queryPost()" autocomplete="off" style="display:none; padding:2px 8px; margin:2px; margin-left:10px;">Edit</button></div>
 				
 				<ul id="mapul"></ul>
 			</div>
@@ -281,8 +281,9 @@ function setupWebsocket(restart) {
 	// Standard commands
 	ws.onopen = function() { 
 		console.log("Connected to server!"); 
-		if (!restart) {
-			browseAuthor(D('info').title);
+		if (!restart) {		
+			ws.emit('queryPostsRecent');
+			ws.emit('queryTagCounts');
 			D('loadingMsg').style.display = "";
 		}
 		if (XNO.address) {
@@ -438,7 +439,7 @@ function setupWebsocket(restart) {
 		tagElt.style.fontSize = "0.85em";
 		tagElt.style.cursor = "pointer";
 		tagElt.onclick = function() {
-			browseAuthor(null, null);
+			queryBrowse(null, null);
 		};
 		D('popularTags').appendChild(tagElt);
 		
@@ -449,7 +450,7 @@ function setupWebsocket(restart) {
 				tagElt.style.fontSize = "0.85em";
 				tagElt.style.cursor = "pointer";
 				tagElt.onclick = function() {
-					browseAuthor(null, tag);
+					queryBrowse(null, tag);
 				};
 				D('popularTags').appendChild(tagElt);
 			}
@@ -460,11 +461,10 @@ function setupWebsocket(restart) {
 
 // Main panel UI interaction handlers ///////////////////////////////////////////////////////////////////////
 
-function browseAuthor(userid, tag) {
+function queryBrowse(userid, tag) {
 	if (userid) {		
 		if (userid == XNO.address) D('subscribe').style.display = "none";
-		else D('subscribe').style.display = "";
-		
+		else D('subscribe').style.display = "";		
 		D('info').title = userid;
 		D('info').textContent = funName(userid);
 		if (ws) {
@@ -472,7 +472,7 @@ function browseAuthor(userid, tag) {
 			ws.emit("queryPostsFromUser", {userid});
 		}
 		D('info').onclick = function() {
-			browseAuthor(userid);
+			queryBrowse(userid);
 		};
 	} else if (tag) {	
 		D('subscribe').style.display = "";		
@@ -483,7 +483,7 @@ function browseAuthor(userid, tag) {
 			ws.emit("queryTag", {tag});
 		}
 		D('info').onclick = function() {
-			browseAuthor(null, tag);
+			queryBrowse(null, tag);
 		};
 	} else {	
 		D('subscribe').style.display = "none";
@@ -495,7 +495,7 @@ function browseAuthor(userid, tag) {
 			ws.emit('queryTagCounts');
 		}
 		D('info').onclick = function() {
-			browseAuthor();
+			queryBrowse();
 		};
 	}
 	loadPanel('browse');
@@ -507,7 +507,7 @@ function makeMetaLabel(userid, createdts, modifiedts) {
 	postAuthor.style.cursor = "pointer";
 	postAuthor.onclick = function() {
 		event.stopPropagation();
-		browseAuthor(userid);
+		queryBrowse(userid);
 	};	
 	queueDOMdisplayName(userid, postAuthor);
 	
@@ -662,14 +662,7 @@ function removeActiveBar(elt) {
 	elt.style.paddingLeft = "";
 }
 
-function fillBrowse(data) {
-	if (new URLSearchParams(window.location.search).get('postid')) {		
-		let url = new URL(window.location);
-		url.search = new URLSearchParams();
-		window.history.pushState(null, "", url);
-		document.title = "mktplc"
-	}
-	
+function fillBrowse(data) {	
 	data.sort(function(x, y) { return y.createdts - x.createdts; });
 	D('loadingMsg').style.display = "none";
 	clearDOM(D('discovery'));
@@ -692,8 +685,8 @@ function fillPost(postid, oldPost) {
 		let url = new URL(window.location);
 		url.search = new URLSearchParams({postid});
 		window.history.pushState(null, "", url);
-		document.title = postCache[postid].title + " - mktplc";
 	}
+	document.title = postCache[postid].title + " - mktplc";
 	
 	if (readPostid && D(readPostid)) removeActiveBar(D(readPostid));
 	if (readPostid && D(readPostid + "-disc")) removeActiveBar(D(readPostid + "-disc"));
@@ -1099,8 +1092,8 @@ function makeSubLi(userid, displayname) {
 			D('loadingMsg').style.display = "";
 			if (userid == XNO.address) D('subscribe').style.display = "none";
 			else D('subscribe').style.display = "";
-			if (!tag) browseAuthor(userid);
-			else browseAuthor(null, userid);
+			if (!tag) queryBrowse(userid);
+			else queryBrowse(null, userid);
 			D('info').title = userid;
 			if (!tag) ws.emit("queryPostsFromUser", {userid});
 			else ws.emit("queryTag", {tag:userid});
@@ -1224,7 +1217,7 @@ function fullLabel(postid, library) {
 	postAuthor.style.cursor = "pointer";
 	postAuthor.onclick = function() {
 		event.stopPropagation();
-		browseAuthor(data.userid);
+		queryBrowse(data.userid);
 	};	
 	queueDOMdisplayName(data.userid, postAuthor);
 	tags.appendChild(postAuthor);
@@ -1236,7 +1229,7 @@ function fullLabel(postid, library) {
 			tags.appendChild(tag);
 			tag.onclick = function() {
 				event.stopPropagation();
-				browseAuthor(null, data.tags[i]);
+				queryBrowse(null, data.tags[i]);
 			};
 		}
 	}
