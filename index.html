@@ -155,6 +155,7 @@
 <script src="xno.js"></script>
 <script src="tweetnacl.js"></script>
 <script src="dompurify.js"></script>
+  <script src="marked.js"></script>
 <script>
 
 // crypto methods ///////////////////////////////////////////////////////////////////////
@@ -737,7 +738,7 @@ function fillPost(postid, oldPost) {
 						D('readContent').appendChild(jsbox);
 					} else if (metaData.content[i].type == "md") {				
 						let mdbox = make("div");
-						mdbox.innerHTML = DOMPurify.sanitize(parseMd(metaData.content[i].content));
+						mdbox.innerHTML = DOMPurify.sanitize(marked.parse(metaData.content[i].content));
 						mdbox.style.marginBottom = "20px";
 						mdbox.style.whiteSpace = "initial";
 						D('readContent').appendChild(mdbox);				
