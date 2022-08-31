@@ -392,14 +392,16 @@ function setupWebsocket(restart) {
 	
 	ws.on('queryPostResponse', function(data) { 
 		console.log(data);
+		let oldPost = readPostid && (JSON.stringify(data.content) == JSON.stringify(postCache[readPostid].content));
 		cachePost(data);
 		if (editPostid == data.postid) {
 			fillEdit(data.postid); 
 			editPostid = "";
-		} else fillPost(data.postid);
+		} else fillPost(data.postid, oldPost);
 	});
 	
 	ws.on('updatePostResponse', function(data) { 
+		console.log(data);
 		cachePost(data);
 		if (!data.errMsg) {
 			fillPost(data.postid);
@@ -684,8 +686,7 @@ function removeActiveBar(elt) {
 	elt.style.paddingLeft = "";
 }
 
-function fillPost(postid) {
-	let newPost = !readPostid || (JSON.stringify(postCache[readPostid].content) != JSON.stringify(postCache[postid].content));
+function fillPost(postid, oldPost) {
 	if (readPostid && D(readPostid)) removeActiveBar(D(readPostid));
 	if (readPostid && D(readPostid + "-disc")) removeActiveBar(D(readPostid + "-disc"));
 	readPostid = postid;
@@ -711,7 +712,7 @@ function fillPost(postid) {
 	}
 	
 	if (metaData.content) {
-		if (newPost) {
+		if (!oldPost) {
 			if (typeof metaData.content === "string") D('readContent').textContent = metaData.content;
 			else {
 				console.log("array content!!!");
