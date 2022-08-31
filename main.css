@@ -225,7 +225,7 @@ a {
 }
 
 a:hover {
-	color: #699;
+	color: #699 !important;
 }
 
 .leftRightBase {
