@@ -141,7 +141,7 @@
 			<div style="flex-basis:1px; flex-grow:1; max-width:360px">
 			
 				<div id="readTitle" style="font-weight:bold; font-size:1.1em; margin-bottom:3px;">Title</div>	
-				<div style="font-size:0.85em"><a id="author" onclick="queryBrowse(this.title)" style="cursor:pointer">Author</a> • <span id="creation">Post date</span><span id="modification"> - Modified date</span><button id="edit" onclick="fillEdit(); queryPost()" autocomplete="off" style="display:none; padding:2px 8px; margin:2px; margin-left:10px;">Edit</button></div>
+				<div style="font-size:0.85em"><a id="author" onclick="queryBrowse(this.title)" style="cursor:pointer; font-weight:600">Author</a> • <span id="creation">Post date</span><span id="modification"> - Modified date</span><button id="edit" onclick="fillEdit(); queryPost()" autocomplete="off" style="display:none; padding:2px 8px; margin:2px; margin-left:10px;">Edit</button></div>
 				
 				<ul id="mapul"></ul>
 			</div>
@@ -1108,7 +1108,7 @@ function makeSubLi(userid, displayname) {
 	actions.style = "position:absolute; top:0px; right:0px; display:none; opacity:0.8";
 	
 	if (userid != XNO.address) {
-		let unsubBut = make("button", "x");
+		let unsubBut = make("button", "✕");
 		unsubBut.style.marginRight = "10px";
 		unsubBut.onclick = function() {
 			event.stopPropagation();
@@ -1129,8 +1129,11 @@ function makeSubLi(userid, displayname) {
 	
 	let nameSpan = make('span', name);
 	subli.appendChild(nameSpan);
-	if (!tag) nameSpan.style.color = funColor(userid);
-	if (!tag) queueDOMdisplayName(userid, nameSpan);
+	if (!tag) {
+		nameSpan.style.color = funColor(userid);
+		queueDOMdisplayName(userid, nameSpan);
+		nameSpan.style.fontWeight = "600";
+	}
 	
 	D('subscriptions').appendChild(subli);
 }
@@ -1190,7 +1193,7 @@ function fullLabel(postid, library) {
 	actions.appendChild(postLink);
 	
 	if (!library) {
-		let addBut = make('button', "+");
+		let addBut = make('button', "＋");
 		addBut.classList.add("right");
 		
 		addBut.onclick = function() {
@@ -1200,7 +1203,7 @@ function fullLabel(postid, library) {
 		}
 		actions.appendChild(addBut);	
 	} else {
-		let unsubBut = make("button", "x");
+		let unsubBut = make("button", "✕");
 		unsubBut.classList.add("right");
 		unsubBut.onclick = function() {
 			event.stopPropagation();
@@ -1219,6 +1222,7 @@ function fullLabel(postid, library) {
 	postAuthor.title = data.userid;
 	postAuthor.style.cursor = "pointer";
 	postAuthor.style.color = funColor(data.userid);
+	postAuthor.style.fontWeight = "600";
 	postAuthor.onclick = function() {
 		event.stopPropagation();
 		queryBrowse(data.userid);
