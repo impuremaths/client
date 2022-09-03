@@ -62,7 +62,7 @@
 
 		<div class="objectWrapper" style="margin-bottom:10px; overflow:hidden; display:flex; flex-direction:column" onclick="openSubAccordion(this)">
 			<div class="clickFlash leftRightBase" style="margin-top:0px" onclick="toggleSubAccordion(this)">
-				<strong>Library</strong> <i id="libraryWarning" style="color:gray">- Create an account to persist -</i>
+				<strong>Library</strong> <i id="libraryWarning" style="color:gray">- The accounted for persist -</i>
 			</div>
 			<div class="accordion">
 				<div id="libraryPlaceholder" style="font-style:italic; color:gray; text-align:center; margin-top:20px">- Read something -</div>
@@ -335,8 +335,9 @@ function setupWebsocket(restart) {
 		clearDOM(D('subscriptions'));
 		if (XNO.address) makeSubLi(XNO.address);
 		if (data.edges) {
+			
 			for (let i = 0; i < data.edges.length; i++) {
-				makeSubLi(data.edges[i].userid, data.edges[i].displayname);
+				makeSubLi(data.edges[i].userid, data.edges[i].lastaccessedts, data.edges[i].lastpublishedts);
 			}
 			requestNames();
 		}
@@ -385,7 +386,12 @@ function setupWebsocket(restart) {
 		fillBrowse(data); 
 	});
 	
-	ws.on('queryPostsFromUser', function (data) { fillBrowse(data); });
+	ws.on('queryPostsFromUser', function (data) { 
+		fillBrowse(data); 
+		console.log("got user " + postCache[data[0].postid].userid);
+		console.log(D(postCache[data[0].postid].userid));
+		if (data.length && D(postCache[data[0].postid].userid)) D(postCache[data[0].postid].userid).style.fontWeight = "";
+	});
 	
 	
 	ws.on('queryTagResponse', function (data) { console.log(data); fillBrowse(data); });
@@ -1080,11 +1086,10 @@ function queryPost(postid) {
 	ws.emit('queryPost', { userid: userid, createdts: createdts });	
 }
 
-function makeSubLi(userid, displayname) {
+function makeSubLi(userid, lastaccessedts, lastpublishedts) {
 	let tag = (userid.substring(0, 5) != "nano_");
 	let name = userid;
 	if (!tag) name = funName(userid);
-	if (displayname) name = displayname;
 	
 	let subli = make("li");
 	subli.id = userid;
@@ -1129,10 +1134,27 @@ function makeSubLi(userid, displayname) {
 	
 	let nameSpan = make('span', name);
 	subli.appendChild(nameSpan);
+	
 	if (!tag) {
 		nameSpan.style.color = funColor(userid);
 		queueDOMdisplayName(userid, nameSpan);
 		nameSpan.style.fontWeight = "600";
+	}
+	
+	
+	if (lastpublishedts) {
+		let publishSpan = make('span', timeSince(lastpublishedts));
+		publishSpan.style = "margin-left:10px; font-size:0.85em";
+		subli.appendChild(publishSpan);
+		
+		if (lastaccessedts) {
+			//let accessSpan = make('span', timeSince(lastaccessedts));
+			//subli.appendChild(accessSpan);
+			if (lastaccessedts < lastpublishedts) {
+				subli.style.fontWeight = "bold";
+				console.log("UNREAD");
+			} else console.log("read");
+		}
 	}
 	
 	D('subscriptions').appendChild(subli);
