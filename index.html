@@ -263,8 +263,6 @@ if (localSeed) {
 	importSeed();
 }
 
-var urlPostid = new URLSearchParams(window.location.search).get('postid');
-
 cancelPost();
 
 
@@ -282,20 +280,14 @@ function setupWebsocket(restart) {
 	ws.onopen = function() { 
 		console.log("Connected to server!"); 
 		if (!restart) {		
-			ws.emit('queryPostsRecent');
 			ws.emit('queryTagCounts');
-			D('loadingMsg').style.display = "";
+			loadURL();					
 		}
 		if (XNO.address) {
 			let ts = Date.now();
 			let loginPacket = {userid: XNO.address, ts, signature:XNO.sign(ts, XNO.address)};
 			ws.emit('authenticateUser', loginPacket);
 			console.log(loginPacket);
-		}
-		if (urlPostid) {
-			loadPanel("read");
-			queryPost(urlPostid);
-			urlPostid = "";
 		}
 	};
 	ws.onclose = function() { 
@@ -335,7 +327,7 @@ function setupWebsocket(restart) {
 		clearDOM(D('subscriptions'));
 		if (XNO.address) makeSubLi(XNO.address);
 		if (data.edges) {
-			
+			console.log(data.edges);
 			for (let i = 0; i < data.edges.length; i++) {
 				makeSubLi(data.edges[i].userid, data.edges[i].lastaccessedts, data.edges[i].lastpublishedts);
 			}
@@ -387,9 +379,7 @@ function setupWebsocket(restart) {
 	});
 	
 	ws.on('queryPostsFromUser', function (data) { 
-		fillBrowse(data); 
-		console.log("got user " + postCache[data[0].postid].userid);
-		console.log(D(postCache[data[0].postid].userid));
+		fillBrowse(data);
 		if (data.length && D(postCache[data[0].postid].userid)) D(postCache[data[0].postid].userid).style.fontWeight = "";
 	});
 	
@@ -418,7 +408,10 @@ function setupWebsocket(restart) {
 	
 	ws.on('subscribeResponse', function(data) {	console.log(data); });
 	
-	ws.on('sponsorResponse', function(data) { makeSubLi(data.userid2); });
+	ws.on('sponsorResponse', function(data) { 
+		console.log(data);
+		makeSubLi(data.userid2); 
+	});
 	
 	ws.on('updateCommentResponse', function(data) {	
 		addComment(data);
@@ -468,11 +461,34 @@ function setupWebsocket(restart) {
 // Main panel UI interaction handlers ///////////////////////////////////////////////////////////////////////
 
 function queryBrowse(userid, tag) {
+	let urltag = new URLSearchParams(window.location.search).get('tag');
+	let urluserid = new URLSearchParams(window.location.search).get('userid');
+	if (userid) {	
+		document.title = funName(userid) + " - mktplc";
+		if (urluserid != userid) {		
+			let url = new URL(window.location);
+			url.search = new URLSearchParams({userid});
+			window.history.pushState(null, "", url);
+		}
+	} else if (tag) {
+		document.title = tag + " - mktplc";
+		if (urltag != tag) {	
+			let url = new URL(window.location);
+			url.search = new URLSearchParams({tag});
+			window.history.pushState(null, "", url);	
+		}
+	} else {	
+		let url = new URL(window.location);
+		window.history.pushState(null, "", url);	
+		document.title = "mktplc";
+	}
+	
 	if (userid) {		
 		if (userid == XNO.address) D('subscribe').style.display = "none";
 		else D('subscribe').style.display = "";		
 		D('info').title = userid;
 		D('info').textContent = funName(userid);
+		queueDOMdisplayName(userid, D('info'));
 		if (ws) {
 			D('loadingMsg').style.display = "";
 			ws.emit("queryPostsFromUser", {userid});
@@ -1238,7 +1254,9 @@ function fullLabel(postid, library) {
 	
 	// author and tags
 	let tags = make('div');
-	tags.style.fontSize = "0.85em";
+	tags.style.fontSize = "0.85em";	
+	tags.style.textOverflow = "ellipsis";
+	tags.style.overflow = "hidden";
 	
 	let postAuthor = make('a', funName(data.userid));
 	postAuthor.title = data.userid;
@@ -1379,14 +1397,19 @@ function setData(type) {
 
 // Global event listeners ///////////////////////////////////////////////////////////////////////
 
-window.addEventListener('popstate', function (event) {
-	let postid = new URLSearchParams(window.location.search).get('postid')
+window.addEventListener('popstate', loadURL);
+
+function loadURL() {
+	let postid = new URLSearchParams(window.location.search).get('postid');
+	let tag = new URLSearchParams(window.location.search).get('tag');
+	let userid = new URLSearchParams(window.location.search).get('userid');
 	if (postid) {
 		fillPost(postid);
 		loadPanel('read');
-	} else loadPanel('browse');
-});
-
+	} else if (tag) queryBrowse(null, tag);
+	else if (userid) queryBrowse(userid);
+	else queryBrowse();
+}
 
 window.addEventListener('message', function (e) {
     // Get the sent data
