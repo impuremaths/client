@@ -281,6 +281,7 @@ function setupWebsocket(restart) {
 		console.log("Connected to server!"); 
 		if (!restart) {		
 			ws.emit('queryTagCounts');
+			if (new URLSearchParams(window.location.search).get('postid')) ws.emit('queryPostsRecent');
 			loadURL();					
 		}
 		if (XNO.address) {
@@ -479,7 +480,7 @@ function queryBrowse(userid, tag) {
 		}
 	} else {	
 		let url = new URL(window.location);
-		window.history.pushState(null, "", url);	
+		if (urltag || urluserid || (new URLSearchParams(window.location.search).get('postid'))) window.history.pushState(null, "", url);	
 		document.title = "mktplc";
 	}
 	
@@ -1404,7 +1405,8 @@ function loadURL() {
 	let tag = new URLSearchParams(window.location.search).get('tag');
 	let userid = new URLSearchParams(window.location.search).get('userid');
 	if (postid) {
-		fillPost(postid);
+		if (postCache[postid]) fillPost(postid);
+		else queryPost(postid);
 		loadPanel('read');
 	} else if (tag) queryBrowse(null, tag);
 	else if (userid) queryBrowse(userid);
