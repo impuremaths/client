@@ -479,8 +479,11 @@ function queryBrowse(userid, tag) {
 			window.history.pushState(null, "", url);	
 		}
 	} else {	
-		let url = new URL(window.location);
-		if (urltag || urluserid || (new URLSearchParams(window.location.search).get('postid'))) window.history.pushState(null, "", url);	
+		if (urltag || urluserid || (new URLSearchParams(window.location.search).get('postid'))) {		
+			let url = new URL(window.location);
+			url.search = new URLSearchParams();
+			window.history.pushState(null, "", url);
+		}
 		document.title = "mktplc";
 	}
 	
