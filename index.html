@@ -594,6 +594,10 @@ function addTag() {
 }
 
 function post() {
+	if (!D('postTitle').value) {
+		alert("Title is required.");
+		return false;
+	}
 	let prev = "";
 	try { prev = new URLSearchParams((new URL(D('set-prev').value)).search).get('postid');} 
 	catch { prev = "" };
@@ -604,7 +608,9 @@ function post() {
 	console.log(prev, next);
 	let content = [];
 	for (let i = 0; i < D('postContent').children.length; i++) {
-		content.push({content:D('postContent').children[i].firstChild.value, type:D('postContent').children[i].firstChild.title});
+		if (D('postContent').children[i].firstChild.title == "image") {
+			content.push({content:D('postContent').children[i].firstChild.firstChild.value, type:D('postContent').children[i].firstChild.title});
+		} else content.push({content:D('postContent').children[i].firstChild.value, type:D('postContent').children[i].firstChild.title});
 	}
 	
 	let tags = [];
@@ -612,7 +618,7 @@ function post() {
 		tags.push(D('editTags').children[0].textContent);
 		D('editTags').removeChild(D('editTags').children[0]);
 	}
-	
+
 	ws.emit('updatePost', {tags, prev_: prev, next_: next, title:D('postTitle').value, content:content, visibility:"public", createdts: parseInt(D('creationEdit').title)});
 }
 
@@ -780,6 +786,15 @@ function fillPost(postid, oldPost) {
 						mdbox.style.marginBottom = "20px";
 						mdbox.style.whiteSpace = "initial";
 						D('readContent').appendChild(mdbox);				
+					} else if (metaData.content[i].type == "image") {
+						let imagediv = make("img");	
+						imagediv.src = metaData.content[i].content;
+						imagediv.alt = "[Broken image link]";
+						imagediv.style.maxWidth = "100%";
+						let imageHolder = make('div');
+						imageHolder.style = "display:flex; justify-content:center; margin-bottom:20px";
+						imageHolder.appendChild(imagediv);
+						D('readContent').appendChild(imageHolder);
 					} else {
 						let textbox = make("div", metaData.content[i].content);
 						textbox.style.marginBottom = "20px";
@@ -826,7 +841,8 @@ function fillEdit(postid) {
 	} else if (metaData.content) {
 		for (let i = 0; i < metaData.content.length; i++) {
 			let block = appendBlock(metaData.content[i].type);
-			block.firstChild.value = metaData.content[i].content;
+			if (metaData.content[i].type == "image") block.firstChild.firstChild.value = metaData.content[i].content;
+			else block.firstChild.value = metaData.content[i].content;
 		}
 	} 
 	D('postTitle').value = metaData.title;
@@ -863,6 +879,11 @@ function appendBlock(type, parent) {
 		textbox.placeholder = "HTML (JS scripts enabled)...";	
 	} else if (type == "md") {
 		textbox.placeholder = "Markdown...";
+	} else if (type == "image") {
+		textbox = make('div');		
+		textbox.style = "display:flex; margin-top:20px;";
+		textbox.innerHTML = `<input placeHolder="Image URL..." autocomplete="off" style="padding-right:30px; flex-grow:1; width:1px" type="text" autocapitalize="off" onkeyup="if (event.keyCode == 27) this.value = '';"><button  tabindex="-1" class="close-icon" onclick="closeCopy(this.previousElementSibling)">`;
+		textbox.innerHTML += "</button>";
 	}
 	textbox.title = type;
 	block.appendChild(textbox);	
@@ -897,8 +918,14 @@ function appendBlock(type, parent) {
 	
 	let jsBut = make('button', "HTML/JS");
 	jsBut.classList.add("center");
+	jsBut.style.marginRight = "0px";
 	jsBut.onclick = function() { appendBlock("js", block) };
 	buttonPanel.appendChild(jsBut);
+	
+	let imageBut = make('button', "Image");
+	imageBut.classList.add("center");
+	imageBut.onclick = function() { appendBlock("image", block) };
+	buttonPanel.appendChild(imageBut);
 	
 	let delBut = make('button', "✕");
 	delBut.classList.add("right");
