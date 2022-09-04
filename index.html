@@ -542,7 +542,7 @@ function makeMetaLabel(userid, createdts, modifiedts) {
 	};	
 	queueDOMdisplayName(userid, postAuthor);
 	
-	let postDate = make('span', " • " + unixToDate(createdts));	
+	let postDate = make('span', " • " + timeSince(createdts));	
 	postDate.title = createdts;
 		
 	let postMeta = make('div');
@@ -551,7 +551,7 @@ function makeMetaLabel(userid, createdts, modifiedts) {
 	postMeta.appendChild(postDate);	
 	
 	if (modifiedts && modifiedts != createdts) {
-		let postModified = make('span', "-" + timeSince(modifiedts));
+		let postModified = make('span', " - " + timeSince(modifiedts));
 		postModified.title = modifiedts;
 		postMeta.appendChild(postModified);
 	}
@@ -1023,7 +1023,7 @@ function addComment(commentData) {
 		D('readComments').appendChild(repPanel);				
 		
 		// reply button
-		repBut.style = "margin-left:20px;margin-bottom:20px; margin-top:5px; font-size:0.85em";
+		repBut.style = "font-size:0.85em;";
 		repBut.title = commentData.commentid;
 		if (!XNO.address) repBut.disabled = true;
 		
@@ -1041,7 +1041,10 @@ function addComment(commentData) {
 			}
 		};
 		
-		D('readComments').appendChild(repBut);
+		let repButHolder = make('div');
+		repButHolder.style = "display:flex; justify-content:right; margin-right:10px";
+		repButHolder.appendChild(repBut);
+		D('readComments').appendChild(repButHolder);
 	}
 }
 
