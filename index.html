@@ -83,7 +83,7 @@
 			<div style="margin-top:20px; margin-bottom:20px">
 			<span style="font-weight:bold; font-size:1.1em; cursor:pointer" onclick="queryBrowse()" id="info">Recent</span>
 			<button id="subscribe" onclick="subscribeHandler()" autocomplete="off" style="display:none; padding:2px 8px; margin:2px; margin-left:5px" disabled>+</button>			
-			<span id="loadingMsg" style="margin-left:10px; font-style:italic">Loading...</span>
+			<span id="loadingMsg" style="margin-left:10px; font-style:italic; display:none">Loading...</span>
 			</div>
 			<ul id="discovery"></ul>
 		</div>
@@ -267,6 +267,7 @@ if (localSeed) {
 }
 
 cancelPost();
+if (new URLSearchParams(window.location.search).get('postid')) loadPanel('read');
 
 
 // Websocket code ///////////////////////////////////////////////////////////////////////
@@ -467,23 +468,21 @@ function setupWebsocket(restart) {
 function queryBrowse(userid, tag) {
 	let urltag = new URLSearchParams(window.location.search).get('tag');
 	let urluserid = new URLSearchParams(window.location.search).get('userid');
+	let url = new URL(window.location);
 	if (userid) {	
 		if (urluserid != userid) {		
-			let url = new URL(window.location);
 			url.search = new URLSearchParams({userid});
 			window.history.pushState(null, "", url);
 		}
 		document.title = funName(userid) + " - mktplc";
 	} else if (tag) {
-		if (urltag != tag) {	
-			let url = new URL(window.location);
+		if (urltag != tag) {
 			url.search = new URLSearchParams({tag});
 			window.history.pushState(null, "", url);	
 		}
 		document.title = tag + " - mktplc";
-	} else {	
-		if (urltag || urluserid || (new URLSearchParams(window.location.search).get('postid'))) {		
-			let url = new URL(window.location);
+	} else {
+		if (urltag || urluserid || (new URLSearchParams(window.location.search).get('postid'))) {
 			url.search = new URLSearchParams();
 			window.history.pushState(null, "", url);
 		}
@@ -496,7 +495,7 @@ function queryBrowse(userid, tag) {
 		D('info').title = userid;
 		D('info').textContent = funName(userid);
 		queueDOMdisplayName(userid, D('info'));
-		if (ws) {
+		if (ws && ws.readyState == 1) {
 			D('loadingMsg').style.display = "";
 			ws.emit("queryPostsFromUser", {userid});
 		}
@@ -507,7 +506,7 @@ function queryBrowse(userid, tag) {
 		D('subscribe').style.display = "";		
 		D('info').title = tag;
 		D('info').textContent = tag;
-		if (ws) {
+		if (ws && ws.readyState == 1) {
 			D('loadingMsg').style.display = "";
 			ws.emit("queryTag", {tag});
 		}
@@ -518,7 +517,7 @@ function queryBrowse(userid, tag) {
 		D('subscribe').style.display = "none";
 		D('info').title = "";
 		D('info').textContent = "Recent";
-		if (ws) {		
+		if (ws && ws.readyState == 1) {
 			D('loadingMsg').style.display = "";
 			ws.emit('queryPostsRecent');
 			ws.emit('queryTagCounts');
@@ -564,7 +563,7 @@ function subscribeHandler() {
 	else {
 		makeSubLi(D('info').title);
 		console.log(D('info').title);
-		if (ws) ws.emit("subscribe", {userid: D('info').title});
+		if (ws && ws.readyState == 1) ws.emit("subscribe", {userid: D('info').title});
 	}
 }
 
@@ -1052,7 +1051,7 @@ function addComment(commentData) {
 // Sidebar UI interaction handlers ///////////////////////////////////////////////////////////////////////
 
 function testFunction() {
-	if (ws) ws.emit('queryPostsRecent');
+	if (ws && ws.readyState == 1) ws.emit('queryPostsRecent');
 }
 
 var clipboardText;
@@ -1116,7 +1115,7 @@ function requestNames() {
 	for (let name in DOMdisplayNames) {
 		userids.push(name);
 	}
-	if (ws) ws.emit('queryUsers', {userids});
+	if (ws && ws.readyState == 1) ws.emit('queryUsers', {userids});
 }
 
 function queryPost(postid) {
@@ -1136,7 +1135,7 @@ function makeSubLi(userid, lastaccessedts, lastpublishedts) {
 	subli.id = userid;
 	subli.onclick = function() {
 		loadPanel('browse');
-		if (ws) {
+		if (ws && ws.readyState == 1) {
 			D('loadingMsg').style.display = "";
 			if (userid == XNO.address) D('subscribe').style.display = "none";
 			else D('subscribe').style.display = "";
@@ -1159,7 +1158,7 @@ function makeSubLi(userid, lastaccessedts, lastpublishedts) {
 		unsubBut.onclick = function() {
 			event.stopPropagation();
 			subli.parentNode.removeChild(subli);
-			if (ws) ws.emit('unsubscribe', {userid});
+			if (ws && ws.readyState == 1) ws.emit('unsubscribe', {userid});
 		};	
 		actions.appendChild(unsubBut);
 	}
@@ -1270,7 +1269,7 @@ function fullLabel(postid, library) {
 		unsubBut.onclick = function() {
 			event.stopPropagation();
 			label.parentNode.parentNode.removeChild(label.parentNode);
-			if (ws) ws.emit('deleteLibrary', {postid:label.parentNode.id});
+			if (ws && ws.readyState == 1) ws.emit('deleteLibrary', {postid:label.parentNode.id});
 			if (!D('library').children[0]) D('libraryPlaceholder').style.display = "";
 		};
 		actions.appendChild(unsubBut);
@@ -1414,7 +1413,7 @@ function toggleVisibility() {
 	
 function setData(type) {
 	if (type == 'name') {
-		if (ws) ws.emit('updateDisplayName', { displayname: D('set-name').value} );
+		if (ws && ws.readyState == 1) ws.emit('updateDisplayName', { displayname: D('set-name').value} );
 	} else console.error("Need code to set " + type);
 }
 
@@ -1433,6 +1432,11 @@ function loadURL() {
 	} else if (tag) queryBrowse(null, tag);
 	else if (userid) queryBrowse(userid);
 	else queryBrowse();
+	
+	if (ws && ws.readyState == 3) {
+		ws = new WebSocket(serverURL);
+		setupWebsocket();
+	}
 }
 
 window.addEventListener('message', function (e) {
