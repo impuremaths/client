@@ -26,12 +26,12 @@
 			</div>
 
 			<div id="editPanel" class="accordion" style="max-height:0px">
-				<div style="text-align:center; margin-top:10px">
-					<button tabindex="-1" class="left" onclick="generateSeed()">Create Account</button><button id="current" class="center" tabindex="-1" onclick="showCurrent()" autocomplete="off" disabled>Current Seed</button><button id="clear" class="right" onclick="if (confirm('Log out of the current account? (Have you saved your account seed elsewhere?!)')) clickClearSeed();" autocomplete="off" disabled>Log Out</button>
+				<div style="text-align:center; margin-top:20px">
+					<button tabindex="-1" class="left" onclick="generateSeed()">Create Account</button><button id="current" class="center" tabindex="-1" onclick="showCurrent()" autocomplete="off" disabled>Current Key</button><button id="clear" class="right" onclick="if (confirm('Log out of the current account? (Have you saved your account key elsewhere?!)')) clickClearSeed();" autocomplete="off" disabled>Log Out</button>
 				</div>
 				
 				<div style="display:flex; justify-content:space-between; margin-top:15px; margin-bottom:20px">
-					<input id="seed" placeholder="Private seed (save securely)..." style="padding-right:30px; flex-grow:1; flex-basis:20px;" type="password" autocomplete="off" onclick="this.select()" oninput="importSeed();">
+					<input id="seed" placeholder="Private key (save securely)..." style="padding-right:30px; flex-grow:1; flex-basis:20px;" type="password" autocomplete="off" onclick="this.select()" oninput="importSeed();">
 					<button  tabindex="-1" class="close-icon" onclick="closeCopy(this.previousElementSibling)"></button>			
 					<button id="show" tabindex="-1" style="font-size:0.85em; margin-left:10px" onclick="toggleVisibility()">Show</button>
 				</div>
@@ -62,10 +62,10 @@
 
 		<div class="objectWrapper" style="margin-bottom:10px; overflow:hidden; display:flex; flex-direction:column" onclick="openSubAccordion(this)">
 			<div class="clickFlash leftRightBase" style="margin-top:0px" onclick="toggleSubAccordion(this)">
-				<strong>Library</strong> <i id="libraryWarning" style="color:gray">- The accounted for persist -</i>
+				<strong>Library</strong>
 			</div>
 			<div class="accordion">
-				<div id="libraryPlaceholder" style="font-style:italic; color:gray; text-align:center; margin-top:20px">- Read something -</div>
+				<div id="libraryPlaceholder" style="font-style:italic; color:gray; text-align:center; margin-top:20px">Read something! (The accounted-for persist.)</div>
 				<ul id="library" style="margin-bottom:5px; overflow:auto; max-height:calc(100% - 15px)"></ul>
 			</div>
 		</div>
@@ -77,8 +77,8 @@
 	
 		<button id="browseButton" class="left active" style="margin-top:25px; margin-bottom:20px" onclick="loadPanel('browse')">Browse</button><button id="readButton" class="center" onclick="loadPanel('read')" autocomplete="off">Read</button><button id="postButton" class="right" onclick="loadPanel('post')" autocomplete="off">Write</button>
 	
-		<div id="browse">
-			<span style="font-size:0.85em; margin-top:10px; display:inline-block">Tags:</span>
+		<div id="browse" style="margin-bottom:80px">
+			<span style="font-size:0.85em; margin-top:10px; display:inline-block">Top tags:</span>
 			<span id="popularTags"></span>
 			<div style="margin-top:20px; margin-bottom:20px">
 			<span style="font-weight:bold; font-size:1.1em; cursor:pointer" onclick="queryBrowse()" id="info">Recent</span>
@@ -88,7 +88,7 @@
 			<ul id="discovery"></ul>
 		</div>
 
-		<div id="post" style="display:none; margin-top:20px; width:80%">
+		<div id="post" style="display:none; margin-top:20px; margin-bottom:80px; max-width:960px">
 			<input id="postTitle" style="font-weight:bold; font-size:1.1em; width:100%;  margin-bottom:10px;" autocomplete="off" placeholder="Title..." type="text" autocomplete="off" onkeyup="if (event.keyCode == 27) this.value = '';">
 			<div id="editid" style="font-size:0.85em; margin-left:10px; display:none">
 			<span id="creationEdit"></span><span id="modificationEdit"></span>
@@ -96,45 +96,48 @@
 			<div id="postContent">
 			</div>
 					
-			<div style="display:flex; margin-top:40px; width:100%">
+			<div style="display:flex; margin-top:50px; width:100%">
 			<div style="display:flex; justify-content:space-between; flex-grow:1">
 				<input placeHolder="Previous post link..." id="set-prev" autocomplete="off"
-					   style="padding-right:30px; flex-grow:1;" type="text" autocapitalize="off" onkeyup="if (event.keyCode == 27) this.value = '';">
+					   style="padding-right:30px; flex-grow:1; width:1px" type="text" autocapitalize="off" onkeyup="if (event.keyCode == 27) this.value = '';">
 				<button tabindex="-1" class="close-icon" onclick="closeCopy(this.previousElementSibling)"></button>
 			</div>
 			<div style="width:10px"></div>
 			<div style="display:flex; justify-content:space-between; flex-grow:1">
 				<input placeHolder="Next post link..." id="set-next" autocomplete="off"
-					   style="padding-right:30px; flex-grow:1;" type="text" autocapitalize="off" onkeyup="if (event.keyCode == 27) this.value = '';">
+					   style="padding-right:30px; flex-grow:1; width:1px" type="text" autocapitalize="off" onkeyup="if (event.keyCode == 27) this.value = '';">
 				<button tabindex="-1" class="close-icon" onclick="closeCopy(this.previousElementSibling)"></button>
 			</div>
 			</div>
 			
 			<div style="display:flex; margin:10px; justify-content:space-between;">
-			<button class="active" onclick="toggle(this)" style="font-size:0.85em;">Reciprocate Link</button>
-			<button class="active" onclick="toggle(this)" style="font-size:0.85em;">Reciprocate Link </button>
+			<button class="active" onclick="toggle(this)" tabindex="-1" style="font-size:0.85em;">Reciprocate Link</button>
+			<button class="active" onclick="toggle(this)" tabindex="-1" style="font-size:0.85em;">Reciprocate Link</button>
 			</div>
 				
 			<input placeHolder="tag (lowercase only)..." id="set-tag" autocomplete="off"
-				   style="padding-right:30px; flex-grow:1; margin-top:20px;" type="text" autocapitalize="off" onkeyup="if (event.keyCode == 27) this.value = ''; if (event.keyCode == 13) addTag()">
-				   <button style="font-size:0.85em;" onclick="addTag()">Add</button>
-			<div id="editTags" style="margin-top:20px; font-size:0.85em"></div>
+				   style="padding-right:30px; flex-grow:1; margin-top:20px; margin-bottom:10px" type="text" autocapitalize="off" onkeyup="if (event.keyCode == 27) this.value = ''; if (event.keyCode == 13) addTag()">
+				   <button style="font-size:0.85em; margin-right:20px" onclick="addTag()">Add</button>
+			<span id="editTags" style="margin-top:20px; font-size:0.85em"></span>
 			
-			<br><br><button id="submitButton" onclick="post()" disabled>Publish Post</button>
-			<button id="clearButton" style="margin-left:5px" onclick="cancelPost()">Clear Post</button>	
+			<div style="margin-top:40px; margin-right:10px; justify-content:right; display:flex;">
+			<button id="submitButton" onclick="post()" tabindex="-1" disabled>Publish Post</button>
+			<button id="clearButton" style="margin-left:5px" tabindex="-1" onclick="if (confirm('Clear your draft?')) cancelPost()">Clear Post</button>	
+			</div>
 		</div>
 		
-		<div id="read" style="display:none; margin-top:20px">
+		<div id="read" style="display:none; margin-top:20px; margin-bottom:80px">
 			<div style="flex-basis:1px; flex-grow:2; margin-right:50px;">
 				
-				<div id="readContent" style="white-space:pre-wrap; margin-bottom:40px; margin-top:40px">Content</div>
+				<div id="readContent" style="white-space:pre-wrap; margin-bottom:40px; margin-top:40px">Browse for something interesting. The content will appear here.</div>
 				
 				<div style="background-color:#e4e7e7; height:2px; border-radius:20px; margin:30px;"></div>
 				
 				<textarea id="commentContent" style="margin-top:10px; margin-bottom:10px; height:80px; width:100%; display:none" autocomplete="off" onkeydown="commentKeypress()" oninput="commentKeypress()" placeholder="Comment..."></textarea>
+				<div style="display:flex; justify-content:right; margin-right:10px">
 				<button id="comment" style="margin-top:5px; font-size:0.85em" onclick="comment()" disabled>Comment</button>
-				<br>
-				<ul id="readComments" style="white-space:pre-wrap; margin-top:30px"><ul>
+				</div>
+				<ul id="readComments" style="white-space:pre-wrap;"><ul>
 			</div>
 			
 	
@@ -389,7 +392,7 @@ function setupWebsocket(restart) {
 	
 	ws.on('queryPostResponse', function(data) { 
 		console.log(data);
-		let oldPost = readPostid && (JSON.stringify(data.content) == JSON.stringify(postCache[readPostid].content));
+		let oldPost = readPostid && (JSON.stringify(data.content) == JSON.stringify(postCache[readPostid].content)) && postCache[readPostid].comments;
 		cachePost(data);
 		if (editPostid == data.postid) {
 			fillEdit(data.postid); 
@@ -465,19 +468,19 @@ function queryBrowse(userid, tag) {
 	let urltag = new URLSearchParams(window.location.search).get('tag');
 	let urluserid = new URLSearchParams(window.location.search).get('userid');
 	if (userid) {	
-		document.title = funName(userid) + " - mktplc";
 		if (urluserid != userid) {		
 			let url = new URL(window.location);
 			url.search = new URLSearchParams({userid});
 			window.history.pushState(null, "", url);
 		}
+		document.title = funName(userid) + " - mktplc";
 	} else if (tag) {
-		document.title = tag + " - mktplc";
 		if (urltag != tag) {	
 			let url = new URL(window.location);
 			url.search = new URLSearchParams({tag});
 			window.history.pushState(null, "", url);	
 		}
+		document.title = tag + " - mktplc";
 	} else {	
 		if (urltag || urluserid || (new URLSearchParams(window.location.search).get('postid'))) {		
 			let url = new URL(window.location);
@@ -531,6 +534,7 @@ function makeMetaLabel(userid, createdts, modifiedts) {
 	let postAuthor = make('a', funName(userid));
 	postAuthor.title = userid;
 	postAuthor.style.cursor = "pointer";
+	postAuthor.style.fontWeight = "600";
 	postAuthor.style.color = funColor(userid);
 	postAuthor.onclick = function() {
 		event.stopPropagation();
@@ -571,6 +575,9 @@ function addTag() {
 	}
 	newTag.style.cursor = "pointer";
 	newTag.style.margin = "10px";
+	newTag.style.padding = "3px 5px 3px 5px";
+	newTag.style.borderRadius = "5px";
+	newTag.style.display = "inline-block";
 	
 	let newTagFlag = true;
 	for (let i = 0; i < D('editTags').children.length; i++) {
@@ -579,8 +586,12 @@ function addTag() {
 			flash(D('editTags').children[i]);
 		}
 	}
-	if (newTagFlag && newTag.textContent) D('editTags').appendChild(newTag);
-	D('set-tag').value = "";	
+	if (newTagFlag && newTag.textContent) {
+		D('editTags').appendChild(newTag);
+		flash(newTag);
+	}
+	D('set-tag').value = "";
+	D('set-tag').select();
 }
 
 function post() {
@@ -863,7 +874,7 @@ function appendBlock(type, parent) {
 	buttonParent.style.justifyContent = "space-between";
 	
 	let sponsBut = make('button', "Sponsors Only");
-	sponsBut.style.marginRight = "20px";
+	sponsBut.style.marginRight = "5px";
 	sponsBut.style.float = "left";
 	sponsBut.style.fontSize = "0.85em";
 	sponsBut.tabIndex = "-1";
@@ -890,7 +901,7 @@ function appendBlock(type, parent) {
 	jsBut.onclick = function() { appendBlock("js", block) };
 	buttonPanel.appendChild(jsBut);
 	
-	let delBut = make('button', "Delete");
+	let delBut = make('button', "✕");
 	delBut.classList.add("right");
 	delBut.onclick = function() {
 		if (D('postContent').children.length > 1) D('postContent').removeChild(block);
@@ -925,6 +936,9 @@ function cancelPost() {
 	D('set-prev').value = "";
 	D('set-next').value = "";
 	
+	clearDOM(D('editTags'));
+	D('set-tag').value = "";
+	
 	D('submitButton').textContent = "Publish Post";
 	D('clearButton').textContent = "Clear Post";
 	loadPanel(topPage);
@@ -943,7 +957,7 @@ function addComment(commentData) {
 		let editBut = make('button', "Edit");
 		
 		editPanel.placeholder = "Reply...";
-		editPanel.style = "margin-bottom:10px; margin-top:10px; width:60%; display:none";		
+		editPanel.style = "margin-bottom:10px; margin-top:10px; width:100%; display:none";		
 		editPanel.oninput = function() {
 			if (editPanel.value) editBut.textContent = "Send Edit";
 			else editBut.textContent = "Cancel";
@@ -992,7 +1006,7 @@ function addComment(commentData) {
 		// reply editor
 		let repPanel = make('textarea');
 		let repBut = make('button', "Reply");
-		repPanel.style = "display:none; margin-left:20px; margin-bottom:10px; margin-top:20px; width:60%;";
+		repPanel.style = "display:none; margin-left:20px; margin-bottom:10px; margin-top:20px; width:calc(100% - 20px);";
 		repPanel.placeholder = "Reply...";
 		repPanel.oninput = function() {
 			if (repPanel.value) repBut.textContent = "Reply";
@@ -1041,20 +1055,25 @@ function testFunction() {
 var clipboardText;
 
 function generateSeed() {
-	if (XNO.address && !confirm('Log out of the current account? (Have you have saved your account seed elsewhere?!)')) return false;
 	let newSeed = XNO.generateSeed();
 	inputEvent(D("seed"), newSeed);
-	navigator.clipboard.writeText(newSeed);
-	clipboardText = newSeed;
-	showMsg("New seed copied to clipboard. Save it safely, elsewhere!");
+	if (D("seed").value) {
+		navigator.clipboard.writeText(newSeed);
+		clipboardText = newSeed;
+		showMsg("New key copied to clipboard. Save it safely, elsewhere!");
+	}
 }
 
 function importSeed() {
 	let seed = D("seed").value;
-	let index = 0;	
-	if (!XNO.checkSeed(seed)) { if (XNO.checkAddress(seed)) showMsg("Enter a seed, not an address."); }
+	let index = 0;
+	if (!XNO.checkSeed(seed)) { if (XNO.checkAddress(seed)) showMsg("Enter a key, not an address."); }
 	else if (index.length > 0 && (!/^[0-9]+$/.test(index) || index < 0 || index > Math.pow(2, 32) - 1)) showMsg("Invalid account index.");
-	else {
+	else if (seed == XNO.seed) return false;
+	else if (XNO.address && !confirm('Log out of the current account? (Have you have saved your account key elsewhere?!)')) {
+			D("seed").value = "";
+			return false;
+	} else {		
 		let keepAccount = XNO.address;
 		clearSeed();		
 		XNO.unpackSeed(seed, parseInt(index));
@@ -1073,7 +1092,6 @@ function importSeed() {
 		
 		clearDOM(D('subscriptions'));
 		if (XNO.address) makeSubLi(XNO.address);
-		D('libraryWarning').style.display = "none";
 		D('subscribe').disabled = false;
 		
 		localStorage.setItem("localSeed", XNO.seed);
@@ -1158,9 +1176,9 @@ function makeSubLi(userid, lastaccessedts, lastpublishedts) {
 	if (!tag) {
 		nameSpan.style.color = funColor(userid);
 		queueDOMdisplayName(userid, nameSpan);
-		nameSpan.style.fontWeight = "600";
 	}
 	
+	nameSpan.style.fontWeight = "600";
 	
 	if (lastpublishedts) {
 		let publishSpan = make('span', timeSince(lastpublishedts));
@@ -1186,7 +1204,6 @@ function fullLabel(postid, library) {
 	postTitle.title = data.title;
 	postTitle.style.overflow = "hidden";
 	postTitle.style.textOverflow = "ellipsis";
-	// postTitle.style.fontWeight = "600";
 	
 	// dates
 	let postDate = make('span', timeSince(data.createdts));	
@@ -1349,7 +1366,7 @@ function showCurrent() {
 function clearSeed() {
 	clearDOM(D('subscriptions'));
 	clearDOM(D('library'));
-	cancelPost();
+	if (D('creationEdit').title) cancelPost();
 }
 
 function clickClearSeed() {
@@ -1377,7 +1394,6 @@ function clickClearSeed() {
 	D("subPanel").style.display = "none";
 	
 	D('displayName').textContent = "✏️ Unaccounted";
-	D('libraryWarning').style.display = "";
 	
 	localStorage.removeItem("localSeed");
 }
@@ -1409,7 +1425,7 @@ function loadURL() {
 	let userid = new URLSearchParams(window.location.search).get('userid');
 	if (postid) {
 		if (postCache[postid]) fillPost(postid);
-		else queryPost(postid);
+		if (!postCache[postid] || !postCache[postid].comments) queryPost(postid);
 		loadPanel('read');
 	} else if (tag) queryBrowse(null, tag);
 	else if (userid) queryBrowse(userid);
@@ -1442,9 +1458,25 @@ window.addEventListener('copy', function(e) {
 });
 
 window.addEventListener('keydown', function(evt) {
-	if (document.activeElement.tagName.toLowerCase() != 'input' && document.activeElement.tagName.toLowerCase() != 'textarea' && evt.keyCode == 27) {
-		evt.preventDefault();
-		loadPanel('browse');		
+	if (document.activeElement.tagName.toLowerCase() != 'input' && document.activeElement.tagName.toLowerCase() != 'textarea' && (evt.keyCode == 27 || evt.keyCode == 8)) {
+		if (evt.keyCode == 8) {			
+			let postid = new URLSearchParams(window.location.search).get('postid');
+			let tag = new URLSearchParams(window.location.search).get('tag');
+			let userid = new URLSearchParams(window.location.search).get('userid');
+			
+			if (postid) {
+				if (D('read').style.display == "none") {
+					evt.preventDefault();
+					loadPanel('read');
+				}
+			} else if (D('browse').style.display == "none") {
+				evt.preventDefault();
+				loadPanel('browse');
+			}	
+		} else {
+			evt.preventDefault();
+			loadPanel('browse');	
+		}
 	}
 });
 
