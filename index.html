@@ -78,8 +78,7 @@
 		<button id="browseButton" class="left active" style="margin-top:25px; margin-bottom:20px" onclick="loadPanel('browse')">Browse</button><button id="readButton" class="center" onclick="loadPanel('read')" autocomplete="off">Read</button><button id="postButton" class="right" onclick="loadPanel('post')" autocomplete="off">Write</button>
 	
 		<div id="browse" style="margin-bottom:80px">
-			<span style="font-size:0.85em; margin-top:10px; display:inline-block">Top tags:</span>
-			<span id="popularTags"></span>
+			<div id="popularTags" style="margin-bottom:30px; margin-top:10px"></div>
 			<div style="margin-top:20px; margin-bottom:20px">
 			<span style="font-weight:bold; font-size:1.1em; cursor:pointer" onclick="queryBrowse()" id="info">Recent</span>
 			<button id="subscribe" onclick="subscribeHandler()" autocomplete="off" style="display:none; padding:2px 8px; margin:2px; margin-left:5px" disabled>+</button>			
@@ -439,9 +438,7 @@ function setupWebsocket(restart) {
 		clearDOM(D('popularTags'));
 
 		let tagElt = make('span', 'Recent');
-		tagElt.style.margin = "10px"
-		tagElt.style.fontSize = "0.85em";
-		tagElt.style.cursor = "pointer";
+		tagElt.style = "margin-right:20px; font-size:0.85em; cursor:pointer; display:inline-block; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:250px";
 		tagElt.onclick = function() {
 			queryBrowse(null, null);
 		};
@@ -450,9 +447,7 @@ function setupWebsocket(restart) {
 		for (let tag in data) {
 			if (data[tag] > 0) {
 				let tagElt = make('span', tag);
-				tagElt.style.margin = "10px"
-				tagElt.style.fontSize = "0.85em";
-				tagElt.style.cursor = "pointer";
+				tagElt.style = "margin-right:20px; font-size:0.85em; cursor:pointer; display:inline-block; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:250px";
 				tagElt.onclick = function() {
 					queryBrowse(null, tag);
 				};
@@ -1393,8 +1388,10 @@ function showCurrent() {
 }
 
 function clearSeed() {
+	// clearing actions that are needed even if switching accounts
 	clearDOM(D('subscriptions'));
 	clearDOM(D('library'));
+	D('libraryPlaceholder').style.display = "";	
 	if (D('creationEdit').title) cancelPost();
 }
 
@@ -1417,13 +1414,10 @@ function clickClearSeed() {
 	closeSubAccordion(D('editPanel'));
 	//D("profilePanel").style.display = "none";
 	D("setDisplayBut").disabled = true;
-	if (!D('library').children[0]) D('libraryPlaceholder').style.display = "";	
+	
 	D("grayout").style.opacity = "0.3";
-	
 	D("subPanel").style.display = "none";
-	
-	D('displayName').textContent = "✏️ Unaccounted";
-	
+	D('displayName').textContent = "✏️ Unaccounted";	
 	localStorage.removeItem("localSeed");
 }
 
