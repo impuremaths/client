@@ -121,7 +121,7 @@
 			
 			<div style="margin-top:40px; margin-right:10px; justify-content:right; display:flex;">
 			<button id="submitButton" onclick="post()" tabindex="-1" disabled>Publish</button>
-			<button id="clearButton" style="margin-left:5px" tabindex="-1" onclick="if (confirm('Clear your draft?')) cancelPost()">Clear</button>	
+			<button id="clearButton" style="margin-left:5px" tabindex="-1" onclick="if (confirm('Clear current draft?')) cancelPost()">Clear</button>	
 			</div>
 		</div>
 		
@@ -143,7 +143,17 @@
 			<div style="flex-basis:1px; flex-grow:1; max-width:360px">
 			
 				<div id="readTitle" style="font-weight:bold; font-size:1.1em; margin-bottom:3px;">Title</div>	
-				<div style="font-size:0.85em"><a id="author" onclick="queryBrowse(this.title)" style="cursor:pointer; font-weight:600">Author</a> • <span id="creation">Post date</span><span id="modification"> - Modified date</span><button id="edit" onclick="fillEdit(); queryPost()" autocomplete="off" style="display:none; padding:2px 8px; margin:2px; margin-left:10px;">Edit</button></div>
+				
+				<div style="font-size:0.85em">
+					<div id="tags">
+						<a id="author" onclick="queryBrowse(this.title)" style="cursor:pointer; font-weight:600">Author</a>
+					</div>
+				
+					<div style="margin-top:3px">
+						<span id="creation">Post date</span><span id="modification"> - Modified date</span>
+						<a id="edit" onclick="event.preventDefault(); fillEdit(); queryPost();" style="cursor:pointer; display:none"> • Edit</a>
+					</div>
+				</div>
 				
 				<ul id="mapul"></ul>
 			</div>
@@ -522,35 +532,6 @@ function queryBrowse(userid, tag) {
 	loadPanel('browse');
 }
 
-function makeMetaLabel(userid, createdts, modifiedts) {	
-	let postAuthor = make('a', funName(userid));
-	postAuthor.title = userid;
-	postAuthor.style.cursor = "pointer";
-	postAuthor.style.fontWeight = "600";
-	postAuthor.style.color = funColor(userid);
-	postAuthor.onclick = function() {
-		event.stopPropagation();
-		queryBrowse(userid);
-	};	
-	queueDOMdisplayName(userid, postAuthor);
-	
-	let postDate = make('span', " • " + timeSince(createdts));	
-	postDate.title = createdts;
-		
-	let postMeta = make('div');
-	postMeta.style = "font-size:0.85em; overflow:hidden; text-overflow:ellipsis";
-	postMeta.appendChild(postAuthor);
-	postMeta.appendChild(postDate);	
-	
-	if (modifiedts && modifiedts != createdts) {
-		let postModified = make('span', " - " + timeSince(modifiedts));
-		postModified.title = modifiedts;
-		postMeta.appendChild(postModified);
-	}
-	
-	return postMeta;
-}
-
 function subscribeHandler() {
 	if (D(D('info').title)) flash(D(D('info').title));
 	else {
@@ -717,6 +698,114 @@ function fillBrowse(data) {
 	requestNames();
 }
 
+function fullLabel(postid, library) {
+	let data = postCache[postid];
+	let postTitle = make('div', data.title);
+	postTitle.title = data.title;
+	postTitle.style = "overflow:hidden; text-overflow:ellipsis";
+	
+	// author and tags
+	let tags = make('div');
+	tags.style = "font-size:0.85em; overflow: hidden; text-overflow:ellipsis;";
+	
+	let postAuthor = make('a', funName(data.userid));
+	postAuthor.title = data.userid;
+	postAuthor.style = "cursor:pointer; font-weight:600";
+	postAuthor.style.color = funColor(data.userid);
+	postAuthor.onclick = function() {
+		event.stopPropagation();
+		queryBrowse(data.userid);
+	};	
+	queueDOMdisplayName(data.userid, postAuthor);
+	tags.appendChild(postAuthor);
+	
+	if (data.tags) {
+		for (let i = 0; i < data.tags.length; i++) {
+			let tag = make('a', " • " + data.tags[i]);
+			tags.appendChild(tag);
+			tag.onclick = function() {
+				event.stopPropagation();
+				queryBrowse(null, data.tags[i]);
+			};
+		}
+	}
+	
+	// Meta: dates, edit
+	let postMeta = make('div');
+	postMeta.style = "font-size:0.85em; overflow:hidden; text-overflow:ellipsis";	
+	
+	let postDate = make('span', timeSince(data.createdts));	
+	postDate.title = data.createdts;
+	postMeta.appendChild(postDate);	
+	
+	if (data.modifiedts && data.modifiedts != data.createdts) {
+		let postModified = make('span', " - " + timeSince(data.modifiedts));
+		postModified.title = data.modifiedts;
+		postMeta.appendChild(postModified);
+	}	
+		
+	if (data.userid == XNO.address) {
+		let editBut = make('a', " • Edit");			
+		editBut.onclick = function() {
+			event.stopPropagation();
+			fillEdit(postid);
+			queryPost(postid);
+		}
+		postMeta.appendChild(editBut);		
+	}
+	
+	// Hover buttons
+	let actions = make('div');
+	actions.style = "position:absolute; top:0px; right:0px; display:none; opacity:0.8";
+	
+	let postLink = make('button', "Link");
+	postLink.classList.add("left");
+	postLink.style.marginRight = "4px";
+	postLink.onclick = function() {
+		event.stopPropagation();
+		let url = new URL(window.location);
+		url.search = new URLSearchParams({postid});
+		clickCopy(this, url.href);
+	};
+	actions.appendChild(postLink);
+	
+	let addBut = make('button', "＋");
+	addBut.classList.add("right");
+	actions.appendChild(addBut);
+	if (library) {
+		addBut.textContent = "✕";
+		addBut.onclick = function() {
+			event.stopPropagation();
+			label.parentNode.parentNode.removeChild(label.parentNode);
+			if (ws && ws.readyState == 1) ws.emit('deleteLibrary', {postid:label.parentNode.id});
+			if (!D('library').children[0]) D('libraryPlaceholder').style.display = "";
+		};	
+	} else addBut.onclick = function() {
+		event.stopPropagation();
+		if (!D(postid)) addToLib(postid, true);
+		flash(D(postid));
+	}
+	
+	let label = make('div');
+	label.appendChild(postTitle);
+	label.appendChild(tags);
+	label.appendChild(postMeta);
+	label.appendChild(actions);
+	
+	label.style = "overflow:hidden; cursor:pointer; padding:5px; flex-grow:1; position:relative";
+	label.onmouseenter = function() { actions.style.display = ""; };
+	label.onmouseleave = function() { actions.style.display = "none"; };
+	label.onclick = function() {
+		fillPost(postid);
+		loadPanel('read');
+		queryPost(postid);
+		if (!D(postid)) addToLib(postid);
+		else D(postid).style.fontWeight = "";
+		flash(this);
+	}
+	return label;
+}
+
 function fillPost(postid, oldPost) {
 	if (new URLSearchParams(window.location.search).get('postid') != postid) {		
 		let url = new URL(window.location);
@@ -725,6 +814,7 @@ function fillPost(postid, oldPost) {
 	}
 	document.title = postCache[postid].title + " - mktplc";
 	
+	// handle left bars
 	if (readPostid && D(readPostid)) removeActiveBar(D(readPostid));
 	if (readPostid && D(readPostid + "-disc")) removeActiveBar(D(readPostid + "-disc"));
 	readPostid = postid;
@@ -734,10 +824,25 @@ function fillPost(postid, oldPost) {
 	let metaData = postCache[postid];
 	queueDOMdisplayName(metaData.userid, D('author'));
 	
+	// Title and label
 	D('readTitle').textContent = metaData.title;
 	D('author').textContent = funName(metaData.userid);
 	D('author').style.color = funColor(metaData.userid);
 	D('author').title = metaData.userid;
+	
+	while (D('tags').children.length > 1) D('tags').removeChild(D('tags').lastElementChild);
+	if (metaData.tags) {
+		for (let i = 0; i < metaData.tags.length; i++) {
+			let tag = make('a', " • " + metaData.tags[i]);
+			tag.style = "cursor:pointer";
+			D('tags').appendChild(tag);
+			tag.onclick = function() {
+				event.stopPropagation();
+				queryBrowse(null, metaData.tags[i]);
+			};
+		}
+	}
+	
 	D('creation').textContent = new Date(metaData.createdts).toLocaleDateString();
 	D('creation').title = metaData.createdts;
 	if (metaData.modifiedts && metaData.modifiedts != metaData.createdts) {
@@ -748,8 +853,11 @@ function fillPost(postid, oldPost) {
 		D('modification').textContent = "";
 		D('modification').title = "";
 		D('modification').style.display = "none";
-	}
+	}	
+	if (metaData.userid == XNO.address) D('edit').style.display = "";
+	else D('edit').style.display = "none";
 	
+	// content
 	if (metaData.content) {
 		if (!oldPost) {
 			if (typeof metaData.content === "string") D('readContent').textContent = metaData.content;
@@ -799,12 +907,9 @@ function fillPost(postid, oldPost) {
 		}
 	} else D('readContent').innerHTML = "<i>Loading...</i>";
 	
-	if (metaData.userid == XNO.address) D('edit').style.display = "";
-	else D('edit').style.display = "none";
-	
+	// comments
 	if (XNO.address) D("comment").disabled = false;
-	clearDOM(D('readComments'));
-	
+	clearDOM(D('readComments'));	
 	if (metaData.comments) {
 		metaData.comments.sort(function(x, y) {
 			return parseInt(x.commentid.split("-")[1]) - parseInt(y.commentid.split("-")[1]);
@@ -962,6 +1067,35 @@ function cancelPost() {
 	D('submitButton').textContent = "Publish";
 	D('clearButton').textContent = "Clear";
 	loadPanel(topPage);
+}
+
+function makeMetaLabel(userid, createdts, modifiedts) {	
+	let postAuthor = make('a', funName(userid));
+	postAuthor.title = userid;
+	postAuthor.style.cursor = "pointer";
+	postAuthor.style.fontWeight = "600";
+	postAuthor.style.color = funColor(userid);
+	postAuthor.onclick = function() {
+		event.stopPropagation();
+		queryBrowse(userid);
+	};	
+	queueDOMdisplayName(userid, postAuthor);
+	
+	let postDate = make('span', " • " + timeSince(createdts));	
+	postDate.title = createdts;
+		
+	let postMeta = make('div');
+	postMeta.style = "font-size:0.85em; overflow:hidden; text-overflow:ellipsis";
+	postMeta.appendChild(postAuthor);
+	postMeta.appendChild(postDate);	
+	
+	if (modifiedts && modifiedts != createdts) {
+		let postModified = make('span', " - " + timeSince(modifiedts));
+		postModified.title = modifiedts;
+		postMeta.appendChild(postModified);
+	}
+	
+	return postMeta;
 }
 
 function addComment(commentData) {
@@ -1221,135 +1355,6 @@ function makeSubLi(userid, lastaccessedts, lastpublishedts) {
 	}
 	
 	D('subscriptions').appendChild(subli);
-}
-
-function fullLabel(postid, library) {
-	let data = postCache[postid];
-	let postTitle = make('div', data.title);
-	postTitle.title = data.title;
-	postTitle.style.overflow = "hidden";
-	postTitle.style.textOverflow = "ellipsis";
-	
-	// dates
-	let postDate = make('span', timeSince(data.createdts));	
-	postDate.title = data.createdts;
-		
-	let postMeta = make('div');
-	postMeta.style = "font-size:0.85em; overflow:hidden; text-overflow:ellipsis";
-	postMeta.appendChild(postDate);	
-	
-	if (data.modifiedts && data.modifiedts != data.createdts) {
-		let postModified = make('span', " - " + timeSince(data.modifiedts));
-		postModified.title = data.modifiedts;
-		postMeta.appendChild(postModified);
-	}
-
-	//	postMeta.appendChild(make('span', " ago"));
-	
-	// hover
-	let actions = make('div');
-	actions.style = "position:absolute; top:0px; right:0px; display:none; opacity:0.8";
-	
-	if (data.userid == XNO.address) {
-			let editBut = make('a', " • Edit");	
-		// editBut.classList.add("left");
-		
-		editBut.onclick = function() {
-			event.stopPropagation();
-			fillEdit(postid);
-			queryPost(postid);
-		}
-		postMeta.appendChild(editBut);		
-	}
-	
-	let postLink = make('button', "Link");
-	//if (data.userid == XNO.address) postLink.classList.add("center");
-	//else {
-		postLink.classList.add("left");
-		postLink.style.marginRight = "4px";
-	//}
-	postLink.onclick = function() {
-		event.stopPropagation();
-		let url = new URL(window.location);
-		url.search = new URLSearchParams({postid});
-		clickCopy(this, url.href);
-	};
-	actions.appendChild(postLink);
-	
-	if (!library) {
-		let addBut = make('button', "＋");
-		addBut.classList.add("right");
-		
-		addBut.onclick = function() {
-			event.stopPropagation();
-			if (!D(postid)) addToLib(postid, true);
-			flash(D(postid));
-		}
-		actions.appendChild(addBut);	
-	} else {
-		let unsubBut = make("button", "✕");
-		unsubBut.classList.add("right");
-		unsubBut.onclick = function() {
-			event.stopPropagation();
-			label.parentNode.parentNode.removeChild(label.parentNode);
-			if (ws && ws.readyState == 1) ws.emit('deleteLibrary', {postid:label.parentNode.id});
-			if (!D('library').children[0]) D('libraryPlaceholder').style.display = "";
-		};
-		actions.appendChild(unsubBut);
-	}
-	
-	// author and tags
-	let tags = make('div');
-	tags.style.fontSize = "0.85em";	
-	tags.style.textOverflow = "ellipsis";
-	tags.style.overflow = "hidden";
-	
-	let postAuthor = make('a', funName(data.userid));
-	postAuthor.title = data.userid;
-	postAuthor.style.cursor = "pointer";
-	postAuthor.style.color = funColor(data.userid);
-	postAuthor.style.fontWeight = "600";
-	postAuthor.onclick = function() {
-		event.stopPropagation();
-		queryBrowse(data.userid);
-	};	
-	queueDOMdisplayName(data.userid, postAuthor);
-	tags.appendChild(postAuthor);
-	
-	if (data.tags) {
-		for (let i = 0; i < data.tags.length; i++) {
-			let tag = make('a', " • " + data.tags[i]);
-			//tag.style.margin = "0px 10px 0px 10px";
-			tags.appendChild(tag);
-			tag.onclick = function() {
-				event.stopPropagation();
-				queryBrowse(null, data.tags[i]);
-			};
-		}
-	}
-	
-	let label = make('div');
-	label.appendChild(postTitle);
-	label.appendChild(tags);
-	label.appendChild(postMeta);
-	label.appendChild(actions);
-	
-	label.style = "overflow:hidden; cursor:pointer; padding:5px; flex-grow:1; position:relative";
-	label.onmouseenter = function() {
-		actions.style.display = "";
-	}
-	label.onmouseleave = function() {
-		actions.style.display = "none";
-	}
-	label.onclick = function() {
-		fillPost(postid);
-		loadPanel('read');
-		queryPost(postid);
-		if (!D(postid)) addToLib(postid);
-		else D(postid).style.fontWeight = "";
-		flash(this);
-	}
-	return label;
 }
 
 function makeLibLi(postid, accessts) {
