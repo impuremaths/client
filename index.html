@@ -22,16 +22,16 @@
 	<div id="firstDiv" class="firstDiv" style="background-color:steelblue">		
 		<div id="profilePanel" class="objectWrapper" style="margin-bottom:15px; margin-top:50px" onclick="openSubAccordion(this)">
 			<div class="clickFlash" style="display:flex; justify-content:space-between;" onclick="toggleSubAccordion(this)">
-				<strong style="overflow:hidden"><div id="displayName" style="text-overflow:ellipsis; overflow:hidden; font-size:1.2em;" class="flash">✏️ Unaccounted</div></strong>
+				<strong style="overflow:hidden"><div id="displayName" style="text-overflow:ellipsis; overflow:hidden; font-size:1.2em;" class="flash">Guest</div></strong>
 			</div>
 
 			<div id="editPanel" class="accordion" style="max-height:0px">
 				<div style="text-align:center; margin-top:20px">
-					<button tabindex="-1" class="left" onclick="generateSeed()">Create Account</button><button id="current" class="center" tabindex="-1" onclick="showCurrent()" autocomplete="off" disabled>Current Key</button><button id="clear" class="right" onclick="if (confirm('Log out of the current account? (Have you saved your account key elsewhere?!)')) clickClearSeed();" autocomplete="off" disabled>Log Out</button>
+					<button tabindex="-1" class="left" onclick="generateSeed()">Create PIN</button><button id="current" class="center" tabindex="-1" onclick="showCurrent()" autocomplete="off" disabled>Current PIN</button><button id="clear" class="right" onclick="if (confirm('Log out of the current account? (Have you saved your account PIN elsewhere?!)')) clickClearSeed();" autocomplete="off" disabled>Log Out</button>
 				</div>
 				
 				<div style="display:flex; justify-content:space-between; margin-top:15px; margin-bottom:20px">
-					<input id="seed" placeholder="Private key (save securely)..." style="padding-right:30px; flex-grow:1; flex-basis:20px;" type="password" autocomplete="off" onclick="this.select()" oninput="importSeed();">
+					<input id="seed" placeholder="PIN (secret, save securely)..." style="padding-right:30px; flex-grow:1; flex-basis:20px;" type="password" autocomplete="off" onclick="this.select()" oninput="importSeed();">
 					<button  tabindex="-1" class="close-icon" onclick="closeCopy(this.previousElementSibling)"></button>			
 					<button id="show" tabindex="-1" style="font-size:0.85em; margin-left:10px" onclick="toggleVisibility()">Show</button>
 				</div>
@@ -65,7 +65,7 @@
 				<strong>Library</strong>
 			</div>
 			<div class="accordion">
-				<div id="libraryPlaceholder" style="font-style:italic; color:gray; text-align:center; margin-top:20px">Read something! (The accounted-for persist.)</div>
+				<div id="libraryPlaceholder" style="font-style:italic; color:gray; text-align:center; margin-top:20px">Read something! (Log in to persist this list.)</div>
 				<ul id="library" style="margin-bottom:5px; overflow:auto; max-height:calc(100% - 15px)"></ul>
 			</div>
 		</div>
@@ -120,15 +120,15 @@
 			<span id="editTags" style="margin-top:20px; font-size:0.85em"></span>
 			
 			<div style="margin-top:40px; margin-right:10px; justify-content:right; display:flex;">
-			<button id="submitButton" onclick="post()" tabindex="-1" disabled>Publish Post</button>
-			<button id="clearButton" style="margin-left:5px" tabindex="-1" onclick="if (confirm('Clear your draft?')) cancelPost()">Clear Post</button>	
+			<button id="submitButton" onclick="post()" tabindex="-1" disabled>Publish</button>
+			<button id="clearButton" style="margin-left:5px" tabindex="-1" onclick="if (confirm('Clear your draft?')) cancelPost()">Clear</button>	
 			</div>
 		</div>
 		
 		<div id="read" style="display:none; margin-top:20px; margin-bottom:80px">
 			<div style="flex-basis:1px; flex-grow:2; margin-right:50px;">
 				
-				<div id="readContent" style="white-space:pre-wrap; margin-bottom:40px; margin-top:40px">Browse for something interesting. The content will appear here.</div>
+				<div id="readContent" style="white-space:pre-wrap; margin-bottom:40px; margin-top:40px">Browse for something interesting. Content displays here.</div>
 				
 				<div style="background-color:#e4e7e7; height:2px; border-radius:20px; margin:30px;"></div>
 				
@@ -331,7 +331,6 @@ function setupWebsocket(restart) {
 		clearDOM(D('subscriptions'));
 		if (XNO.address) makeSubLi(XNO.address);
 		if (data.edges) {
-			console.log(data.edges);
 			for (let i = 0; i < data.edges.length; i++) {
 				makeSubLi(data.edges[i].userid, data.edges[i].lastaccessedts, data.edges[i].lastpublishedts);
 			}
@@ -341,7 +340,6 @@ function setupWebsocket(restart) {
 		if (data && data.displayname) {
 			D('displayName').textContent = data.displayname;			
 			receiveDOMdisplayName(data.userid, data.displayname);
-			closeSubAccordion(D('editPanel'));
 		}
 		console.log("Authenticated! Requesting library...");
 		ws.emit('queryLibrary');
@@ -589,7 +587,7 @@ function addTag() {
 }
 
 function post() {
-	if (!D('postTitle').value) {
+	if (!D('postTitle').value.trim()) {
 		alert("Title is required.");
 		return false;
 	}
@@ -605,7 +603,8 @@ function post() {
 	for (let i = 0; i < D('postContent').children.length; i++) {
 		if (D('postContent').children[i].firstChild.title == "image") {
 			content.push({content:D('postContent').children[i].firstChild.firstChild.value, type:D('postContent').children[i].firstChild.title});
-		} else content.push({content:D('postContent').children[i].firstChild.value, type:D('postContent').children[i].firstChild.title});
+		} else if (D('postContent').children[i].firstChild.value)
+			content.push({content:D('postContent').children[i].firstChild.value, type:D('postContent').children[i].firstChild.title});
 	}
 	
 	let tags = [];
@@ -614,7 +613,7 @@ function post() {
 		D('editTags').removeChild(D('editTags').children[0]);
 	}
 
-	ws.emit('updatePost', {tags, prev_: prev, next_: next, title:D('postTitle').value, content:content, visibility:"public", createdts: parseInt(D('creationEdit').title)});
+	ws.emit('updatePost', {tags, prev_: prev, next_: next, title:D('postTitle').value.trim(), content:content, visibility:"public", createdts: parseInt(D('creationEdit').title)});
 }
 
 function commentKeypress() {
@@ -960,8 +959,8 @@ function cancelPost() {
 	clearDOM(D('editTags'));
 	D('set-tag').value = "";
 	
-	D('submitButton').textContent = "Publish Post";
-	D('clearButton').textContent = "Clear Post";
+	D('submitButton').textContent = "Publish";
+	D('clearButton').textContent = "Clear";
 	loadPanel(topPage);
 }
 
@@ -975,34 +974,36 @@ function addComment(commentData) {
 	let editPanel = make('textarea');
 	
 	if (XNO.address == commentData.commentid.split("-")[0]) {	
-		let editBut = make('button', "Edit");
+		// let editBut = make('button', "Edit");
+		let editBut = make('a', " • Edit");	
+		editBut.style.cursor = "pointer";
 		
 		editPanel.placeholder = "Reply...";
 		editPanel.style = "margin-bottom:10px; margin-top:10px; width:100%; display:none";		
 		editPanel.oninput = function() {
-			if (editPanel.value) editBut.textContent = "Send Edit";
-			else editBut.textContent = "Cancel";
+			if (editPanel.value) editBut.textContent = " • Send Edit";
+			else editBut.textContent = " • Cancel";
 		};
 		editPanel.onkeydown = function() {
 			if (event.keyCode == 27) {
 				editPanel.value = "";
 				editPanel.style.display = "none";
-				editBut.textContent = "Edit";
+				editBut.textContent = " • Edit";
 				event.stopPropagation();
 			}
 		}
 		
-		editBut.style = "padding:2px 8px; margin:2px; margin-left:10px;";				
+		// editBut.style = "padding:2px 8px; margin:2px; margin-left:10px;";				
 		editBut.onclick = function() {
 			if (editPanel.style.display) {
 				editPanel.style.display = "";
 				editPanel.value = D(commentData.commentid).textContent;
-				this.textContent = "Cancel";
+				this.textContent = " • Cancel";
 			} else {
 				editPanel.style.display = "none";
 				if (editPanel.value && editPanel.value != D(commentData.commentid).textContent)
 					ws.emit('updateComment', {content:editPanel.value, postid: commentData.postid, parentid: commentData.parentid, commentid: commentData.commentid });
-				this.textContent = "Edit";
+				this.textContent = " • Edit";
 			}
 		};
 		theLabel.appendChild(editBut);
@@ -1084,21 +1085,20 @@ function generateSeed() {
 	if (D("seed").value) {
 		navigator.clipboard.writeText(newSeed);
 		clipboardText = newSeed;
-		showMsg("New key copied to clipboard. Save it safely, elsewhere!");
+		showMsg("New PIN copied to clipboard. Save it safely, elsewhere!");
 	}
 }
 
 function importSeed() {
 	let seed = D("seed").value;
 	let index = 0;
-	if (!XNO.checkSeed(seed)) { if (XNO.checkAddress(seed)) showMsg("Enter a key, not an address."); }
-	else if (index.length > 0 && (!/^[0-9]+$/.test(index) || index < 0 || index > Math.pow(2, 32) - 1)) showMsg("Invalid account index.");
+	if (!XNO.checkSeed(seed)) { if (XNO.checkAddress(seed)) showMsg("Enter a PIN, not an address."); }
 	else if (seed == XNO.seed) return false;
-	else if (XNO.address && !confirm('Log out of the current account? (Have you have saved your account key elsewhere?!)')) {
-			D("seed").value = "";
-			return false;
-	} else {		
-		let keepAccount = XNO.address;
+	else if (index.length > 0 && (!/^[0-9]+$/.test(index) || index < 0 || index > Math.pow(2, 32) - 1)) showMsg("Invalid account index.");
+	else if (XNO.address && !confirm('Log out of the current account? (Have you have saved your account PIN elsewhere?!)')) {
+		D("seed").value = "";
+		return false;
+	} else {
 		clearSeed();		
 		XNO.unpackSeed(seed, parseInt(index));
 		
@@ -1119,7 +1119,8 @@ function importSeed() {
 		D('subscribe').disabled = false;
 		
 		localStorage.setItem("localSeed", XNO.seed);
-		if (keepAccount != XNO.address && ws) {
+		closeSubAccordion(D('editPanel'));
+		if (ws && ws.readyState == 1) {
 			let ts = Date.now();
 			console.log({userid: XNO.address, ts, signature:XNO.sign(ts, XNO.address)});
 			ws.emit('authenticateUser', {userid: XNO.address, ts, signature:XNO.sign(ts, XNO.address)});
@@ -1176,7 +1177,7 @@ function makeSubLi(userid, lastaccessedts, lastpublishedts) {
 	
 	if (userid != XNO.address) {
 		let unsubBut = make("button", "✕");
-		unsubBut.style.marginRight = "10px";
+		unsubBut.style.marginRight = "5px";
 		unsubBut.onclick = function() {
 			event.stopPropagation();
 			subli.parentNode.removeChild(subli);
@@ -1250,23 +1251,23 @@ function fullLabel(postid, library) {
 	actions.style = "position:absolute; top:0px; right:0px; display:none; opacity:0.8";
 	
 	if (data.userid == XNO.address) {
-		let editBut = make('button', "Edit");
-		editBut.classList.add("left");
+			let editBut = make('a', " • Edit");	
+		// editBut.classList.add("left");
 		
 		editBut.onclick = function() {
 			event.stopPropagation();
 			fillEdit(postid);
 			queryPost(postid);
 		}
-		actions.appendChild(editBut);		
+		postMeta.appendChild(editBut);		
 	}
 	
 	let postLink = make('button', "Link");
-	if (data.userid == XNO.address) postLink.classList.add("center");
-	else {
+	//if (data.userid == XNO.address) postLink.classList.add("center");
+	//else {
 		postLink.classList.add("left");
 		postLink.style.marginRight = "4px";
-	}
+	//}
 	postLink.onclick = function() {
 		event.stopPropagation();
 		let url = new URL(window.location);
@@ -1368,7 +1369,7 @@ function makeLibLi(postid, accessts) {
 function addToLib(postid, addOnly) {
 	let metaData = postCache[postid];
 	let ts = Date.now();
-	if (XNO.address && ws) {
+	if (XNO.address && ws && ws.readyState == 1) {
 		let libdata = { posts: [{ userid:metaData.userid, createdts:metaData.createdts, pushedts:ts }] };
 		if (!addOnly) libdata.posts[0].lastaccessedts = ts;
 		console.log("Emitting signal to add to DB library.");
@@ -1417,7 +1418,7 @@ function clickClearSeed() {
 	
 	D("grayout").style.opacity = "0.3";
 	D("subPanel").style.display = "none";
-	D('displayName').textContent = "✏️ Unaccounted";	
+	D('displayName').textContent = "Guest";	
 	localStorage.removeItem("localSeed");
 }
 
@@ -1512,7 +1513,7 @@ window.addEventListener('keydown', function(evt) {
 
 function funName(userid, pencil) {
 	let pencilLiteral = "";
-	if (pencil) pencilLiteral = "✏️ ";
+	// if (pencil) pencilLiteral = "✏️ ";
 	if (cacheDisplayNames[userid]) return pencilLiteral + cacheDisplayNames[userid];
 	return pencilLiteral + adj[parseInt(XNO.pubFromAddr(userid).substring(0, 10), 16) % adj.length] + " " 
 											+ animals[parseInt(XNO.pubFromAddr(userid).substring(0, 10), 16) % animals.length];
