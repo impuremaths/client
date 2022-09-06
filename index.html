@@ -147,6 +147,7 @@
 				<div style="font-size:0.85em">
 					<div id="tags">
 						<a id="author" onclick="queryBrowse(this.title)" style="cursor:pointer; font-weight:600">Author</a>
+						<a onclick="queryBrowse(this.title)" style="cursor:pointer"> • tag</a>
 					</div>
 				
 					<div style="margin-top:3px">
@@ -1245,6 +1246,7 @@ function importSeed() {
 		//D("profilePanel").style.display = "";
 		D("setDisplayBut").disabled = false;
 		D("grayout").style.opacity = "";
+		D("libraryPlaceholder").textContent = "Read something!";
 		
 		D("subPanel").style.display = "flex";
 		
@@ -1420,6 +1422,7 @@ function clickClearSeed() {
 	closeSubAccordion(D('editPanel'));
 	//D("profilePanel").style.display = "none";
 	D("setDisplayBut").disabled = true;
+	D("libraryPlaceholder").textContent = "Read something! (Log in to persist this list.)";
 	
 	D("grayout").style.opacity = "0.3";
 	D("subPanel").style.display = "none";
