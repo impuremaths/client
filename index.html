@@ -138,7 +138,7 @@
 				
 				<div style="margin-top:50px; display:flex;">
 					<button id="submitButton" onclick="post()" tabindex="-1" disabled>Publish</button>
-					<button id="clearButton" style="margin-left:5px" tabindex="-1" onclick="if (confirm('Clear current draft?')) cancelPost()">Clear</button>	
+					<button id="clearButton" style="margin-left:5px" tabindex="-1" onclick="cancelPost()">Clear</button>	
 				</div>
 			</div>
 		</div>
@@ -420,9 +420,10 @@ function setupWebsocket(restart) {
 	ws.on('queryPostResponse', function(data) { 
 		console.log(data);
 		let oldPost = readPostid && (JSON.stringify(data.content) == JSON.stringify(postCache[readPostid].content));
+		let oldEditPost = editPostid && (JSON.stringify(data.content) == JSON.stringify(postCache[editPostid].content));
 		cachePost(data);
 		if (editPostid == data.postid) {
-			fillEdit(data.postid); 
+			fillEdit(data.postid, oldEditPost); 
 			editPostid = "";
 		} else fillPost(data.postid, oldPost);
 	});
@@ -652,6 +653,14 @@ function showEditor() {
 	D('previewButton').classList.remove('active');
 	D('postContent').style.display = "";
 	D('postPreview').style.display = "none";
+}
+
+function hasDraft() {
+	for (let i = 0; i < D('postContent').children.length; i++) {
+		if (D('postContent').children[i].firstChild.title == "image") return true;
+		else if (D('postContent').children[i].firstChild.value) return true;
+	}
+	return false;
 }
 
 function showPreview(elt) {
@@ -978,7 +987,10 @@ function fillContent(elt, content) {
 	}
 }
 
-function fillEdit(postid) {
+function fillEdit(postid, oldEditPost) {
+	loadPanel('post');
+	showEditor();
+	if (!oldEditPost && hasDraft() && !confirm("Clear current draft?")) return false;
 	if (!postid) postid = readPostid;
 	editPostid = postid;
 	let metaData = postCache[postid];
@@ -990,17 +1002,19 @@ function fillEdit(postid) {
 		D('modificationEdit').title = metaData.modifiedts;
 	}	
 	
-	clearDOM(D('postContent'));
-	if (typeof metaData.content === "string") {	
-		let block = appendBlock();
-		block.firstChild.value = metaData.content;
-	} else if (metaData.content) {
-		for (let i = 0; i < metaData.content.length; i++) {
-			let block = appendBlock(metaData.content[i].type);
-			if (metaData.content[i].type == "image") block.firstChild.firstChild.value = metaData.content[i].content;
-			else block.firstChild.value = metaData.content[i].content;
-		}
-	} 
+	if (!oldEditPost) {
+		clearDOM(D('postContent'));
+		if (typeof metaData.content === "string") {	
+			let block = appendBlock();
+			block.firstChild.value = metaData.content;
+		} else if (metaData.content) {
+			for (let i = 0; i < metaData.content.length; i++) {
+				let block = appendBlock(metaData.content[i].type);
+				if (metaData.content[i].type == "image") block.firstChild.firstChild.value = metaData.content[i].content;
+				else block.firstChild.value = metaData.content[i].content;
+			}
+		} 
+	}
 	D('postTitle').value = metaData.title;
 	
 	let url = new URL(window.location);
@@ -1019,7 +1033,6 @@ function fillEdit(postid) {
 	
 	D('submitButton').textContent = "Publish Edit";
 	D('clearButton').textContent = "Cancel Edit";
-	loadPanel('post');
 }
 
 function appendBlock(type, parent) {
@@ -1107,6 +1120,8 @@ function appendBlock(type, parent) {
 }
 
 function cancelPost() {
+	if (hasDraft() && !confirm("Clear current draft?")) return false;
+	showEditor();
 	editPostid = "";
 	D('editid').style.display = "none";
 	D('creationEdit').textContent = " - ";
@@ -1541,20 +1556,6 @@ window.addEventListener('copy', function(e) {
 });
 
 window.addEventListener('keydown', function(evt) {
-	if (evt.altKey) {
-		if (evt.keyCode == 49) loadPanel('browse');
-		if (evt.keyCode == 50) loadPanel('read');
-		if (evt.keyCode == 51) loadPanel('post');		
-		if (evt.keyCode == 81) {
-			//loadPanel('post');
-			if (active('postButton') && D('postContent').style.display == "none") showEditor();
-		}
-		if (evt.keyCode == 87) {
-			//loadPanel('post');
-			if (active('postButton') && D('postPreview').style.display == "none") showPreview();			
-		}
-	}
-		
 	if (document.activeElement.tagName.toLowerCase() != 'input' && document.activeElement.tagName.toLowerCase() != 'textarea') {
 		if (evt.keyCode == 8) {			
 			let postid = new URLSearchParams(window.location.search).get('postid');
@@ -1574,6 +1575,18 @@ window.addEventListener('keydown', function(evt) {
 			evt.preventDefault();
 			loadPanel('browse');	
 		}
+	}
+	if (evt.altKey) {
+		if (evt.keyCode == 49) loadPanel('browse');
+		else if (evt.keyCode == 50) loadPanel('read');
+		else if (evt.keyCode == 51) loadPanel('post');		
+		else if (evt.keyCode == 81) {
+			if (active('readButton') && postCache[readPostid].userid == XNO.address) fillEdit();
+			else if (active('postButton') && D('postContent').style.display == "none") showEditor();
+			if (active('postButton') && document.activeElement.tagName.toLowerCase() != 'input' && document.activeElement.tagName.toLowerCase() != 'textarea') {
+				D('postContent').firstElementChild.firstElementChild.focus();
+			}
+		} else if (evt.keyCode == 87) if (active('postButton') && D('postPreview').style.display == "none") showPreview();
 	}
 });
 
