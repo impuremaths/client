@@ -56,7 +56,7 @@
 				<strong>Subscriptions</strong>
 			</div>
 			<div class="accordion">
-				<ul id="subscriptions" style="margin-bottom:5px; overflow:auto; max-height:calc(100% - 15px)"></ul>
+				<ul id="subscriptions" style="overflow:auto; max-height:calc(100% - 15px)"></ul>
 			</div>
 		</div>
 
@@ -66,7 +66,7 @@
 			</div>
 			<div class="accordion">
 				<div id="libraryPlaceholder" style="font-style:italic; color:gray; text-align:center; margin-top:20px">Read something! (Log in to persist this list.)</div>
-				<ul id="library" style="margin-bottom:5px; overflow:auto; max-height:calc(100% - 15px)"></ul>
+				<ul id="library" style="overflow:auto; max-height:calc(100% - 15px)"></ul>
 			</div>
 		</div>
 		
@@ -87,41 +87,59 @@
 			<ul id="discovery"></ul>
 		</div>
 
-		<div id="post" style="display:none; margin-top:20px; margin-bottom:80px; max-width:960px">
-			<input id="postTitle" style="font-weight:bold; font-size:1.1em; width:100%;  margin-bottom:10px;" autocomplete="off" placeholder="Title..." type="text" autocomplete="off" onkeyup="if (event.keyCode == 27) this.value = '';">
-			<div id="editid" style="font-size:0.85em; margin-left:10px; display:none">
-			<span id="creationEdit"></span><span id="modificationEdit"></span>
-			</div>		
-			<div id="postContent">
-			</div>
-					
-			<div style="display:flex; margin-top:50px; width:100%">
-			<div style="display:flex; justify-content:space-between; flex-grow:1">
-				<input placeHolder="Previous post link..." id="set-prev" autocomplete="off"
-					   style="padding-right:30px; flex-grow:1; width:1px" type="text" autocapitalize="off" onkeyup="if (event.keyCode == 27) this.value = '';">
-				<button tabindex="-1" class="close-icon" onclick="closeCopy(this.previousElementSibling)"></button>
-			</div>
-			<div style="width:10px"></div>
-			<div style="display:flex; justify-content:space-between; flex-grow:1">
-				<input placeHolder="Next post link..." id="set-next" autocomplete="off"
-					   style="padding-right:30px; flex-grow:1; width:1px" type="text" autocapitalize="off" onkeyup="if (event.keyCode == 27) this.value = '';">
-				<button tabindex="-1" class="close-icon" onclick="closeCopy(this.previousElementSibling)"></button>
-			</div>
-			</div>
+		<div id="post" style="display:none; margin-top:20px; margin-bottom:80px; max-width:1200px">
+		
+			<div style="flex-basis:1px; flex-grow:2; margin-right:50px; position:relative">
 			
-			<div style="display:flex; margin:10px; justify-content:space-between;">
-			<button class="active" onclick="toggle(this)" tabindex="-1" style="font-size:0.85em;">Reciprocate Link</button>
-			<button class="active" onclick="toggle(this)" tabindex="-1" style="font-size:0.85em;">Reciprocate Link</button>
-			</div>
+				<div style="display:flex; justify-content:center; position:absolute; right:0px; top:-10px;">
+					<button id="editButton" class="left active" onclick="showEditor()">Editor</button><button id="previewButton" class="right" style="margin-left:5px" onclick="showPreview()">Preview</button>
+				</div>
 				
-			<input placeHolder="tag (lowercase only)..." id="set-tag" autocomplete="off"
-				   style="padding-right:30px; flex-grow:1; margin-top:20px; margin-bottom:10px" type="text" autocapitalize="off" onkeyup="if (event.keyCode == 27) this.value = ''; if (event.keyCode == 13) addTag()">
-				   <button style="font-size:0.85em; margin-right:20px" onclick="addTag()">Add</button>
-			<span id="editTags" style="margin-top:20px; font-size:0.85em"></span>
+				<div id="postContent" style="margin-bottom:40px; margin-top:40px"></div>
+				<div id="postPreview" style="white-space:pre-wrap; margin-bottom:40px; margin-top:40px; display:none">Hi</div>
+				
+			</div>
 			
-			<div style="margin-top:40px; margin-right:10px; justify-content:right; display:flex;">
-			<button id="submitButton" onclick="post()" tabindex="-1" disabled>Publish</button>
-			<button id="clearButton" style="margin-left:5px" tabindex="-1" onclick="if (confirm('Clear current draft?')) cancelPost()">Clear</button>	
+			<div style="flex-basis:1px; flex-grow:1; max-width:360px; margin-right:20px">
+				<input id="postTitle" style="font-weight:bold; font-size:1.1em; width:100%; margin-bottom:10px;" autocomplete="off" placeholder="Title (required)..." type="text" onkeyup="if (event.keyCode == 27) this.value = '';">
+				<div id="editid" style="font-size:0.85em; margin-left:10px; display:none">
+				<span id="creationEdit"></span><span id="modificationEdit"></span>
+				</div>
+				
+				<div style="display:flex; margin-left:20px; margin-top:15px">
+					<input id="set-tag" style="padding-right:30px; flex-grow:1; margin-right:10px" autocomplete="off" placeHolder="tag (lowercase only)..." type="text" onkeyup="if (event.keyCode == 27) this.value = ''; if (event.keyCode == 13) addTag()" autocapitalize="off">
+					<button tabindex="-1" style="font-size:0.85em; min-width:fit-content" onclick="addTag()">Add</button>
+				</div>
+				<div id="editTags" style="font-size:0.85em; margin-left:20px; margin-top:10px"></div>
+						
+						
+				<div style="margin-top:40px; display:flex; justify-content:space-between; flex-grow:1">
+					<input placeHolder="Previous post link..." id="set-prev" autocomplete="off"
+						   style="padding-right:30px; flex-grow:1; width:1px" type="text" autocapitalize="off" onkeyup="if (event.keyCode == 27) this.value = ''; checkTitle(this);" oninput="checkTitle(this);">
+					<button tabindex="-1" class="close-icon" onclick="closeCopy(this.previousElementSibling)"></button>
+				</div>
+				
+				<div style="display:flex; margin-top:10px; justify-content:space-between;">
+					<span style="text-overflow:ellipsis; overflow:hidden; white-space:nowrap">(none)</span>
+					<button onclick="toggle(this)" tabindex="-1" style="font-size:0.85em; min-width:fit-content" disabled>Reciprocate Link</button>
+				</div>
+				
+				<div style="margin-top:15px; display:flex; justify-content:space-between; flex-grow:1">
+					<input placeHolder="Next post link..." id="set-next" autocomplete="off"
+						   style="padding-right:30px; flex-grow:1; width:1px" type="text" autocapitalize="off" onkeyup="if (event.keyCode == 27) this.value = ''; checkTitle(this);"oninput="checkTitle(this);">
+					<button tabindex="-1" class="close-icon" onclick="closeCopy(this.previousElementSibling)"></button>
+				</div>
+				
+				<div style="display:flex; margin-top:10px; justify-content:space-between;">
+					<span style="text-overflow:ellipsis; overflow:hidden; white-space:nowrap">(none)</span>
+					<button onclick="toggle(this)" tabindex="-1" style="font-size:0.85em; min-width:fit-content" disabled>Reciprocate Link</button>
+				</div>
+					
+				
+				<div style="margin-top:50px; display:flex;">
+					<button id="submitButton" onclick="post()" tabindex="-1" disabled>Publish</button>
+					<button id="clearButton" style="margin-left:5px" tabindex="-1" onclick="if (confirm('Clear current draft?')) cancelPost()">Clear</button>	
+				</div>
 			</div>
 		</div>
 		
@@ -132,7 +150,7 @@
 				
 				<div style="background-color:#e4e7e7; height:2px; border-radius:20px; margin:30px;"></div>
 				
-				<textarea id="commentContent" style="margin-top:10px; margin-bottom:10px; height:80px; width:100%; display:none" autocomplete="off" onkeydown="commentKeypress()" oninput="commentKeypress()" placeholder="Comment..."></textarea>
+				<textarea id="commentContent" style="margin-top:10px; margin-bottom:10px; height:80px; width:100%; display:none" autocomplete="off" onkeyup="commentKeypress()" oninput="commentKeypress()" placeholder="Comment..."></textarea>
 				<div style="display:flex; justify-content:right; margin-right:10px">
 				<button id="comment" style="margin-top:5px; font-size:0.85em" onclick="comment()" disabled>Comment</button>
 				</div>
@@ -151,7 +169,7 @@
 					</div>
 				
 					<div style="margin-top:3px">
-						<span id="creation">Post date</span><span id="modification"> - Modified date</span>
+						<span id="creation">Date published</span><span id="modification"> - modified</span>
 						<a id="edit" onclick="event.preventDefault(); fillEdit(); queryPost();" style="cursor:pointer; display:none"> • Edit</a>
 					</div>
 				</div>
@@ -397,7 +415,7 @@ function setupWebsocket(restart) {
 	});
 	
 	
-	ws.on('queryTagResponse', function (data) { console.log(data); fillBrowse(data); });
+	ws.on('queryTagResponse', function (data) { fillBrowse(data); });
 	
 	ws.on('queryPostResponse', function(data) { 
 		console.log(data);
@@ -426,9 +444,7 @@ function setupWebsocket(restart) {
 		makeSubLi(data.userid2); 
 	});
 	
-	ws.on('updateCommentResponse', function(data) {	
-		addComment(data);
-	});
+	ws.on('updateCommentResponse', function(data) {	addComment(data); });
 	
 	ws.on('queryPostChainResponse', function(data) { 
 		clearDOM(D('mapul'));
@@ -503,9 +519,6 @@ function queryBrowse(userid, tag) {
 			D('loadingMsg').style.display = "";
 			ws.emit("queryPostsFromUser", {userid});
 		}
-		D('info').onclick = function() {
-			queryBrowse(userid);
-		};
 	} else if (tag) {	
 		D('subscribe').style.display = "";		
 		D('info').title = tag;
@@ -514,9 +527,6 @@ function queryBrowse(userid, tag) {
 			D('loadingMsg').style.display = "";
 			ws.emit("queryTag", {tag});
 		}
-		D('info').onclick = function() {
-			queryBrowse(null, tag);
-		};
 	} else {	
 		D('subscribe').style.display = "none";
 		D('info').title = "";
@@ -526,10 +536,8 @@ function queryBrowse(userid, tag) {
 			ws.emit('queryPostsRecent');
 			ws.emit('queryTagCounts');
 		}
-		D('info').onclick = function() {
-			queryBrowse();
-		};
 	}
+	D('info').onclick = function() { queryBrowse(userid, tag); };
 	loadPanel('browse');
 }
 
@@ -537,30 +545,24 @@ function subscribeHandler() {
 	if (D(D('info').title)) flash(D(D('info').title));
 	else {
 		makeSubLi(D('info').title);
-		console.log(D('info').title);
 		if (ws && ws.readyState == 1) ws.emit("subscribe", {userid: D('info').title});
 	}
 }
 
 function addTag() {
-	let newTag = make('span', D('set-tag').value.toLowerCase().trim());
-	newTag.onclick = function() {
-		this.parentNode.removeChild(this);
-	}
-	newTag.style.cursor = "pointer";
-	newTag.style.margin = "10px";
-	newTag.style.padding = "3px 5px 3px 5px";
-	newTag.style.borderRadius = "5px";
-	newTag.style.display = "inline-block";
-	
-	let newTagFlag = true;
+	let newTagFlag = D('set-tag').value.toLowerCase().trim();
 	for (let i = 0; i < D('editTags').children.length; i++) {
-		if (D('editTags').children[i].textContent == newTag.textContent) {
-			newTagFlag = false;
+		if (D('editTags').children[i].textContent == newTagFlag) {
+			newTagFlag = "";
 			flash(D('editTags').children[i]);
 		}
+		if (!newTagFlag) break;
 	}
-	if (newTagFlag && newTag.textContent) {
+	
+	if (newTagFlag) {
+		let newTag = make('span', newTagFlag);
+		newTag.onclick = function() { this.parentNode.removeChild(this); }
+		newTag.style = "cursor:pointer; margin:5px 10px 0px 10px; padding:3px 5px 3px 5px; border-radius:5px; display:inline-block";
 		D('editTags').appendChild(newTag);
 		flash(newTag);
 	}
@@ -580,22 +582,45 @@ function post() {
 	try { next = new URLSearchParams((new URL(D('set-next').value)).search).get('postid');} 
 	catch { next = "" };
 	
-	console.log(prev, next);
 	let content = [];
 	for (let i = 0; i < D('postContent').children.length; i++) {
-		if (D('postContent').children[i].firstChild.title == "image") {
+		if (D('postContent').children[i].firstChild.title == "image")
 			content.push({content:D('postContent').children[i].firstChild.firstChild.value, type:D('postContent').children[i].firstChild.title});
-		} else if (D('postContent').children[i].firstChild.value)
+		else if (D('postContent').children[i].firstChild.value)
 			content.push({content:D('postContent').children[i].firstChild.value, type:D('postContent').children[i].firstChild.title});
 	}
 	
 	let tags = [];
-	while (D('editTags').children.length) {
-		tags.push(D('editTags').children[0].textContent);
-		D('editTags').removeChild(D('editTags').children[0]);
+	for (let i = 0; i < D('editTags').children.length; i++) {	
+		tags.push(D('editTags').children[i].textContent);
 	}
 
 	ws.emit('updatePost', {tags, prev_: prev, next_: next, title:D('postTitle').value.trim(), content:content, visibility:"public", createdts: parseInt(D('creationEdit').title)});
+}
+
+function checkTitle(elt) {
+	let prev = "";
+	try { prev = new URLSearchParams((new URL(elt.value)).search).get('postid');} 
+	catch { prev = "" };
+	
+	if (prev) {
+		if (postCache[prev]) elt.parentNode.nextElementSibling.firstElementChild.textContent = postCache[prev].title;
+		else elt.parentNode.nextElementSibling.firstElementChild.textContent = "(unknown post)";
+		
+		let split = prev.split("-");
+		let userid = split[0];		
+		if (userid == XNO.address) {
+			elt.parentNode.nextElementSibling.children[1].classList.add('active');
+			elt.parentNode.nextElementSibling.children[1].disabled = false;
+		} else {
+			elt.parentNode.nextElementSibling.children[1].classList.remove('active');
+			elt.parentNode.nextElementSibling.children[1].disabled = true;		
+		}		
+	} else {
+		elt.parentNode.nextElementSibling.firstElementChild.textContent = "(none)"; 
+		elt.parentNode.nextElementSibling.children[1].classList.remove('active');
+		elt.parentNode.nextElementSibling.children[1].disabled = true;
+	}
 }
 
 function commentKeypress() {
@@ -621,6 +646,30 @@ function comment() {
 	}
 }
 
+function showEditor() {
+	clearDOM(D('postPreview'));
+	D('editButton').classList.add('active');
+	D('previewButton').classList.remove('active');
+	D('postContent').style.display = "";
+	D('postPreview').style.display = "none";
+}
+
+function showPreview(elt) {
+	let content = [];
+	for (let i = 0; i < D('postContent').children.length; i++) {
+		if (D('postContent').children[i].firstChild.title == "image")
+			content.push({content:D('postContent').children[i].firstChild.firstChild.value, type:D('postContent').children[i].firstChild.title});
+		else if (D('postContent').children[i].firstChild.value)
+			content.push({content:D('postContent').children[i].firstChild.value, type:D('postContent').children[i].firstChild.title});
+	}
+	fillContent(D('postPreview'), content);
+	
+	D('previewButton').classList.add('active');
+	D('editButton').classList.remove('active');
+	D('postContent').style.display = "none";
+	D('postPreview').style.display = "";
+}
+
 function loadPanel(type) {	
 	if (D('browse').style.display != 'none') browseHeight = Math.ceil(D('secondDiv').scrollTop);
 	if (D('read').style.display != 'none') readHeight = Math.ceil(D('secondDiv').scrollTop);
@@ -639,12 +688,14 @@ function loadPanel(type) {
 	
 	if (type == "read") {
 		D(type).style.display = "flex";
-		D('commentContent').style.display = 'none';
-		D('commentContent').value = "";
-		D('comment').textContent = "Comment";
-		D('secondDiv').scrollTo(0, 0);		
+		D('secondDiv').scrollTo(0, readHeight);
+	}
+	if (type == "post") {
+		D(type).style.display = "flex";
+		D('secondDiv').scrollTo(0, postHeight);		
 	}
 	if (type == "browse") D('secondDiv').scrollTo(0, browseHeight);
+	
 	if (type != "post") topPage = type;
 }
 
@@ -815,6 +866,10 @@ function fillPost(postid, oldPost) {
 	}
 	document.title = postCache[postid].title + " - mktplc";
 	
+	D('commentContent').style.display = 'none';
+	D('commentContent').value = "";
+	D('comment').textContent = "Comment";
+	
 	// handle left bars
 	if (readPostid && D(readPostid)) removeActiveBar(D(readPostid));
 	if (readPostid && D(readPostid + "-disc")) removeActiveBar(D(readPostid + "-disc"));
@@ -862,49 +917,7 @@ function fillPost(postid, oldPost) {
 	if (metaData.content) {
 		if (!oldPost) {
 			if (typeof metaData.content === "string") D('readContent').textContent = metaData.content;
-			else {
-				console.log("array content!!!");
-				clearDOM(D('readContent'));
-				for (let i = 0; i < metaData.content.length; i++) {
-					if (metaData.content[i].type == "js") {
-						let jsbox = make("iframe");
-						jsbox.style = "width:100%; height:0px; border-top:0px; border-bottom:0px; border-left:4px solid white; border-right:0px; border-radius:4px 0px 0px 4px";
-						jsbox.onmouseenter = function() {
-							jsbox.style.borderColor = "#aaa";
-						}
-						jsbox.onmouseleave = function() {
-							jsbox.style.borderColor = "transparent";
-						}
-						jsbox.sandbox = "allow-scripts";
-						let str = `<script>window.onload = function() {
-							window.parent.postMessage({height:Math.max( document.body.scrollHeight, document.body.offsetHeight, document.body.clientHeight,
-							document.body.parentElement.scrollHeight, document.body.parentElement.offsetHeight, document.body.parentElement.clientHeight)}, '*');
-						};<` + "/" + `script>`;
-						jsbox.srcdoc = metaData.content[i].content + str;
-						jsbox.style.marginBottom = "20px";
-						D('readContent').appendChild(jsbox);
-					} else if (metaData.content[i].type == "md") {				
-						let mdbox = make("div");
-						mdbox.innerHTML = DOMPurify.sanitize(marked.parse(metaData.content[i].content));
-						mdbox.style.marginBottom = "20px";
-						mdbox.style.whiteSpace = "initial";
-						D('readContent').appendChild(mdbox);				
-					} else if (metaData.content[i].type == "image") {
-						let imagediv = make("img");	
-						imagediv.src = metaData.content[i].content;
-						imagediv.alt = "[Broken image link]";
-						imagediv.style.maxWidth = "100%";
-						let imageHolder = make('div');
-						imageHolder.style = "display:flex; justify-content:center; margin-bottom:20px";
-						imageHolder.appendChild(imagediv);
-						D('readContent').appendChild(imageHolder);
-					} else {
-						let textbox = make("div", metaData.content[i].content);
-						textbox.style.marginBottom = "20px";
-						D('readContent').appendChild(textbox);
-					}
-				}
-			}
+			else fillContent(D('readContent'), metaData.content);
 		}
 	} else D('readContent').innerHTML = "<i>Loading...</i>";
 	
@@ -920,6 +933,49 @@ function fillPost(postid, oldPost) {
 		}	
 	}
 	ws.emit("queryPostChain", {userid:metaData.userid, createdts:metaData.createdts });
+}
+
+function fillContent(elt, content) {
+	clearDOM(elt);
+	for (let i = 0; i < content.length; i++) {
+		if (content[i].type == "js") {
+			let jsbox = make("iframe");
+			jsbox.style = "width:100%; height:0px; border-top:0px; border-bottom:0px; border-left:4px solid white; border-right:0px; border-radius:4px 0px 0px 4px";
+			jsbox.onmouseenter = function() {
+				jsbox.style.borderColor = "#aaa";
+			}
+			jsbox.onmouseleave = function() {
+				jsbox.style.borderColor = "transparent";
+			}
+			jsbox.sandbox = "allow-scripts";
+			let str = `<script>window.onload = function() {
+				window.parent.postMessage({height:Math.max( document.body.scrollHeight, document.body.offsetHeight, document.body.clientHeight,
+				document.body.parentElement.scrollHeight, document.body.parentElement.offsetHeight, document.body.parentElement.clientHeight)}, '*');
+			};<` + "/" + `script>`;
+			jsbox.srcdoc = content[i].content + str;
+			jsbox.style.marginBottom = "20px";
+			elt.appendChild(jsbox);
+		} else if (content[i].type == "md") {				
+			let mdbox = make("div");
+			mdbox.innerHTML = DOMPurify.sanitize(marked.parse(content[i].content));
+			mdbox.style.marginBottom = "20px";
+			mdbox.style.whiteSpace = "initial";
+			elt.appendChild(mdbox);				
+		} else if (content[i].type == "image") {
+			let imagediv = make("img");	
+			imagediv.src = content[i].content;
+			imagediv.alt = "[Broken image link]";
+			imagediv.style.maxWidth = "100%";
+			let imageHolder = make('div');
+			imageHolder.style = "display:flex; justify-content:center; margin-bottom:20px";
+			imageHolder.appendChild(imagediv);
+			elt.appendChild(imageHolder);
+		} else {
+			let textbox = make("div", content[i].content);
+			textbox.style.marginBottom = "20px";
+			elt.appendChild(textbox);
+		}
+	}
 }
 
 function fillEdit(postid) {
@@ -968,18 +1024,25 @@ function fillEdit(postid) {
 
 function appendBlock(type, parent) {
 	let block = make('div');
+	block.tabIndex = "-1";
 	let textbox = make('textarea');
-	textbox.style = "margin-top:20px; height:150px; width:100%";
+	textbox.style = "height:150px; width:100%";
 	
 	if (!type) type = "text";
 	if (type == "text") {
 		textbox.style.fontFamily = "Segoe UI, Source Sans Pro, Roboto, Helvetica, sans-serif";
 		textbox.placeholder = "Simple text...";
 	} else if (type == "js") {
-		textbox.placeholder = "HTML (JS scripts enabled)...";	
-	} else if (type == "md") {
-		textbox.placeholder = "Markdown...";
-	} else if (type == "image") {
+		textbox.placeholder = "HTML (JS scripts enabled)...";
+		textbox.onkeydown = function() {
+			if (event.keyCode == 9) {
+				event.preventDefault();
+				console.log("HANDLE TABS");
+			}
+		}
+		addTabbing(textbox);
+	} else if (type == "md") textbox.placeholder = "Markdown...";
+	else if (type == "image") {
 		textbox = make('div');		
 		textbox.style = "display:flex; margin-top:20px;";
 		textbox.innerHTML = `<input placeHolder="Image URL..." autocomplete="off" style="padding-right:30px; flex-grow:1; width:1px" type="text" autocapitalize="off" onkeyup="if (event.keyCode == 27) this.value = '';"><button  tabindex="-1" class="close-icon" onclick="closeCopy(this.previousElementSibling)">`;
@@ -988,54 +1051,50 @@ function appendBlock(type, parent) {
 	textbox.title = type;
 	block.appendChild(textbox);	
 	
-	let buttonParent = make('div');
-	buttonParent.style.margin = "10px";
-	buttonParent.style.display = "flex";
-	buttonParent.style.justifyContent = "space-between";
-	
 	let sponsBut = make('button', "Sponsors Only");
 	sponsBut.style.marginRight = "5px";
-	sponsBut.style.float = "left";
 	sponsBut.style.fontSize = "0.85em";
 	sponsBut.tabIndex = "-1";
 	sponsBut.onclick = function() { toggle(this); }
-	buttonParent.appendChild(sponsBut);
-	
-	let buttonPanel = make('div');
-	buttonPanel.style.display = "flex";
-	buttonPanel.style.justifyContent = "right";
 	
 	let textBut = make('button', "Add Text");
 	textBut.classList.add("left");
 	textBut.onclick = function() { appendBlock("text", block); }
-	buttonPanel.appendChild(textBut);
 	
 	let mdBut = make('button', "Markdown");
 	mdBut.classList.add("center");
 	mdBut.style.marginRight = "0px";
 	mdBut.onclick = function() { appendBlock("md", block); }
-	buttonPanel.appendChild(mdBut);
 	
 	let jsBut = make('button', "HTML/JS");
 	jsBut.classList.add("center");
 	jsBut.style.marginRight = "0px";
 	jsBut.onclick = function() { appendBlock("js", block) };
-	buttonPanel.appendChild(jsBut);
 	
 	let imageBut = make('button', "Image");
 	imageBut.classList.add("center");
 	imageBut.onclick = function() { appendBlock("image", block) };
-	buttonPanel.appendChild(imageBut);
 	
 	let delBut = make('button', "✕");
 	delBut.classList.add("right");
 	delBut.onclick = function() {
 		if (D('postContent').children.length > 1) D('postContent').removeChild(block);
-		else alert("At least one element required! Add a replacement first.");
+		else alert("At least one element required. Add a replacement first.");
 	};
+
+	let buttonPanel = make('div');
+	buttonPanel.style = "display:flex; justify-content:right";
+	buttonPanel.appendChild(textBut);
+	buttonPanel.appendChild(mdBut);
+	buttonPanel.appendChild(jsBut);
+	buttonPanel.appendChild(imageBut);
 	buttonPanel.appendChild(delBut);
 	
+	let buttonParent = make('div');
+	buttonParent.style = "margin-top:10px; margin-bottom:20px; display:flex; justify-content:space-between";
+	buttonParent.appendChild(sponsBut);
 	buttonParent.appendChild(buttonPanel);
+	
 	block.appendChild(buttonParent);
 	if (parent && parent.nextElementSibling) D('postContent').insertBefore(block, parent.nextElementSibling);
 	else D('postContent').appendChild(block);	
@@ -1119,7 +1178,7 @@ function addComment(commentData) {
 			if (editPanel.value) editBut.textContent = " • Send Edit";
 			else editBut.textContent = " • Cancel";
 		};
-		editPanel.onkeydown = function() {
+		editPanel.onkeyup = function() {
 			if (event.keyCode == 27) {
 				editPanel.value = "";
 				editPanel.style.display = "none";
@@ -1169,7 +1228,7 @@ function addComment(commentData) {
 			if (repPanel.value) repBut.textContent = "Reply";
 			else repBut.textContent = "Cancel";
 		};
-		repPanel.onkeydown = function() {
+		repPanel.onkeyup = function() {
 			if (event.keyCode == 27) {
 				repPanel.value = "";
 				repPanel.style.display = "none";
@@ -1307,9 +1366,11 @@ function makeSubLi(userid, lastaccessedts, lastpublishedts) {
 	};
 	subli.style = "cursor:pointer; width:100%; padding:3px; position:relative";
 	
-	
 	let actions = make('div');
 	actions.style = "position:absolute; top:0px; right:0px; display:none; opacity:0.8";
+	subli.appendChild(actions);	
+	subli.onmouseenter = function() { actions.style.display = ""; }
+	subli.onmouseleave = function() { actions.style.display = "none"; }
 	
 	if (userid != XNO.address) {
 		let unsubBut = make("button", "✕");
@@ -1322,24 +1383,14 @@ function makeSubLi(userid, lastaccessedts, lastpublishedts) {
 		actions.appendChild(unsubBut);
 	}
 	
-	subli.appendChild(actions);
-	
-	subli.onmouseenter = function() {
-		actions.style.display = "";
-	}
-	subli.onmouseleave = function() {
-		actions.style.display = "none";
-	}
-	
 	let nameSpan = make('span', name);
+	nameSpan.style.fontWeight = "600";
 	subli.appendChild(nameSpan);
 	
 	if (!tag) {
 		nameSpan.style.color = funColor(userid);
 		queueDOMdisplayName(userid, nameSpan);
 	}
-	
-	nameSpan.style.fontWeight = "600";
 	
 	if (lastpublishedts) {
 		let publishSpan = make('span', timeSince(lastpublishedts));
@@ -1470,18 +1521,13 @@ function loadURL() {
 }
 
 window.addEventListener('message', function (e) {
-    // Get the sent data
-    console.log(e.data);
-	console.log(e.origin);
-	if (e.data.height && e.data.height > 0 && e.data.height < 4096) {
+	if (e.data.height && e.data.height > 0) {
+		let h = e.data.height;
+		if (h > 4096) h = 4096;		
 		Array.from(document.getElementsByTagName('iframe')).filter(iframe => {
 			return iframe.contentWindow === event.source;
-		})[0].style.height = e.data.height + "px";
+		})[0].style.height = h + "px";
 	}
-
-    // If you encode the message in JSON before sending them,
-    // then decode here
-    // const decoded = JSON.parse(data);
 });
 
 window.addEventListener('copy', function(e) { 
@@ -1495,7 +1541,21 @@ window.addEventListener('copy', function(e) {
 });
 
 window.addEventListener('keydown', function(evt) {
-	if (document.activeElement.tagName.toLowerCase() != 'input' && document.activeElement.tagName.toLowerCase() != 'textarea' && (evt.keyCode == 27 || evt.keyCode == 8)) {
+	if (evt.altKey) {
+		if (evt.keyCode == 49) loadPanel('browse');
+		if (evt.keyCode == 50) loadPanel('read');
+		if (evt.keyCode == 51) loadPanel('post');		
+		if (evt.keyCode == 81) {
+			//loadPanel('post');
+			if (active('postButton') && D('postContent').style.display == "none") showEditor();
+		}
+		if (evt.keyCode == 87) {
+			//loadPanel('post');
+			if (active('postButton') && D('postPreview').style.display == "none") showPreview();			
+		}
+	}
+		
+	if (document.activeElement.tagName.toLowerCase() != 'input' && document.activeElement.tagName.toLowerCase() != 'textarea') {
 		if (evt.keyCode == 8) {			
 			let postid = new URLSearchParams(window.location.search).get('postid');
 			let tag = new URLSearchParams(window.location.search).get('tag');
@@ -1510,7 +1570,7 @@ window.addEventListener('keydown', function(evt) {
 				evt.preventDefault();
 				loadPanel('browse');
 			}	
-		} else {
+		} else if (evt.keyCode == 27) {
 			evt.preventDefault();
 			loadPanel('browse');	
 		}
@@ -1685,48 +1745,111 @@ function parseMd(md){
   
 }
 
+function timeSince(date) {
+	if (typeof date !== 'object') date = new Date(date);
 
- function timeSince(date) {
-  if (typeof date !== 'object') {
-    date = new Date(date);
-  }
+	var seconds = Math.floor((new Date() - date) / 1000);
+	var intervalType;
 
-  var seconds = Math.floor((new Date() - date) / 1000);
-  var intervalType;
+	var interval = Math.floor(seconds / 31536000);
+	if (interval >= 1) intervalType = 'y';
+	else {
+		interval = Math.floor(seconds / 2592000);
+		if (interval >= 1) intervalType = 'mo';
+		else {
+			interval = Math.floor(seconds / 86400);
+			if (interval >= 1) intervalType = 'd';
+			else {
+				interval = Math.floor(seconds / 3600);
+				if (interval >= 1) intervalType = "h";
+				else {
+					interval = Math.floor(seconds / 60);
+					if (interval >= 1) intervalType = "m";
+					else {
+						interval = seconds;
+						intervalType = "s";
+					}
+				}
+			}
+		}
+	}
 
-  var interval = Math.floor(seconds / 31536000);
-  if (interval >= 1) {
-    intervalType = 'y';
-  } else {
-    interval = Math.floor(seconds / 2592000);
-    if (interval >= 1) {
-      intervalType = 'mo';
-    } else {
-      interval = Math.floor(seconds / 86400);
-      if (interval >= 1) {
-        intervalType = 'd';
-      } else {
-        interval = Math.floor(seconds / 3600);
-        if (interval >= 1) {
-          intervalType = "h";
-        } else {
-          interval = Math.floor(seconds / 60);
-          if (interval >= 1) {
-            intervalType = "m";
-          } else {
-            interval = seconds;
-            intervalType = "s";
-          }
+	//  if (interval > 1 || interval === 0) intervalType += 's';
+	return interval + intervalType;
+}
+
+function addTabbing(elt) {
+	elt.style.tabSize = "4";
+    elt.onkeydown = function(evt) {
+        let text = elt.value;
+        let sel = elt.selectionStart;
+		let selEnd = elt.selectionEnd;
+        switch(evt.key){
+            case "Escape":
+                evt.preventDefault();
+				evt.stopPropagation();
+				if (elt.parentNode.nextElementSibling) elt.parentNode.nextElementSibling.focus();
+				else elt.parentNode.focus();
+				break;
+            case "Enter":
+                if (sel == selEnd) {
+                    // find start of the current line
+                    while (sel > 0 && text[sel-1] != '\n') sel--;
+
+                    let lineStart = sel;
+                    while (text[sel] == ' ' || text[sel]=='\t') sel++;
+
+                    if (sel > lineStart) {
+                        evt.preventDefault();
+                        // Insert carriage return and indented text
+                        document.execCommand('insertText', false, "\n" + text.substr(lineStart, sel-lineStart));
+
+                        // Scroll caret visible
+                        elt.blur();
+                        elt.focus();
+                    }
+                }
+				break;
+            case "Tab":
+                evt.preventDefault();
+                // selection?
+                if (sel == selEnd) { // These operations are undoable
+                    if (!evt.shiftKey) document.execCommand('insertText', false, "\t");
+                    else if (elt.selectionStart > 0 && text[elt.selectionStart-1]=='\t') 
+                        document.execCommand('delete');
+                } else { // Block indent/unindent trashes undo stack.
+                    // Select whole lines
+                    while (sel > 0 && text[sel-1] != '\n') sel--;
+                    while (selEnd > 0 && text[selEnd-1]!='\n' && selEnd < text.length) selEnd++;
+
+                    // Get selected text
+                    let lines = text.substr(sel, selEnd - sel).split('\n');
+
+                    // Insert tabs
+                    for (var i=0; i<lines.length; i++) {
+                        // Don't indent last line if cursor at start of line
+                        if (i==lines.length-1 && lines[i].length==0) continue;
+
+                        // Tab or Shift+Tab?
+                        if (evt.shiftKey) {
+                            if (lines[i].startsWith('\t')) lines[i] = lines[i].substr(1);
+                            else if (lines[i].startsWith("    ")) lines[i] = lines[i].substr(4);
+                        } else lines[i] = "\t" + lines[i];
+                    }
+                    let output = lines.join('\n');
+
+                    // Update the text area
+                    elt.value = text.substr(0, sel) + output + text.substr(selEnd);
+                    elt.selectionStart = sel;
+                    elt.selectionEnd = sel + output.length; 
+                }
         }
-      }
-    }
-  }
+    } 
+}
 
-//  if (interval > 1 || interval === 0) {
- //   intervalType += 's';
-//  }
-
-  return interval + intervalType;
+function active(elt) {
+	if (typeof elt === 'string' || elt instanceof String) elt = D(elt);
+	return elt.classList.contains('active');
 }
 
 </script>
