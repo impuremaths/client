@@ -434,7 +434,7 @@ function setupWebsocket(restart) {
 		if (!data.errMsg) {
 			fillPost(data.postid);
 			loadPanel('read');
-			cancelPost();
+			cancelPost(true);
 		} else console.log(data);
 	});
 	
@@ -1119,8 +1119,8 @@ function appendBlock(type, parent) {
 	return block;
 }
 
-function cancelPost() {
-	if (hasDraft() && !confirm("Clear current draft?")) return false;
+function cancelPost(override) {
+	if (!override && hasDraft() && !confirm("Clear current draft?")) return false;
 	showEditor();
 	editPostid = "";
 	D('editid').style.display = "none";
@@ -1466,7 +1466,7 @@ function clearSeed() {
 	clearDOM(D('subscriptions'));
 	clearDOM(D('library'));
 	D('libraryPlaceholder').style.display = "";	
-	if (D('creationEdit').title) cancelPost();
+	if (D('creationEdit').title) cancelPost(true);
 }
 
 function clickClearSeed() {
