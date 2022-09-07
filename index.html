@@ -1019,9 +1019,9 @@ function fillEdit(postid, oldEditPost) {
 	
 	let url = new URL(window.location);
 	url.search = new URLSearchParams({postid: metaData.prev_});
-	if (metaData.prev_) D('set-prev').value = url.href;
+	if (metaData.prev_) inputEvent(D('set-prev'), url.href);
 	url.search = new URLSearchParams({postid: metaData.next_});	
-	if (metaData.next_) D('set-next').value = url.href;
+	if (metaData.next_) inputEvent(D('set-next'), url.href);
 	
 	clearDOM(D('editTags'));
 	if (metaData.tags) {
@@ -1133,8 +1133,8 @@ function cancelPost(override) {
 	appendBlock();	
 	
 	D('postTitle').value = "";	
-	D('set-prev').value = "";
-	D('set-next').value = "";
+	inputEvent(D('set-prev'), "");
+	inputEvent(D('set-next'), "");
 	
 	clearDOM(D('editTags'));
 	D('set-tag').value = "";
