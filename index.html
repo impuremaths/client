@@ -1515,6 +1515,15 @@ function setData(type) {
 
 // Global event listeners ///////////////////////////////////////////////////////////////////////
 
+window.addEventListener("beforeunload", function (e) {
+    var confirmationMessage = 'It looks like you have been drafting something. '
+                            + 'If you leave before posting, your changes will be lost.';
+	if (hasDraft()) {
+		(e || window.event).returnValue = confirmationMessage; //Gecko + IE
+		return confirmationMessage; //Gecko + Webkit, Safari, Chrome etc.
+	}
+});
+
 window.addEventListener('popstate', loadURL);
 
 function loadURL() {
@@ -1581,7 +1590,7 @@ window.addEventListener('keydown', function(evt) {
 		else if (evt.keyCode == 50) loadPanel('read');
 		else if (evt.keyCode == 51) loadPanel('post');		
 		else if (evt.keyCode == 81) {
-			if (active('readButton') && postCache[readPostid].userid == XNO.address) fillEdit();
+			if (active('readButton') && readPostid && postCache[readPostid].userid == XNO.address) fillEdit();
 			else if (active('postButton') && D('postContent').style.display == "none") showEditor();
 			if (active('postButton') && document.activeElement.tagName.toLowerCase() != 'input' && document.activeElement.tagName.toLowerCase() != 'textarea') {
 				D('postContent').firstElementChild.firstElementChild.focus();
