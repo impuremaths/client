@@ -21,11 +21,11 @@
 	
 	<div id="firstDiv" class="firstDiv" style="background-color:steelblue">		
 		<div id="profilePanel" class="objectWrapper" style="margin-bottom:15px; margin-top:50px" onclick="openSubAccordion(this)">
-			<div class="clickFlash" style="display:flex; justify-content:space-between;" onclick="toggleSubAccordion(this)">
+			<div class="clickFlash" style="display:flex; justify-content:space-between; margin:0px 10px" onclick="toggleSubAccordion(this)">
 				<strong style="overflow:hidden"><div id="displayName" style="text-overflow:ellipsis; overflow:hidden; font-size:1.1em;" class="flash">Guest</div></strong>
 			</div>
 
-			<div id="editPanel" class="accordion" style="max-height:0px">
+			<div id="editPanel" class="accordion" style="max-height:0px; margin:0px 10px">
 				<div style="text-align:center; margin-top:20px">
 					<button tabindex="-1" class="left" onclick="generateSeed()">Create PIN</button><button id="current" class="center" tabindex="-1" onclick="showCurrent()" autocomplete="off" disabled>Current PIN</button><button id="clear" class="right" onclick="if (confirm('Log out of the current account? (Have you saved your account PIN elsewhere?!)')) clickClearSeed();" autocomplete="off" disabled>Log Out</button>
 				</div>
@@ -51,22 +51,22 @@
 			</div>	
 		</div>	
 		
-		<div id="subPanel" class="objectWrapper" style="overflow:hidden; display:none; flex-direction:column; flex-shrink:0; max-height:33vh" onclick="openSubAccordion(this)">
-			<div class="clickFlash leftRightBase" style="margin-top:0px" onclick="toggleSubAccordion(this)">
+		<div id="subPanel" class="objectWrapper" style="padding-right:0px; overflow:hidden; display:none; flex-direction:column; flex-shrink:0; max-height:33vh" onclick="openSubAccordion(this)">
+			<div class="clickFlash leftRightBase" style="margin-top:0px; margin:0px 10px" onclick="toggleSubAccordion(this)">
 				<strong>Subscriptions</strong>
 			</div>
 			<div class="accordion">
-				<ul id="subscriptions" style="overflow:auto; max-height:calc(100% - 15px)"></ul>
+				<ul id="subscriptions" style="overflow:auto; max-height:calc(100% - 15px); margin-left:10px"></ul>
 			</div>
 		</div>
 
-		<div class="objectWrapper" style="margin-bottom:10px; overflow:hidden; display:flex; flex-direction:column" onclick="openSubAccordion(this)">
-			<div class="clickFlash leftRightBase" style="margin-top:0px" onclick="toggleSubAccordion(this)">
+		<div class="objectWrapper" style="padding-right:0px; margin-bottom:10px; overflow:hidden; display:flex; flex-direction:column" onclick="openSubAccordion(this)">
+			<div class="clickFlash leftRightBase" style="margin-top:0px; margin:0px 10px" onclick="toggleSubAccordion(this)">
 				<strong>Library</strong>
 			</div>
 			<div class="accordion">
 				<div id="libraryPlaceholder" style="font-style:italic; color:gray; text-align:center; margin-top:20px">Read something! (Log in to persist this list.)</div>
-				<ul id="library" style="overflow:auto; max-height:calc(100% - 15px)"></ul>
+				<ul id="library" style="overflow:auto; max-height:calc(100% - 15px); margin-left:10px"></ul>
 			</div>
 		</div>
 		
@@ -421,7 +421,8 @@ function setupWebsocket(restart) {
 	});
 	
 	ws.on('queryPostsRecentResponse', function(data) { 
-		D('subscribe').style.display = "none";
+		D('subscribe').disabled = true;
+		D('sponsor').disabled = true;
 		D('info').textContent = "Recent";
 		D('info').title = "";
 		fillBrowse(data); 
@@ -534,8 +535,13 @@ function queryBrowse(userid, tag) {
 	}
 	
 	if (userid) {		
-		if (userid == XNO.address) D('subscribe').style.display = "none";
-		else D('subscribe').style.display = "";		
+		if (userid == XNO.address) {
+			D('subscribe').disabled = true;
+			D('sponsor').disabled = true;
+		} else if (XNO.address) {
+			D('subscribe').disabled = false;	
+			D('sponsor').disabled = false;
+		}
 		D('info').title = userid;
 		D('info').textContent = funName(userid);
 		queueDOMdisplayName(userid, D('info'));
@@ -544,7 +550,10 @@ function queryBrowse(userid, tag) {
 			ws.emit("queryPostsFromUser", {userid});
 		}
 	} else if (tag) {	
-		D('subscribe').style.display = "";		
+		if (XNO.address) {
+			D('subscribe').disabled = false;	
+			D('sponsor').disabled = false;	
+		}
 		D('info').title = tag;
 		D('info').textContent = tag;
 		if (ws && ws.readyState == 1) {
@@ -552,7 +561,8 @@ function queryBrowse(userid, tag) {
 			ws.emit("queryTag", {tag});
 		}
 	} else {	
-		D('subscribe').style.display = "none";
+		D('subscribe').disabled = true;	
+		D('sponsor').disabled = true;	
 		D('info').title = "";
 		D('info').textContent = "Recent";
 		if (ws && ws.readyState == 1) {
@@ -1344,6 +1354,7 @@ function importSeed() {
 		clearDOM(D('subscriptions'));
 		if (XNO.address) makeSubLi(XNO.address);
 		D('subscribe').disabled = false;
+		D('sponsor').disabled = false;
 		
 		localStorage.setItem("localSeed", XNO.seed);
 		closeSubAccordion(D('editPanel'));
@@ -1387,8 +1398,13 @@ function makeSubLi(userid, lastaccessedts, lastpublishedts) {
 		loadPanel('browse');
 		if (ws && ws.readyState == 1) {
 			D('loadingMsg').style.display = "";
-			if (userid == XNO.address) D('subscribe').style.display = "none";
-			else D('subscribe').style.display = "";
+			if (userid == XNO.address) {
+				D('subscribe').disabled = true;
+				D('sponsor').disabled = true;
+			} else if (XNO.address) {
+				D('subscribe').disabled = false;
+				D('sponsor').disabled = false;
+			} 
 			if (!tag) queryBrowse(userid);
 			else queryBrowse(null, userid);
 			D('info').title = userid;
@@ -1502,6 +1518,7 @@ function clickClearSeed() {
 	D("submitButton").disabled = true;
 	D("comment").disabled = true;
 	D('subscribe').disabled = true;
+	D('sponsor').disabled = true;
 	closeSubAccordion(D('editPanel'));
 	//D("profilePanel").style.display = "none";
 	D("setDisplayBut").disabled = true;
