@@ -77,14 +77,32 @@
 	
 		<button id="browseButton" class="left active" style="margin-top:25px; margin-bottom:20px" onclick="loadPanel('browse')">Browse</button><button id="readButton" class="center" onclick="loadPanel('read')" autocomplete="off">Read</button><button id="postButton" class="right" onclick="loadPanel('post')" autocomplete="off">Write</button>
 	
-		<div id="browse" style="margin-bottom:80px">
+		<div id="browse" style="margin-bottom:80px; max-width:1200px">
 			<div id="popularTags" style="margin-bottom:30px; margin-top:10px"></div>
-			<div style="margin-top:20px; margin-bottom:20px">
-			<span style="font-weight:bold; font-size:1.1em; cursor:pointer" onclick="queryBrowse()" id="info">Recent</span>
-			<button id="subscribe" onclick="subscribeHandler()" autocomplete="off" style="display:none; padding:2px 8px; margin:2px; margin-left:5px" disabled>+</button>			
-			<span id="loadingMsg" style="margin-left:10px; font-style:italic; display:none">Loading...</span>
+			
+			<div style="display:flex">
+				<div style="flex-basis:1px; flex-grow:2; margin-right:50px;">
+						<div>
+							<span style="font-weight:bold; font-size:1.1em; cursor:pointer;" onclick="queryBrowse()" id="info"></span>
+							<span id="loadingMsg" style="margin-left:10px; font-style:italic; display:none">Loading...</span>
+						</div>		
+					<ul id="discovery"></ul>
+				</div>
+				
+				<div style="flex-basis:1px; flex-grow:2; margin-right:20px;">
+				
+					<div style="display:flex; justify-content:space-between; min-width:200px; margin-top:40px">
+						<div>
+							<span style="font-weight:bold; margin-right:10px">Info</span>					
+						</div>
+						<div>
+							<button id="subscribe" onclick="subscribeHandler()" autocomplete="off" class="left" disabled>Subscribe</button>
+							<button id="sponsor" onclick="subscribeHandler()" autocomplete="off" class="right" disabled>Sponsor</button>		
+						</div>
+					</div>
+					<div id="bio" style="margin-top:20px"></div>
+				</div>
 			</div>
-			<ul id="discovery"></ul>
 		</div>
 
 		<div id="post" style="display:none; margin-top:20px; margin-bottom:80px; max-width:1200px">
@@ -100,7 +118,7 @@
 				
 			</div>
 			
-			<div style="flex-basis:1px; flex-grow:1; max-width:360px; margin-right:20px">
+			<div style="flex-basis:1px; flex-grow:1; margin-right:20px; max-width:360px;">
 				<input id="postTitle" style="font-weight:bold; font-size:1.1em; width:100%; margin-bottom:10px;" autocomplete="off" placeholder="Title (required)..." type="text" onkeyup="if (event.keyCode == 27) this.value = '';">
 				<div id="editid" style="font-size:0.85em; margin-left:10px; display:none">
 				<span id="creationEdit"></span><span id="modificationEdit"></span>
@@ -407,15 +425,20 @@ function setupWebsocket(restart) {
 		D('info').textContent = "Recent";
 		D('info').title = "";
 		fillBrowse(data); 
+		D('bio').textContent = "The firehose (i.e. trickle) of recent posts."
 	});
 	
 	ws.on('queryPostsFromUser', function (data) { 
 		fillBrowse(data);
+		D('bio').textContent = "Full of possibilities."
 		if (data.length && D(postCache[data[0].postid].userid)) D(postCache[data[0].postid].userid).style.fontWeight = "";
 	});
 	
 	
-	ws.on('queryTagResponse', function (data) { fillBrowse(data); });
+	ws.on('queryTagResponse', function (data) { 
+		fillBrowse(data); 		
+		D('bio').textContent = "An unmoderated tag."
+	});
 	
 	ws.on('queryPostResponse', function(data) { 
 		console.log(data);
@@ -684,27 +707,22 @@ function loadPanel(type) {
 	if (D('read').style.display != 'none') readHeight = Math.ceil(D('secondDiv').scrollTop);
 	if (D('post').style.display != 'none') postHeight = Math.ceil(D('secondDiv').scrollTop);
 	
+	D('postButton').classList.remove('active');
+	D('readButton').classList.remove('active');
+	D('browseButton').classList.remove('active');	
+	D(type + "Button").classList.add('active');
+	
 	D('post').style.display = 'none';
 	D('read').style.display = 'none';
 	D('browse').style.display = 'none';
+	D(type).style.display = "flex";
 	
-	D('postButton').classList.remove('active');
-	D('readButton').classList.remove('active');
-	D('browseButton').classList.remove('active');
-	
-	D(type).style.display = "";
-	D(type + "Button").classList.add('active');
-	
-	if (type == "read") {
-		D(type).style.display = "flex";
-		D('secondDiv').scrollTo(0, readHeight);
+	if (type == "read") D('secondDiv').scrollTo(0, readHeight);
+	if (type == "post") D('secondDiv').scrollTo(0, postHeight);	
+	if (type == "browse") {
+		D(type).style.display = "";
+		D('secondDiv').scrollTo(0, browseHeight);	
 	}
-	if (type == "post") {
-		D(type).style.display = "flex";
-		D('secondDiv').scrollTo(0, postHeight);		
-	}
-	if (type == "browse") D('secondDiv').scrollTo(0, browseHeight);
-	
 	if (type != "post") topPage = type;
 }
 
@@ -750,7 +768,6 @@ function fillBrowse(data) {
 		cachePost(data[i]);			
 		let postli = make('li');
 		postli.id = data[i].postid + "-disc";
-		postli.style = "width:max-content; display:flex; align-items:center; min-width:550px";
 		if (readPostid == data[i].postid) activeBar(postli);
 		postli.appendChild(fullLabel(data[i].postid));
 		D('discovery').appendChild(postli);
