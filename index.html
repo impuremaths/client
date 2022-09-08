@@ -80,18 +80,18 @@
 		<div id="browse" style="margin-bottom:80px; max-width:1200px">
 			<div id="popularTags" style="margin-bottom:30px; margin-top:10px"></div>
 			
+			<div>
+				<span style="font-weight:bold; font-size:1.1em; cursor:pointer;" onclick="queryBrowse()" id="info"></span>
+				<span id="loadingMsg" style="margin-left:10px; font-style:italic; display:none">Loading...</span>
+			</div>
 			<div style="display:flex">
 				<div style="flex-basis:1px; flex-grow:2; margin-right:50px;">
-						<div>
-							<span style="font-weight:bold; font-size:1.1em; cursor:pointer;" onclick="queryBrowse()" id="info"></span>
-							<span id="loadingMsg" style="margin-left:10px; font-style:italic; display:none">Loading...</span>
-						</div>		
 					<ul id="discovery"></ul>
 				</div>
 				
 				<div style="flex-basis:1px; flex-grow:2; margin-right:20px;">
 				
-					<div style="display:flex; justify-content:space-between; min-width:200px; margin-top:40px">
+					<div style="display:flex; justify-content:space-between; min-width:200px; margin-top:10px">
 						<div>
 							<span style="font-weight:bold; margin-right:10px">Info</span>					
 						</div>
