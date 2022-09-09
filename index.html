@@ -113,7 +113,7 @@
 					</div>
 					
 					<div id="bioContent" style="display:none">					
-						<input id="" style="width:100%; margin-bottom:10px; margin-top:30px" autocomplete="off" placeholder="Public display name..." type="text" onkeyup="if (event.keyCode == 27) this.value = '';">												
+						<input id="bio-name" style="width:100%; margin-bottom:10px; margin-top:30px" autocomplete="off" placeholder="Public display name..." type="text" onkeyup="if (event.keyCode == 27) this.value = '';">												
 						<div id="bioBlocks" style="margin-top:20px; margin-bottom:40px"></div>
 						<div style="font-size:0.9em; margin-top:20px;">Amount for sponsor-exclusive content (30 days):</div>
 						<div style="display:flex; justify-content:right; margin-top:5px">
@@ -592,11 +592,12 @@ function queryBrowse(userid, tag) {
 			D('info').textContent = "Edit ✏️";
 			D('info').style.cursor = "pointer";
 			D('info').onclick = function() {			
-				if (D('bioContent').style.display == "none") {
+				if (D('bioContent').style.display == "none") {				
+					D('bioPreview').style.display = "none";
 					D('bioContent').style.display = "";
 					clearDOM(D('bioBlocks'));
-					appendBlock("text", null, D('bioBlocks'));					
-					D('bioPreview').style.display = "none";
+					appendBlock("text", null, D('bioBlocks'));	
+					D('bio-name').focus();
 				}
 			};
 		}
