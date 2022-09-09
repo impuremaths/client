@@ -78,7 +78,7 @@
 			<div id="popularTags" style="margin-bottom:30px; margin-top:10px"></div>
 			
 			<div>
-				<span style="font-weight:bold; font-size:1.1em; cursor:pointer;" onclick="queryBrowse()" id="info"></span>
+				<span style="font-weight:bold; font-size:1.1em; cursor:pointer;" onclick="queryBrowse()" id="browseHeading"></span>
 				<span id="loadingMsg" style="margin-left:10px; font-style:italic; display:none">Loading...</span>
 			</div>
 			<div style="display:flex">
@@ -86,24 +86,40 @@
 					<ul id="discovery"></ul>
 				</div>
 				
-				<div style="flex-basis:1px; flex-grow:2; margin-right:20px;">
+				<div style="flex-basis:1px; flex-grow:2; margin-right:20px; overflow:hidden">
 				
-					<div style="display:flex; justify-content:space-between; min-width:200px; margin-top:20px">
+					<div style="display:flex; min-width:200px; margin-top:20px">
 						<div>
-							<span style="font-weight:600; margin-right:10px">Info</span>					
+							<span id="info" style="font-weight:600; margin-right:30px">Info</span>					
 						</div>
 						<div>
 							<button id="subscribe" onclick="subscribeHandler()" autocomplete="off" class="left" disabled>Subscribe</button>
 							<button id="sponsor" onclick="subscribeHandler()" autocomplete="off" class="right" disabled>Sponsor</button>		
 						</div>
 					</div>
-					<div id="bio" style="margin-top:20px; margin-bottom:40px"></div>					
-					<div style="font-size:0.9em">Public address:</div>
-					<div class='address' id="theirAddress" style="margin-bottom:15px;" onclick="clickCopy(this, this.textContent)"> - </div>
-					<div style="font-size:0.9em">Display name:</div>
-					<div class='address' id="theirFunName" style="margin-bottom:15px; cursor:initial"> - </div>
-					<div style="font-size:0.9em">For sponsor-exclusive content:</div>
-					<div class='address' id="theirThreshold" style="margin-bottom:15px; cursor:initial"> - </div>
+					
+					<div id="bioPreview" style="overflow:hidden">
+						<div id="bio" style="margin-top:30px; margin-bottom:40px"></div>
+						<div style="font-size:0.9em">Display name:</div>
+						<div class='address' id="theirFunName" style="margin-bottom:15px; cursor:initial"> - </div>					
+						<div style="font-size:0.9em">Unique public address:</div>
+						<div class='address' id="theirAddress" style="margin-bottom:15px;" onclick="clickCopy(this, this.textContent)"> - </div>
+						<div style="font-size:0.9em">Minimum for sponsor-exclusive content (30 days):</div>
+						<div class='address' id="theirThreshold" style="margin-bottom:15px; cursor:initial"> - </div>
+					</div>
+					
+					<div id="bioContent" style="display:none">					
+						<input id="" style="width:100%; margin-bottom:10px; margin-top:30px" autocomplete="off" placeholder="Public display name..." type="text" onkeyup="if (event.keyCode == 27) this.value = '';">
+						
+						
+						<div style="font-size:0.9em; margin-top:10px;">Minimum for sponsor-exclusive content (30 days):</div>
+						<div style="display:flex; justify-content:right; margin-top:5px">
+						<input onkeyup="" onkeydown="" placeholder="0.00" onblur="prepTwoDigit(this)" style="margin-left:20px; margin-right:10px; text-align:right; flex-grow:1; flex-basis:1px; overflow:hidden; text-overflow:ellipsis;" type="number" step="0.01" min="0"> XNO
+						</div>
+						
+						<button style="margin-top:30px">Update</button>
+						<button onclick="closeBio()">Cancel</button>
+					</div>
 				</div>
 			</div>
 		</div>
@@ -121,7 +137,7 @@
 				
 			</div>
 			
-			<div style="flex-basis:1px; flex-grow:1; margin-right:20px; max-width:360px;">
+			<div style="flex-basis:1px; flex-grow:1; margin-right:20px; max-width:360px; overflow:hidden">
 				<input id="postTitle" style="font-weight:bold; font-size:1.1em; width:100%; margin-bottom:10px;" autocomplete="off" placeholder="Title (required)..." type="text" onkeyup="if (event.keyCode == 27) this.value = '';">
 				<div id="editid" style="font-size:0.85em; margin-left:10px; display:none">
 				<span id="creationEdit"></span><span id="modificationEdit"></span>
@@ -179,7 +195,7 @@
 			</div>
 			
 	
-			<div style="flex-basis:1px; flex-grow:1; max-width:360px">
+			<div style="flex-basis:1px; flex-grow:1; max-width:360px; overflow:hidden">
 			
 				<div id="readTitle" style="font-weight:bold; font-size:1.1em; margin-bottom:3px;">Title</div>	
 				
@@ -282,6 +298,23 @@ function hexToByteArray(hex) {
     a.push(parseInt(hex.substr(i, 2), 16));
   }
   return new Uint8Array(a);
+}
+
+
+function prepTwoDigit(elt) {
+	if (elt.validationMessage != 'Please enter a number.') elt.value = twoDigit(elt.value);
+}
+
+function twoDigit(str) {
+	if (!str) return str;
+	let parts = str.toString().split(".");
+	if (parts[0].length == 0) parts[0] = "0";
+	let fraction = '';
+	if (parts.length > 1) fraction = parts[1];
+	while (fraction.length < 2) {
+		fraction += '0';
+	}
+	return `${parts[0]}.${fraction}`;	
 }
 
 // Global variables and macros; and initializers ///////////////////////////////////////////////////////////////////////
@@ -426,8 +459,8 @@ function setupWebsocket(restart) {
 	ws.on('queryPostsRecentResponse', function(data) { 
 		D('subscribe').disabled = true;
 		D('sponsor').disabled = true;
-		D('info').textContent = "Recent";
-		D('info').title = "";
+		D('browseHeading').textContent = "Recent";
+		D('browseHeading').title = "";
 		fillBrowse(data); 
 		D('bio').textContent = "The firehose (i.e. trickle) of recent posts."
 	});
@@ -537,6 +570,10 @@ function queryBrowse(userid, tag) {
 		document.title = "mktplc";
 	}
 	
+	closeBio();
+	D('info').onclick = "";
+	D('info').style.cursor = "";
+	
 	if (userid) {		
 		if (userid == XNO.address) {
 			D('subscribe').disabled = true;
@@ -545,8 +582,18 @@ function queryBrowse(userid, tag) {
 			D('subscribe').disabled = false;	
 			D('sponsor').disabled = false;
 		}
-		D('info').title = userid;
-		D('info').textContent = funName(userid);
+		D('browseHeading').title = userid;
+		D('browseHeading').textContent = funName(userid);
+		
+		D('info').textContent = "Info";
+		if (userid == XNO.address) {
+			D('info').textContent = "Edit ✏️";
+			D('info').style.cursor = "pointer";
+			D('info').onclick = function() {			
+				D('bioContent').style.display = "";
+				D('bioPreview').style.display = "none";
+			};
+		}
 		D('theirAddress').textContent = userid;
 		D('theirFunName').textContent = funName(userid);
 		D('theirFunName').style.fontWeight = "600";
@@ -554,7 +601,7 @@ function queryBrowse(userid, tag) {
 		
 		D('theirThreshold').textContent = "0.1 XNO";
 		
-		queueDOMdisplayName(userid, D('info'));
+		queueDOMdisplayName(userid, D('browseHeading'));
 		queueDOMdisplayName(userid, D('theirFunName'));
 		if (ws && ws.readyState == 1) {
 			D('loadingMsg').style.display = "";
@@ -563,10 +610,12 @@ function queryBrowse(userid, tag) {
 	} else if (tag) {	
 		if (XNO.address) {
 			D('subscribe').disabled = false;	
-			D('sponsor').disabled = false;	
+			D('sponsor').disabled = true;	
 		}
-		D('info').title = tag;
-		D('info').textContent = tag;
+		D('browseHeading').title = tag;
+		D('browseHeading').textContent = tag;
+		
+		D('info').textContent = "Info";
 		D('theirAddress').textContent = " - ";
 		D('theirFunName').textContent = " - ";
 		D('theirFunName').style.fontWeight = "";
@@ -581,8 +630,10 @@ function queryBrowse(userid, tag) {
 	} else {	
 		D('subscribe').disabled = true;	
 		D('sponsor').disabled = true;	
-		D('info').title = "";
-		D('info').textContent = "Recent";		
+		D('browseHeading').title = "";
+		D('browseHeading').textContent = "Recent";	
+
+		D('info').textContent = "Info";		
 		D('theirAddress').textContent = " - ";
 		D('theirFunName').textContent = " - ";
 		D('theirFunName').style.fontWeight = "";
@@ -597,15 +648,20 @@ function queryBrowse(userid, tag) {
 			ws.emit('queryTagCounts');
 		}
 	}
-	D('info').onclick = function() { queryBrowse(userid, tag); };
+	D('browseHeading').onclick = function() { queryBrowse(userid, tag); };
 	loadPanel('browse');
 }
 
+function closeBio() {
+	D('bioContent').style.display = "none";
+	D('bioPreview').style.display = "";
+}
+
 function subscribeHandler() {
-	if (D(D('info').title)) flash(D(D('info').title));
+	if (D(D('browseHeading').title)) flash(D(D('browseHeading').title));
 	else {
-		makeSubLi(D('info').title);
-		if (ws && ws.readyState == 1) ws.emit("subscribe", {userid: D('info').title});
+		makeSubLi(D('browseHeading').title);
+		if (ws && ws.readyState == 1) ws.emit("subscribe", {userid: D('browseHeading').title});
 	}
 }
 
