@@ -605,36 +605,30 @@ function queryBrowse(userid, tag) {
 		D('theirFunName').textContent = funName(userid);
 		D('theirFunName').style.fontWeight = "600";
 		D('theirFunName').style.color = funColor(userid);		
-		D('theirThreshold').textContent = "0.10 XNO";
-		
+		D('theirThreshold').textContent = "0.10 XNO";		
 		queueDOMdisplayName(userid, D('browseHeading'));
 		queueDOMdisplayName(userid, D('theirFunName'));
-		if (ws && ws.readyState == 1) {
-			D('loadingMsg').style.display = "";
-			ws.emit("queryPostsFromUser", {userid});
-		}
 	} else if (tag) {	
 		if (XNO.address) D('subscribe').disabled = false;
 		D('browseHeading').title = tag;
 		D('browseHeading').textContent = tag;	
 		D('theirFunName').textContent = tag;
-		
-		if (ws && ws.readyState == 1) {
-			D('loadingMsg').style.display = "";
-			ws.emit("queryTag", {tag});
-		}
 	} else {	
 		D('browseHeading').title = "";
 		D('browseHeading').textContent = "Recent";
 		D('theirFunName').textContent = " - ";
-		
-		if (ws && ws.readyState == 1) {
-			D('loadingMsg').style.display = "";
+	}
+	D('browseHeading').onclick = function() { queryBrowse(userid, tag); };
+	
+	if (ws && ws.readyState == 1) {
+		D('loadingMsg').style.display = "";
+		if (userid) ws.emit("queryPostsFromUser", {userid});
+		else if (tag) ws.emit("queryTag", {tag});
+		else {
 			ws.emit('queryPostsRecent');
 			ws.emit('queryTagCounts');
 		}
 	}
-	D('browseHeading').onclick = function() { queryBrowse(userid, tag); };
 	loadPanel('browse');
 }
 
