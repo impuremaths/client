@@ -36,10 +36,7 @@
 					<button id="show" tabindex="-1" style="font-size:0.85em; margin-left:10px" onclick="toggleVisibility()">Show</button>
 				</div>
 				
-				<div id="grayout" style="opacity:0.3">
-				<div style="font-size:0.9em">Public address:</div>
-				<div class='address' style="margin-bottom:15px;" id="address" onclick="clickCopy(this, this.textContent)"> - </div>
-			
+				<div id="grayout" style="opacity:0.3">			
 				<div style="display:flex; justify-content:space-between;">
 					<input placeHolder="Public display name..." id="set-name" autocomplete="off"
 					       style="padding-right:30px; flex-grow:1;" type="text"autocapitalize="off" maxlength="64"
@@ -100,7 +97,13 @@
 							<button id="sponsor" onclick="subscribeHandler()" autocomplete="off" class="right" disabled>Sponsor</button>		
 						</div>
 					</div>
-					<div id="bio" style="margin-top:20px"></div>
+					<div id="bio" style="margin-top:20px; margin-bottom:40px"></div>					
+					<div style="font-size:0.9em">Public address:</div>
+					<div class='address' id="theirAddress" style="margin-bottom:15px;" onclick="clickCopy(this, this.textContent)"> - </div>
+					<div style="font-size:0.9em">Display name:</div>
+					<div class='address' id="theirFunName" style="margin-bottom:15px; cursor:initial"> - </div>
+					<div style="font-size:0.9em">For sponsor-exclusive content:</div>
+					<div class='address' id="theirThreshold" style="margin-bottom:15px; cursor:initial"> - </div>
 				</div>
 			</div>
 		</div>
@@ -544,7 +547,15 @@ function queryBrowse(userid, tag) {
 		}
 		D('info').title = userid;
 		D('info').textContent = funName(userid);
+		D('theirAddress').textContent = userid;
+		D('theirFunName').textContent = funName(userid);
+		D('theirFunName').style.fontWeight = "600";
+		D('theirFunName').style.color = funColor(userid);
+		
+		D('theirThreshold').textContent = "0.1 XNO";
+		
 		queueDOMdisplayName(userid, D('info'));
+		queueDOMdisplayName(userid, D('theirFunName'));
 		if (ws && ws.readyState == 1) {
 			D('loadingMsg').style.display = "";
 			ws.emit("queryPostsFromUser", {userid});
@@ -556,6 +567,13 @@ function queryBrowse(userid, tag) {
 		}
 		D('info').title = tag;
 		D('info').textContent = tag;
+		D('theirAddress').textContent = " - ";
+		D('theirFunName').textContent = " - ";
+		D('theirFunName').style.fontWeight = "";
+		D('theirFunName').style.color = "";
+		
+		D('theirThreshold').textContent = " - ";
+		
 		if (ws && ws.readyState == 1) {
 			D('loadingMsg').style.display = "";
 			ws.emit("queryTag", {tag});
@@ -564,7 +582,15 @@ function queryBrowse(userid, tag) {
 		D('subscribe').disabled = true;	
 		D('sponsor').disabled = true;	
 		D('info').title = "";
-		D('info').textContent = "Recent";
+		D('info').textContent = "Recent";		
+		D('theirAddress').textContent = " - ";
+		D('theirFunName').textContent = " - ";
+		D('theirFunName').style.fontWeight = "";
+		D('theirFunName').style.color = "";
+		
+		D('theirThreshold').textContent = " - ";
+		
+		
 		if (ws && ws.readyState == 1) {
 			D('loadingMsg').style.display = "";
 			ws.emit('queryPostsRecent');
@@ -1339,7 +1365,6 @@ function importSeed() {
 		XNO.unpackSeed(seed, parseInt(index));
 		
 		D('displayName').textContent = funName(XNO.address, true);
-		D('address').textContent = XNO.address;	
 		
 		D("current").disabled = false;
 		D("clear").disabled = false;
@@ -1407,9 +1432,6 @@ function makeSubLi(userid, lastaccessedts, lastpublishedts) {
 			} 
 			if (!tag) queryBrowse(userid);
 			else queryBrowse(null, userid);
-			D('info').title = userid;
-			if (!tag) ws.emit("queryPostsFromUser", {userid});
-			else ws.emit("queryTag", {tag:userid});
 		}
 	};
 	subli.style = "cursor:pointer; width:100%; padding:3px; position:relative";
@@ -1511,7 +1533,6 @@ function clickClearSeed() {
 	
 	clearSeed();	
 	inputEvent(D('seed'), "");
-	D('address').textContent = " - ";
 	
 	D("current").disabled = true;	
 	D("clear").disabled = true;
