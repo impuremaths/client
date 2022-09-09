@@ -108,15 +108,14 @@
 						<div class='address' id="theirFunName" style="margin-bottom:15px; cursor:initial"> - </div>					
 						<div style="font-size:0.9em">Unique public address:</div>
 						<div class='address' id="theirAddress" style="margin-bottom:15px;" onclick="clickCopy(this, this.textContent)"> - </div>
-						<div style="font-size:0.9em">Amount for sponsor exclusive content (30 days):</div>
+						<div style="font-size:0.9em">Amount for sponsor-exclusive content (30 days):</div>
 						<div class='address' id="theirThreshold" style="margin-bottom:15px; cursor:initial"> - </div>
 					</div>
 					
 					<div id="bioContent" style="display:none">					
-						<input id="" style="width:100%; margin-bottom:10px; margin-top:30px" autocomplete="off" placeholder="Public display name..." type="text" onkeyup="if (event.keyCode == 27) this.value = '';">
-						
-						<textarea style="width:100%; margin-top:20px"></textarea>
-						<div style="font-size:0.9em; margin-top:20px;">Amount for sponsor exclusive content (30 days):</div>
+						<input id="" style="width:100%; margin-bottom:10px; margin-top:30px" autocomplete="off" placeholder="Public display name..." type="text" onkeyup="if (event.keyCode == 27) this.value = '';">												
+						<div id="bioBlocks" style="margin-top:20px; margin-bottom:40px"></div>
+						<div style="font-size:0.9em; margin-top:20px;">Amount for sponsor-exclusive content (30 days):</div>
 						<div style="display:flex; justify-content:right; margin-top:5px">
 						<input onkeyup="" onkeydown="" placeholder="0.00" onblur="prepTwoDigit(this)" style="margin-left:20px; margin-right:10px; text-align:right; flex-grow:1; flex-basis:1px; overflow:hidden; text-overflow:ellipsis;" type="number" step="0.01" min="0"> XNO
 						</div>
@@ -162,7 +161,7 @@
 				
 				<div style="display:flex; margin-top:10px; justify-content:space-between;">
 					<span style="text-overflow:ellipsis; overflow:hidden; white-space:nowrap">(none)</span>
-					<button onclick="toggle(this)" tabindex="-1" style="font-size:0.85em; min-width:fit-content" disabled>Reciprocate Link</button>
+					<button id="recip-prev" onclick="toggle(this)" tabindex="-1" style="font-size:0.85em; min-width:fit-content" disabled>Reciprocate Link</button>
 				</div>
 				
 				<div style="margin-top:15px; display:flex; justify-content:space-between; flex-grow:1">
@@ -173,7 +172,7 @@
 				
 				<div style="display:flex; margin-top:10px; justify-content:space-between;">
 					<span style="text-overflow:ellipsis; overflow:hidden; white-space:nowrap">(none)</span>
-					<button onclick="toggle(this)" tabindex="-1" style="font-size:0.85em; min-width:fit-content" disabled>Reciprocate Link</button>
+					<button id="recip-next" onclick="toggle(this)" tabindex="-1" style="font-size:0.85em; min-width:fit-content" disabled>Reciprocate Link</button>
 				</div>
 					
 				
@@ -593,15 +592,19 @@ function queryBrowse(userid, tag) {
 			D('info').textContent = "Edit ✏️";
 			D('info').style.cursor = "pointer";
 			D('info').onclick = function() {			
-				D('bioContent').style.display = "";
-				D('bioPreview').style.display = "none";
+				if (D('bioContent').style.display == "none") {
+					D('bioContent').style.display = "";
+					clearDOM(D('bioBlocks'));
+					appendBlock("text", null, D('bioBlocks'));					
+					D('bioPreview').style.display = "none";
+				}
 			};
 		}
 		D('theirAddress').textContent = userid;
 		D('theirFunName').textContent = funName(userid);
 		D('theirFunName').style.fontWeight = "600";
 		D('theirFunName').style.color = funColor(userid);		
-		D('theirThreshold').textContent = "0.1 XNO";
+		D('theirThreshold').textContent = "0.10 XNO";
 		
 		queueDOMdisplayName(userid, D('browseHeading'));
 		queueDOMdisplayName(userid, D('theirFunName'));
@@ -637,6 +640,7 @@ function queryBrowse(userid, tag) {
 function closeBio() {
 	D('bioContent').style.display = "none";
 	D('bioPreview').style.display = "";
+	clearDOM(D('bioBlocks'));
 }
 
 function subscribeHandler() {
@@ -692,8 +696,8 @@ function post() {
 	for (let i = 0; i < D('editTags').children.length; i++) {	
 		tags.push(D('editTags').children[i].textContent);
 	}
-
-	ws.emit('updatePost', {tags, prev_: prev, next_: next, title:D('postTitle').value.trim(), content:content, visibility:"public", createdts: parseInt(D('creationEdit').title)});
+	
+	ws.emit('updatePost', {recipPrev: active('recip-prev'), recipNext: active('recip-next'), tags, prev_: prev, next_: next, title:D('postTitle').value.trim(), content:content, visibility:"public", createdts: parseInt(D('creationEdit').title)});
 }
 
 function checkTitle(elt) {
@@ -1126,7 +1130,8 @@ function fillEdit(postid, oldEditPost) {
 	D('clearButton').textContent = "Cancel Edit";
 }
 
-function appendBlock(type, parent) {
+function appendBlock(type, previous, parent) {
+	if (!parent) parent = D('postContent');
 	let block = make('div');
 	block.tabIndex = "-1";
 	let textbox = make('textarea');
@@ -1163,26 +1168,26 @@ function appendBlock(type, parent) {
 	
 	let textBut = make('button', "Add Text");
 	textBut.classList.add("left");
-	textBut.onclick = function() { appendBlock("text", block); }
+	textBut.onclick = function() { appendBlock("text", block, parent); }
 	
 	let mdBut = make('button', "Markdown");
 	mdBut.classList.add("center");
 	mdBut.style.marginRight = "0px";
-	mdBut.onclick = function() { appendBlock("md", block); }
+	mdBut.onclick = function() { appendBlock("md", block, parent); }
 	
 	let jsBut = make('button', "HTML/JS");
 	jsBut.classList.add("center");
 	jsBut.style.marginRight = "0px";
-	jsBut.onclick = function() { appendBlock("js", block) };
+	jsBut.onclick = function() { appendBlock("js", block, parent) };
 	
 	let imageBut = make('button', "Image");
 	imageBut.classList.add("center");
-	imageBut.onclick = function() { appendBlock("image", block) };
+	imageBut.onclick = function() { appendBlock("image", block, parent) };
 	
 	let delBut = make('button', "✕");
 	delBut.classList.add("right");
 	delBut.onclick = function() {
-		if (D('postContent').children.length > 1) D('postContent').removeChild(block);
+		if (parent.children.length > 1) parent.removeChild(block);
 		else alert("At least one element required. Add a replacement first.");
 	};
 
@@ -1196,12 +1201,15 @@ function appendBlock(type, parent) {
 	
 	let buttonParent = make('div');
 	buttonParent.style = "margin-top:10px; margin-bottom:20px; display:flex; justify-content:space-between";
-	buttonParent.appendChild(sponsBut);
+	if (parent == D('postContent')) buttonParent.appendChild(sponsBut);
+	else buttonParent.style.justifyContent = "right";
 	buttonParent.appendChild(buttonPanel);
 	
 	block.appendChild(buttonParent);
-	if (parent && parent.nextElementSibling) D('postContent').insertBefore(block, parent.nextElementSibling);
-	else D('postContent').appendChild(block);	
+	if (previous) {
+		if (previous.nextElementSibling) previous.parentNode.insertBefore(block, previous.nextElementSibling);
+		else previous.parentNode.appendChild(block);
+	} else parent.appendChild(block);	
 	
 	for (let i = 0; i < buttonPanel.children.length; i++) {
 		buttonPanel.children[i].tabIndex = -1;
