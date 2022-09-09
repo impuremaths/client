@@ -88,18 +88,22 @@
 				
 				<div style="flex-basis:1px; flex-grow:2; margin-right:20px; overflow:hidden">
 				
-					<div style="display:flex; min-width:200px; margin-top:20px">
+					<div style="display:flex; min-width:200px; justify-content:space-between">
 						<div>
-							<span id="info" style="font-weight:600; margin-right:30px">Info</span>					
+							<span id="info" style="font-weight:600; margin-right:30px"></span>					
 						</div>
 						<div>
 							<button id="subscribe" onclick="subscribeHandler()" autocomplete="off" class="left" disabled>Subscribe</button>
 							<button id="sponsor" onclick="subscribeHandler()" autocomplete="off" class="right" disabled>Sponsor</button>		
 						</div>
+						
 					</div>
 					
 					<div id="bioPreview" style="overflow:hidden">
 						<div id="bio" style="margin-top:30px; margin-bottom:40px"></div>
+						
+						<div style="background-color:#e4e7e7; height:2px; border-radius:20px; margin:30px;"></div>
+				
 						<div style="font-size:0.9em">Display name:</div>
 						<div class='address' id="theirFunName" style="margin-bottom:15px; cursor:initial"> - </div>					
 						<div style="font-size:0.9em">Unique public address:</div>
@@ -585,7 +589,7 @@ function queryBrowse(userid, tag) {
 		D('browseHeading').title = userid;
 		D('browseHeading').textContent = funName(userid);
 		
-		D('info').textContent = "Info";
+		D('info').textContent = "";
 		if (userid == XNO.address) {
 			D('info').textContent = "Edit ✏️";
 			D('info').style.cursor = "pointer";
@@ -615,9 +619,9 @@ function queryBrowse(userid, tag) {
 		D('browseHeading').title = tag;
 		D('browseHeading').textContent = tag;
 		
-		D('info').textContent = "Info";
+		D('info').textContent = "";
 		D('theirAddress').textContent = " - ";
-		D('theirFunName').textContent = " - ";
+		D('theirFunName').textContent = tag;
 		D('theirFunName').style.fontWeight = "";
 		D('theirFunName').style.color = "";
 		
@@ -633,7 +637,7 @@ function queryBrowse(userid, tag) {
 		D('browseHeading').title = "";
 		D('browseHeading').textContent = "Recent";	
 
-		D('info').textContent = "Info";		
+		D('info').textContent = "";		
 		D('theirAddress').textContent = " - ";
 		D('theirFunName').textContent = " - ";
 		D('theirFunName').style.fontWeight = "";
