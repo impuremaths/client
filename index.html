@@ -368,7 +368,10 @@ function setupWebsocket(restart) {
 	// Standard commands
 	ws.onopen = function() { 
 		console.log("Connected to server!"); 
-		if (!restart) loadURL();
+		if (!restart) {
+			loadURL();			
+			ws.emit('queryTagCounts');
+		}
 		if (XNO.address) {
 			let ts = Date.now();
 			let loginPacket = {userid: XNO.address, ts, signature:XNO.sign(ts, XNO.address)};
@@ -430,7 +433,6 @@ function setupWebsocket(restart) {
 	ws.on('queryLibraryResponse', function(data) {
 		clearDOM(D('library'));
 		data.sort(function(x, y) { return Math.round(x.pushedts - y.pushedts); });
-		console.log(data);
 		for (let i = 0; i < data.length; i++) {
 			cachePost(data[i]);
 			makeLibLi(data[i].postid, data[i].lastaccessedts);
@@ -474,8 +476,7 @@ function setupWebsocket(restart) {
 		D('bio').textContent = "An unmoderated tag."
 	});
 	
-	ws.on('queryPostResponse', function(data) { 
-		console.log(data);
+	ws.on('queryPostResponse', function(data) {
 		let oldPost = readPostid && (JSON.stringify(data.content) == JSON.stringify(postCache[readPostid].content));
 		let oldEditPost = editPostid && (JSON.stringify(data.content) == JSON.stringify(postCache[editPostid].content));
 		cachePost(data);
@@ -486,7 +487,6 @@ function setupWebsocket(restart) {
 	});
 	
 	ws.on('updatePostResponse', function(data) { 
-		console.log(data);
 		cachePost(data);
 		if (!data.errMsg) {
 			fillPost(data.postid);
@@ -1138,12 +1138,6 @@ function appendBlock(type, previous, parent) {
 		textbox.placeholder = "Simple text...";
 	} else if (type == "js") {
 		textbox.placeholder = "HTML (JS scripts enabled)...";
-		textbox.onkeydown = function() {
-			if (event.keyCode == 9) {
-				event.preventDefault();
-				console.log("HANDLE TABS");
-			}
-		}
 		addTabbing(textbox);
 	} else if (type == "md") textbox.placeholder = "Markdown...";
 	else if (type == "image") {
@@ -1359,8 +1353,7 @@ function addComment(commentData) {
 				repPanel.focus();
 			} else {
 				repPanel.style.display = "none";
-				this.textContent = "Reply";	
-				console.log({content:repPanel.value, postid: commentData.postid, parentid: commentData.commentid });
+				this.textContent = "Reply";
 				if (repPanel.value) ws.emit('updateComment', {content:repPanel.value, postid: commentData.postid, parentid: commentData.commentid });
 				repPanel.value = "";
 			}
