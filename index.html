@@ -303,10 +303,7 @@ function hexToByteArray(hex) {
   return new Uint8Array(a);
 }
 
-
-function prepTwoDigit(elt) {
-	if (elt.validationMessage != 'Please enter a number.') elt.value = twoDigit(elt.value);
-}
+function prepTwoDigit(elt) { if (elt.validationMessage != 'Please enter a number.') elt.value = twoDigit(elt.value); }
 
 function twoDigit(str) {
 	if (!str) return str;
@@ -324,7 +321,6 @@ function twoDigit(str) {
 
 var readPostid = "";
 var editPostid = "";
-var topPage = "browse";
 var DOMdisplayNames = {};
 var cacheDisplayNames = {};
 var postCache = {};
@@ -368,13 +364,11 @@ function setupWebsocket(restart) {
 	// Standard commands
 	ws.onopen = function() { 
 		console.log("Connected to server!"); 
-		if (!restart) {
-			loadURL();			
-			ws.emit('queryTagCounts');
-		}
+		if (!restart) loadURL();
 		if (XNO.address) {
 			let ts = Date.now();
 			let loginPacket = {userid: XNO.address, ts, signature:XNO.sign(ts, XNO.address)};
+			queueDOMdisplayName(XNO.address, D('displayName'));
 			ws.emit('authenticateUser', loginPacket);
 			console.log(loginPacket);
 		}
@@ -406,10 +400,7 @@ function setupWebsocket(restart) {
 	});
 	
 	ws.on('updateDisplayNameResponse', function(data) {
-		if (data && data.displayname) {
-			D('displayName').textContent = data.displayname;
-			receiveDOMdisplayName(data.userid, data.displayname);
-		}
+		if (data && data.displayname) receiveDOMdisplayName(data.userid, data.displayname);
 	});
 	
 	ws.on('authenticateUserResponse', function(data) {
@@ -422,10 +413,7 @@ function setupWebsocket(restart) {
 			requestNames();
 		}
 		
-		if (data && data.displayname) {
-			D('displayName').textContent = data.displayname;			
-			receiveDOMdisplayName(data.userid, data.displayname);
-		}
+		if (data && data.displayname) receiveDOMdisplayName(data.userid, data.displayname);
 		console.log("Authenticated! Requesting library...");
 		ws.emit('queryLibrary');
 	});
@@ -444,8 +432,9 @@ function setupWebsocket(restart) {
 		if (displayname) cacheDisplayNames[userid] = displayname;
 		else delete cacheDisplayNames[userid];
 		if (DOMdisplayNames[userid]) {
+			let theName = funName(userid)
 			for (let j = 0; j < DOMdisplayNames[userid].length; j++) {
-			DOMdisplayNames[userid][j].textContent = funName(userid);
+				DOMdisplayNames[userid][j].textContent = theName;
 			}
 		}
 		delete DOMdisplayNames[userid];
@@ -470,7 +459,6 @@ function setupWebsocket(restart) {
 		if (data.length && D(postCache[data[0].postid].userid)) D(postCache[data[0].postid].userid).style.fontWeight = "";
 	});
 	
-	
 	ws.on('queryTagResponse', function (data) { 
 		fillBrowse(data); 		
 		D('bio').textContent = "An unmoderated tag."
@@ -488,11 +476,12 @@ function setupWebsocket(restart) {
 	
 	ws.on('updatePostResponse', function(data) { 
 		cachePost(data);
-		if (!data.errMsg) {
+		if (data.errMsg) console.log(data);
+		else {
 			fillPost(data.postid);
 			loadPanel('read');
 			cancelPost(true);
-		} else console.log(data);
+		}
 	});
 	
 	ws.on('subscribeResponse', function(data) {	console.log(data); });
@@ -514,6 +503,7 @@ function setupWebsocket(restart) {
 			postli.appendChild(fullLabel(data[x].postid));
 			D('mapul').appendChild(postli);	
 		}
+		requestNames();
 	});
 	
 	ws.on('queryTagCountsResponse', function(data) {
@@ -522,18 +512,14 @@ function setupWebsocket(restart) {
 
 		let tagElt = make('span', 'Recent');
 		tagElt.style = "margin-right:20px; font-size:0.85em; cursor:pointer; display:inline-block; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:250px";
-		tagElt.onclick = function() {
-			queryBrowse(null, null);
-		};
+		tagElt.onclick = function() { queryBrowse(); };
 		D('popularTags').appendChild(tagElt);
 		
 		for (let tag in data) {
 			if (data[tag] > 0) {
 				let tagElt = make('span', tag);
 				tagElt.style = "margin-right:20px; font-size:0.85em; cursor:pointer; display:inline-block; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:250px";
-				tagElt.onclick = function() {
-					queryBrowse(null, tag);
-				};
+				tagElt.onclick = function() { queryBrowse(null, tag); };
 				D('popularTags').appendChild(tagElt);
 			}
 		}
@@ -624,10 +610,9 @@ function queryBrowse(userid, tag) {
 		D('loadingMsg').style.display = "";
 		if (userid) ws.emit("queryPostsFromUser", {userid});
 		else if (tag) ws.emit("queryTag", {tag});
-		else {
-			ws.emit('queryPostsRecent');
-			ws.emit('queryTagCounts');
-		}
+		else ws.emit('queryPostsRecent');
+		
+		if ((!userid && !tag) || !D('popularTags').children.length) ws.emit('queryTagCounts');
 	}
 	loadPanel('browse');
 }
@@ -796,7 +781,6 @@ function loadPanel(type) {
 		D(type).style.display = "";
 		D('secondDiv').scrollTo(0, browseHeight);	
 	}
-	if (type != "post") topPage = type;
 }
 
 function cachePost(metaData) {
@@ -1139,6 +1123,7 @@ function appendBlock(type, previous, parent) {
 	} else if (type == "js") {
 		textbox.placeholder = "HTML (JS scripts enabled)...";
 		addTabbing(textbox);
+		textbox.value = "<div></div>\n\n" + "<script>\n\n</" + "script>";
 	} else if (type == "md") textbox.placeholder = "Markdown...";
 	else if (type == "image") {
 		textbox = make('div');		
@@ -1229,7 +1214,6 @@ function cancelPost(override) {
 	
 	D('submitButton').textContent = "Publish";
 	D('clearButton').textContent = "Clear";
-	loadPanel(topPage);
 }
 
 function makeMetaLabel(userid, createdts, modifiedts) {	
@@ -1369,10 +1353,6 @@ function addComment(commentData) {
 
 // Sidebar UI interaction handlers ///////////////////////////////////////////////////////////////////////
 
-function testFunction() {
-	if (ws && ws.readyState == 1) ws.emit('queryPostsRecent');
-}
-
 var clipboardText;
 
 function generateSeed() {
@@ -1422,6 +1402,7 @@ function importSeed() {
 		if (ws && ws.readyState == 1) {
 			let ts = Date.now();
 			console.log({userid: XNO.address, ts, signature:XNO.sign(ts, XNO.address)});
+			queueDOMdisplayName(XNO.address, D('displayName'));
 			ws.emit('authenticateUser', {userid: XNO.address, ts, signature:XNO.sign(ts, XNO.address)});
 		}
 	}
@@ -1437,7 +1418,7 @@ function requestNames() {
 	for (let name in DOMdisplayNames) {
 		userids.push(name);
 	}
-	if (ws && ws.readyState == 1) ws.emit('queryUsers', {userids});
+	if (ws && ws.readyState == 1 && userids.length) ws.emit('queryUsers', {userids});
 }
 
 function queryPost(postid) {
@@ -1456,9 +1437,7 @@ function makeSubLi(userid, lastaccessedts, lastpublishedts) {
 	let subli = make("li");
 	subli.id = userid;
 	subli.onclick = function() {
-		loadPanel('browse');
 		if (ws && ws.readyState == 1) {
-			D('loadingMsg').style.display = "";
 			if (!tag) queryBrowse(userid);
 			else queryBrowse(null, userid);
 		}
@@ -1593,7 +1572,10 @@ function toggleVisibility() {
 	
 function setData(type) {
 	if (type == 'name') {
-		if (ws && ws.readyState == 1) ws.emit('updateDisplayName', { displayname: D('set-name').value} );
+		if (ws && ws.readyState == 1) {		
+			queueDOMdisplayName(XNO.address, D('displayName'));
+			ws.emit('updateDisplayName', { displayname: D('set-name').value} );
+		}
 	} else console.error("Need code to set " + type);
 }
 
@@ -1615,6 +1597,7 @@ function loadURL() {
 	let tag = new URLSearchParams(window.location.search).get('tag');
 	let userid = new URLSearchParams(window.location.search).get('userid');
 	if (postid) {
+		if (!D('browseHeading').textContent) queryBrowse();
 		if (postCache[postid]) fillPost(postid);
 		if (!postCache[postid] || !postCache[postid].comments) queryPost(postid);
 		loadPanel('read');
@@ -1886,6 +1869,7 @@ function timeSince(date) {
 
 function addTabbing(elt) {
 	elt.style.tabSize = "4";
+	elt.spellcheck = false;
     elt.onkeydown = function(evt) {
         let text = elt.value;
         let sel = elt.selectionStart;
