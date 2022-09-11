@@ -28,7 +28,7 @@
 
 			<div id="editPanel" class="accordion" style="max-height:0px; margin:0px 10px">
 				<div style="text-align:center; margin-top:20px">
-					<button tabindex="-1" class="left" onclick="generateSeed()">Create PIN</button><button id="current" class="center" tabindex="-1" onclick="showCurrent()" autocomplete="off" disabled>Current PIN</button><button id="clear" class="right" onclick="if (confirm('Log out of the current account? (Have you saved your account PIN elsewhere?!)')) clickClearSeed();" autocomplete="off" disabled>Log Out</button>
+					<button tabindex="-1" class="left" onclick="generateSeed()">Generate PIN</button><button id="current" class="center" tabindex="-1" onclick="showCurrent()" autocomplete="off" disabled>Current PIN</button><button id="clear" class="right" onclick="if (confirm('Log out of the current account? (Have you saved your account PIN elsewhere?!)')) clickClearSeed();" autocomplete="off" disabled>Log Out</button>
 				</div>
 				
 				<div style="display:flex; justify-content:space-between; margin-top:15px; margin-bottom:10px">
@@ -63,7 +63,7 @@
 	
 	<div id="secondDiv" class="secondDiv">
 	
-		<div style="margin-top:25px; margin-bottom:40px; display:flex" >
+		<div style="margin-top:25px; margin-bottom:50px; display:flex" >
 			<button id="browseButton" style="min-width:fit-content" class="left active" onclick="loadPanel('browse')">Browse</button><button id="readButton" style="min-width:fit-content" class="center" onclick="loadPanel('read')" autocomplete="off">Read</button><button id="postButton" style="min-width:fit-content" class="right" onclick="loadPanel('post')" autocomplete="off">Write</button>
 		
 			<div id="popularTags" class="hideScroll" style="margin-left:40px; overflow:auto; display:flex; align-items:center; font-size:0.85em"></div>
