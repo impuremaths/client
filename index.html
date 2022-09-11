@@ -597,12 +597,12 @@ async function withdraw(symbol, elt, amt, destaddr, them) {
 	let totalAmt = BigInt(rawFromUnit(symbol, amt));
 	let balance = BigInt(rawFromUnit(symbol, D('balance').textContent));
 	if (totalAmt <= balance) {
-		showMsg("Sponsoring " + them + "...", null, true);
+		showMsg("Sponsoring \'" + them + "\'...", null, true);
 		let sendResp = await ccc[symbol].sendTo(destaddr, totalAmt.toString());
 		if (sendResp) {
 			console.log(sendResp);
 			flash(D('balance'), unitFromRaw(symbol, BigInt(rawFromUnit(symbol, D('balance').textContent)) - totalAmt));
-			showMsg("Sponsored " + them + " with " + amt + " " + symbol + "!");
+			showMsg("Sponsored \'" + them + "\' with " + amt + " " + symbol + "!");
 			D('sponsorInput').value = "";
 			refreshData(symbol);
 		}
