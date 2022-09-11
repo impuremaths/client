@@ -81,8 +81,8 @@
 				
 				<div style="flex-basis:1px; flex-grow:2; margin-right:20px; overflow:hidden">
 				
-					<div style="display:flex; min-width:200px; justify-content:space-between">
-						<div><span id="info" style="font-weight:600; margin-right:30px"></span></div>
+					<div style="display:flex; justify-content:space-between; white-space:nowrap">
+						<div><span id="info" style="font-weight:600; margin-right:5px;"></span></div>
 						<div>
 							<button id="subscribe" onclick="subscribeHandler()" autocomplete="off" class="left" disabled>Subscribe</button>
 							<button id="sponsor" onclick="sponsorHandler(this)" autocomplete="off" class="right" disabled>Sponsor</button>		
@@ -1280,7 +1280,7 @@ function fullLabel(postid, library) {
 	label.appendChild(postMeta);
 	label.appendChild(actions);
 	
-	label.style = "overflow:hidden; cursor:pointer; padding:5px; flex-grow:1; position:relative";
+	label.style = "overflow:hidden; cursor:pointer; padding:5px; position:relative";
 	label.onmouseenter = function() { actions.style.display = ""; };
 	label.onmouseleave = function() { actions.style.display = "none"; };
 	label.onclick = function() {
