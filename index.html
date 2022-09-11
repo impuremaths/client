@@ -21,8 +21,9 @@
 	
 	<div id="firstDiv" class="firstDiv" style="background-color:steelblue">		
 		<div id="profilePanel" class="objectWrapper" style="margin-bottom:15px; margin-top:50px" onclick="openSubAccordion(this)">
-			<div class="clickFlash" style="display:flex; justify-content:space-between; margin:0px 10px" onclick="toggleSubAccordion(this)">
-				<strong style="overflow:hidden"><div id="displayName" style="text-overflow:ellipsis; overflow:hidden; font-size:1.1em;" class="flash">Guest</div></strong>
+			<div class="clickFlash" style="display:flex; justify-content:space-between; margin:0px 10px; align-items:baseline" onclick="toggleSubAccordion(this)">
+				<div id="displayName" style="text-overflow:ellipsis; overflow:hidden; font-size:1.1em; white-space:nowrap; font-weight:bold; flex-grow:1" class="flash">Guest</div>
+				<div id="balance" class="clickFlash" style="overflow:hidden; text-overflow:ellipsis; flex-shrink:0; max-width:60%; font-size:0.9em; margin-left:5px;" onclick="event.stopPropagation(); clickCopy(this, this.textContent)">0.00</div><span style="font-size:0.9em">&nbsp;XNO</span>
 			</div>
 
 			<div id="editPanel" class="accordion" style="max-height:0px; margin:0px 10px">
@@ -93,11 +94,11 @@
 						<div id="bioLine" style="background-color:#e4e7e7; height:2px; border-radius:20px; margin:30px;"></div>
 				
 						<div style="font-size:0.9em; margin-top:20px;">Display name:</div>
-						<div class='address' id="theirFunName" style="margin-bottom:15px; cursor:initial"> - </div>					
+						<div id="theirFunName" style="margin-bottom:15px; margin-left:10px;"> - </div>					
 						<div style="font-size:0.9em">Unique public address:</div>
-						<div class='address' id="theirAddress" style="margin-bottom:15px;" onclick="clickCopy(this, this.textContent)"> - </div>
+						<div class='address' id="theirAddress" style="margin-bottom:15px; margin-left:10px" onclick="clickCopy(this, this.textContent)"> - </div>
 						<div style="font-size:0.9em">Contribution for sponsor-exclusive content (30 days):</div>
-						<div class='address' id="theirThreshold" style="margin-bottom:15px; cursor:initial"> - </div>
+						<div id="theirThreshold" style="margin-bottom:15px; margin-left:10px;" onclick="clickCopy(this, this.title)"> - </div>
 						
 						<div id="bioSponsor" style="display:none; margin:15px">
 							<div style="display:flex; justify-content:space-between; align-items:baseline">
@@ -327,7 +328,9 @@ ccc['XNO'] = {shift:30, flashColor:'#def', keyType:'seed', min:0, fee:0, donatio
 for (let symbol in ccc) { 
 	ccc[symbol].queue = new Promise(function(resolve, reject) { resolve(true); });
 }
-		
+	
+ccc['XNO'].getPending = function() {return post(ccc['XNO'].server, {action: 'pending', account: XNO.address, source:true}); };
+ccc['XNO'].receive = function(hash) { return enqueue('XNO', function() {return nanoReceive('XNO', hash);}); };	
 ccc['XNO'].getBlock = function(hash) { return post(ccc['XNO'].server, {action: 'block_info', json_block: true, hash: hash}); };		
 ccc['XNO'].sendTo = function(destination, amt) { return enqueue('XNO', function() {return nanoSend('XNO', destination, amt);}); };
 ccc['XNO'].createBlock = function(secretKey, data) {
@@ -379,6 +382,48 @@ ccc['XNO'].createBlock = function(secretKey, data) {
 	}
 	return { hash: byteArrayToHex(hashBytes), block: block };
 }
+
+
+async function nanoReceive(symbol, hash) {
+	let blockInfoFetch = post(ccc[symbol].server, {action: 'block_info', json_block: true, hash: hash});
+	let oldBalance = '0';
+	let previous = '0'.padStart(64, '0');
+	let representative = ccc[symbol].representative;
+	let workInput = XNO.publicKey;
+	
+	let frontierBlock = await fetchFrontier(symbol, await ccc[symbol].getAccountInfo());
+	if (frontierBlock) {
+		oldBalance = frontierBlock.balance;
+		previous = frontierBlock.hash;
+		representative = frontierBlock.representative;
+		workInput = frontierBlock.hash;
+	} else {
+		console.log("Fetched frontier failed check; attempting open block.");
+		await suggestRep(symbol);
+		representative = ccc[symbol].representative;
+	}
+	
+	return await blockInfoFetch.then(async function(blockInfo) {
+		if (!blockInfo) return false;
+		return await postBlock(symbol, 'receive', workInput, previous, representative, (BigInt(oldBalance) + BigInt(blockInfo.amount)).toString(), hash);
+	});
+};
+
+function suggestRep(symbol) {
+	return fetch(ccc[symbol].repRec).then(function(response) {
+		return response.json().then(function(data) { 
+			if (!data) return false;
+			data.sort(function(x, y) { return y.score - x.score; });
+			let repAddr = data[0].account;
+			if (!repAddr) repAddr = data[0].address;
+			if (repAddr) {
+				ccc[symbol].representative = repAddr;
+				inputEvent(D(`${symbol}-new-rep`), repAddr);
+			}
+		});
+	}).catch(function() {networkFailMsg();});
+}
+
 
 ccc['XNO'].getAccountInfo = function() { return nanoGetAccountInfo('XNO'); };
 function nanoGetAccountInfo(symbol) {
@@ -529,17 +574,32 @@ function rawFromUnit(symbol, str) {
 	return `${parts[0]}${fraction}`;
 }
 
+function unitFromRaw(symbol, str) {
+	let shift = ccc[symbol].shift;
+	let n = str.toString();	
+	while (n.length < shift + 1) {
+		n = '0' + n;
+	}
+	let whole = n.substring(0, n.length - shift);
+	let cut = 0;
+	while (n[n.length - 1 - cut] == '0' && cut < shift - 2) cut++;
+	let fraction = n.substring(n.length - shift, n.length - cut);
+	return whole + '.' + fraction;	
+}
+
 async function withdraw(symbol, elt, amt, destaddr, them) {
 	elt.disabled = true;
 	let totalAmt = BigInt(rawFromUnit(symbol, amt));
-	let balance = BigInt(rawFromUnit(symbol, 100)); // temporary
+	let balance = BigInt(rawFromUnit(symbol, D('balance').textContent));
 	if (totalAmt <= balance) {
 		showMsg("Sponsoring " + them + "...", null, true);
 		let sendResp = await ccc[symbol].sendTo(destaddr, totalAmt.toString());
 		if (sendResp) {
 			console.log(sendResp);
+			flash(D('balance'), unitFromRaw(symbol, BigInt(rawFromUnit(symbol, D('balance').textContent)) - totalAmt));
 			showMsg("Sponsored " + them + " with " + amt + " " + symbol + "!");
 			D('sponsorInput').value = "";
+			refreshData(symbol);
 		}
 	} else showMsg("Insufficient funds.");
 	elt.disabled = false;
@@ -552,6 +612,36 @@ function sendMoney(elt) {
 	} else withdraw("XNO", elt, D('sponsorInput').value, D('theirAddress').textContent, D('theirFunName').textContent);
 }
 
+
+function refreshData(symbol) {	
+	console.log("refreshing");
+	ccc[symbol].getAccountInfo().then(function(accountInfo) {
+		if (!XNO.address) return false;
+		
+		if (accountInfo.balance !== undefined) flash(D('balance'), unitFromRaw(symbol, accountInfo.balance));
+		// if (accountInfo.pending !== undefined) flash(D(`${symbol}-balance-pending`), unitFromRaw(symbol, accountInfo.pending));
+		
+		if (accountInfo.detail == "Unopened account.") {
+			if (symbol == "XNO" || symbol == "BAN") cyclePending(symbol);
+		} else cyclePending(symbol);
+		return accountInfo;
+	});
+}
+
+function cyclePending(symbol) {
+	if (!XNO.address) return false;
+	console.log("cycling");
+	ccc[symbol].getPending().then(async function(data) {
+		if (data) {
+			let count = 0;
+			for (const block in data.blocks) {
+				await ccc[symbol].receive(block);
+				count++;
+			}
+			if (count) refreshData(symbol);
+		}
+	});	
+}
 
 // Global variables and macros; and initializers ///////////////////////////////////////////////////////////////////////
 
@@ -1659,6 +1749,7 @@ function importSeed() {
 			queueDOMdisplayName(XNO.address, D('displayName'));
 			ws.emit('authenticateUser', {userid: XNO.address, ts, signature:XNO.sign(ts, XNO.address)});
 		}
+		refreshData("XNO");
 	}
 }
 
@@ -1810,6 +1901,7 @@ function clickClearSeed() {
 	
 	D("subPanel").style.display = "none";
 	D('displayName').textContent = "Guest";	
+	D('balance').textContent = "0.00";
 	localStorage.removeItem("localSeed");
 }
 
@@ -1828,6 +1920,7 @@ function setData(type) {
 	if (type == 'name') {
 		if (ws && ws.readyState == 1) {		
 			queueDOMdisplayName(XNO.address, D('displayName'));
+			queueDOMdisplayName(XNO.address, D(XNO.address).lastElementChild);
 			ws.emit('updateDisplayName', { displayname: D('bio-name').value} );
 		}
 	} else console.error("Need code to set " + type);
