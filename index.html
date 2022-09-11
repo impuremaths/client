@@ -63,11 +63,13 @@
 	
 	<div id="secondDiv" class="secondDiv">
 	
-		<button id="browseButton" class="left active" style="margin-top:25px; margin-bottom:20px" onclick="loadPanel('browse')">Browse</button><button id="readButton" class="center" onclick="loadPanel('read')" autocomplete="off">Read</button><button id="postButton" class="right" onclick="loadPanel('post')" autocomplete="off">Write</button>
-	
-		<div id="browse" style="margin-bottom:80px; max-width:1200px">
-			<div id="popularTags" style="margin-bottom:30px; margin-top:10px"></div>
-			
+		<div style="margin-top:25px; margin-bottom:40px; display:flex" >
+			<button id="browseButton" style="min-width:fit-content" class="left active" onclick="loadPanel('browse')">Browse</button><button id="readButton" style="min-width:fit-content" class="center" onclick="loadPanel('read')" autocomplete="off">Read</button><button id="postButton" style="min-width:fit-content" class="right" onclick="loadPanel('post')" autocomplete="off">Write</button>
+		
+			<div id="popularTags" class="hideScroll" style="margin-left:40px; overflow:auto; display:flex; align-items:center; font-size:0.85em"></div>
+		</div>
+		
+		<div id="browse" style="margin-bottom:80px; max-width:1200px">			
 			<div>
 				<span style="font-weight:bold; font-size:1.1em; cursor:pointer;" onclick="queryBrowse()" id="browseHeading"></span>
 				<span id="loadingMsg" style="margin-left:10px; font-style:italic; display:none">Loading...</span>
@@ -834,15 +836,15 @@ function setupWebsocket(restart) {
 		console.log(data);
 		clearDOM(D('popularTags'));
 
-		let tagElt = make('span', 'Recent');
-		tagElt.style = "margin-right:20px; font-size:0.85em; cursor:pointer; display:inline-block; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:250px";
+		let tagElt = make('a', 'Recent');
+		tagElt.style = "flex-shrink:0; cursor:pointer; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:250px";
 		tagElt.onclick = function() { queryBrowse(); };
 		D('popularTags').appendChild(tagElt);
 		
 		for (let tag in data) {
 			if (data[tag] > 0) {
-				let tagElt = make('span', tag);
-				tagElt.style = "margin-right:20px; font-size:0.85em; cursor:pointer; display:inline-block; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:250px";
+				let tagElt = make('a', tag); // " • " + tag);
+				tagElt.style = "flex-shrink:0; margin-left:20px; cursor:pointer; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:250px";
 				tagElt.onclick = function() { queryBrowse(null, tag); };
 				D('popularTags').appendChild(tagElt);
 			}
@@ -898,6 +900,7 @@ function queryBrowse(userid, tag) {
 		}
 		D('browseHeading').title = userid;
 		D('browseHeading').textContent = funName(userid);
+		//D('browseHeading').style.color = funColor(userid);
 		
 		if (userid == XNO.address) {
 			D('info').textContent = "Edit ✏️";
