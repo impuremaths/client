@@ -79,35 +79,40 @@
 				<div style="flex-basis:1px; flex-grow:2; margin-right:20px; overflow:hidden">
 				
 					<div style="display:flex; min-width:200px; justify-content:space-between">
-						<div>
-							<span id="info" style="font-weight:600; margin-right:30px"></span>					
-						</div>
+						<div><span id="info" style="font-weight:600; margin-right:30px"></span></div>
 						<div>
 							<button id="subscribe" onclick="subscribeHandler()" autocomplete="off" class="left" disabled>Subscribe</button>
-							<button id="sponsor" onclick="subscribeHandler()" autocomplete="off" class="right" disabled>Sponsor</button>		
+							<button id="sponsor" onclick="sponsorHandler(this)" autocomplete="off" class="right" disabled>Sponsor</button>		
 						</div>
-						
 					</div>
 					
+					
 					<div id="bioPreview" style="overflow:hidden">
-						<div id="bio" style="margin-top:30px; margin-bottom:40px"></div>
+						<div id="bio" class="accordion" style="margin-top:30px; margin-bottom:40px"></div>
 						
-						<div style="background-color:#e4e7e7; height:2px; border-radius:20px; margin:30px;"></div>
+						<div id="bioLine" style="background-color:#e4e7e7; height:2px; border-radius:20px; margin:30px;"></div>
 				
-						<div style="font-size:0.9em">Display name:</div>
+						<div style="font-size:0.9em; margin-top:20px;">Display name:</div>
 						<div class='address' id="theirFunName" style="margin-bottom:15px; cursor:initial"> - </div>					
 						<div style="font-size:0.9em">Unique public address:</div>
 						<div class='address' id="theirAddress" style="margin-bottom:15px;" onclick="clickCopy(this, this.textContent)"> - </div>
-						<div style="font-size:0.9em">Amount for sponsor-exclusive content (30 days):</div>
+						<div style="font-size:0.9em">Contribution for sponsor-exclusive content (30 days):</div>
 						<div class='address' id="theirThreshold" style="margin-bottom:15px; cursor:initial"> - </div>
+						
+						<div id="bioSponsor" style="display:none; margin:15px">
+							<div style="display:flex; justify-content:space-between; align-items:baseline">
+							<input id="sponsorInput" onkeyup="" onkeydown="" placeholder="0.00" onblur="prepTwoDigit(this)" style="margin-right:5px; text-align:right; flex-grow:1; flex-basis:1px; overflow:hidden; text-overflow:ellipsis;" type="number" step="0.01" min="0" autocomplete="off"> XNO							
+							<button onclick="sendMoney(this)" style="margin-left:10px; font-size:0.85em">Send</button>
+							</div>
+						</div>
 					</div>
 					
 					<div id="bioContent" style="display:none">					
 						<input id="bio-name" style="width:100%; margin-bottom:10px; margin-top:30px" autocomplete="off" placeholder="Public display name..." type="text" onkeyup="if (event.keyCode == 27) this.value = '';">												
 						<div id="bioBlocks" style="margin-top:20px; margin-bottom:40px"></div>
-						<div style="font-size:0.9em; margin-top:20px;">Amount for sponsor-exclusive content (30 days):</div>
+						<div style="font-size:0.9em; margin-top:20px;">Contribution for sponsor-exclusive content (30 days):</div>
 						<div style="display:flex; justify-content:right; margin-top:5px">
-						<input onkeyup="" onkeydown="" placeholder="0.00" onblur="prepTwoDigit(this)" style="margin-left:20px; margin-right:10px; text-align:right; flex-grow:1; flex-basis:1px; overflow:hidden; text-overflow:ellipsis;" type="number" step="0.01" min="0"> XNO
+						<input onkeyup="" onkeydown="" placeholder="0.00" onblur="prepTwoDigit(this)" style="margin-left:20px; margin-right:5px; text-align:right; flex-grow:1; flex-basis:1px; overflow:hidden; text-overflow:ellipsis;" type="number" step="0.01" min="0"> XNO
 						</div>
 						
 						<button onclick="setData('name')" style="margin-top:30px">Update</button>
@@ -167,7 +172,7 @@
 					
 				
 				<div style="margin-top:50px; display:flex;">
-					<button id="submitButton" onclick="post()" tabindex="-1" disabled>Publish</button>
+					<button id="submitButton" onclick="publish()" tabindex="-1" disabled>Publish</button>
 					<button id="clearButton" style="margin-left:5px" tabindex="-1" onclick="cancelPost()">Clear</button>	
 				</div>
 			</div>
@@ -306,6 +311,247 @@ function twoDigit(str) {
 	}
 	return `${parts[0]}.${fraction}`;	
 }
+
+
+
+let ccc = {};
+ccc['XNO'] = {shift:30, flashColor:'#def', keyType:'seed', min:0, fee:0, donation:'nano_1gpquwssoy8491ajmxp9cxjb3o38imcxidissob7cxc38o6h6r4d8gg639b7',
+				server:'https://rainstorm.city/api',				
+				gettingStarted:'https://nanolinks.info/',
+				
+				faucet: 'https://nanodrop.io/',
+				representative:'nano_1natrium1o3z5519ifou7xii8crpxpk8y65qmkih8e8bpsjri651oza8imdd',
+				repRec:'https://mynano.ninja/api/accounts/verified'};
+				
+				
+for (let symbol in ccc) { 
+	ccc[symbol].queue = new Promise(function(resolve, reject) { resolve(true); });
+}
+		
+ccc['XNO'].getBlock = function(hash) { return post(ccc['XNO'].server, {action: 'block_info', json_block: true, hash: hash}); };		
+ccc['XNO'].sendTo = function(destination, amt) { return enqueue('XNO', function() {return nanoSend('XNO', destination, amt);}); };
+ccc['XNO'].createBlock = function(secretKey, data) {
+	if (typeof data.work === 'undefined') throw new Error('Work is not set');
+	if (!XNO.checkAddress(data.representative)) throw new Error('Representative is not valid');
+
+	let correctedPrevious = data.previous;
+	if (data.previous === null) correctedPrevious = BLANK_HASH;
+
+	let linkIsAddress = false;
+	let correctedLink = data.link;
+	if (data.link === null) correctedLink = BLANK_HASH;
+	else if (XNO.checkAddress(correctedLink)) linkIsAddress = true;
+	if (correctedPrevious === BLANK_HASH && (linkIsAddress || correctedLink === BLANK_HASH)) throw new Error('Block is impossible');
+
+	let publicKey = XNO.pubFromPriv(secretKey);
+	let linkBytes;
+	if (XNO.checkAddress(correctedLink)) linkBytes = hexToByteArray(XNO.pubFromAddr(correctedLink));
+	else linkBytes = hexToByteArray(correctedLink);
+	
+	const context = blake2bInit(32)
+	blake2bUpdate(context, STATE_BLOCK_PREAMBLE_BYTES)
+	blake2bUpdate(context, hexToByteArray(publicKey))
+	blake2bUpdate(context, hexToByteArray(correctedPrevious))
+	blake2bUpdate(context, hexToByteArray(XNO.pubFromAddr(data.representative)))
+	blake2bUpdate(context, hexToByteArray(BigInt(data.balance).toString(16).padStart(32, '0')))
+	blake2bUpdate(context, linkBytes)
+	const hashBytes = blake2bFinal(context)
+	let link
+	let linkAsAddress
+	if (linkIsAddress) {
+		linkAsAddress = correctedLink
+		link = XNO.pubFromAddr(linkAsAddress)
+	} else {
+		link = correctedLink
+		linkAsAddress = XNO.addrFromPub(link)
+	}
+	const block = {
+		type: 'state',
+		account: XNO.addrFromPub(publicKey),
+		previous: correctedPrevious,
+		representative: data.representative,
+		balance: data.balance,
+		link,
+		// eslint-disable-next-line @typescript-eslint/camelcase
+		link_as_account: linkAsAddress,
+		work: data.work,
+		signature: byteArrayToHex(signDetached(hashBytes, hexToByteArray(secretKey))),
+	}
+	return { hash: byteArrayToHex(hashBytes), block: block };
+}
+
+ccc['XNO'].getAccountInfo = function() { return nanoGetAccountInfo('XNO'); };
+function nanoGetAccountInfo(symbol) {
+	return post(ccc[symbol].server, {action: 'account_info', pending: true, representative: true, account: XNO.address}).then(function(accountInfo) {
+		if (accountInfo && !accountInfo.frontier) {
+			accountInfo.balance = "0";
+			accountInfo.detail = "Unopened account.";
+		} 
+		return accountInfo;
+	});
+}
+
+function enqueue(symbol, func) {
+	ccc[symbol].queue = ccc[symbol].queue.then(func);
+	return ccc[symbol].queue;
+}
+
+function post(url, params) {
+    return new Promise((resolve, reject) => {
+        let xhttp = new XMLHttpRequest();
+        xhttp.timeout = 10*1000; // 10 seconds
+        xhttp.onreadystatechange = function() {
+			if (this.readyState == 4) {
+				if (this.status == 200) {
+					try { resolve(JSON.parse(this.responseText)); } 
+					catch(e) {
+						console.error('Failed to parse response from node');
+						console.error(this.responseText);
+						resolve();
+					}
+				} else {
+					console.log('Failed to connect to '+ url);
+					networkFailMsg();
+					resolve();
+				}
+			}
+        };
+        xhttp.open("POST", url, true);
+        xhttp.setRequestHeader("Content-Type", "application/json");
+        xhttp.send(JSON.stringify(params));
+    });
+}	
+
+async function nanoSend(symbol, destination, amt) {
+	// check frontier
+	let frontierBlock = await fetchFrontier(symbol, await ccc[symbol].getAccountInfo());
+	if (!frontierBlock) return false;
+	
+	return await postBlock(symbol, 'send', frontierBlock.hash, frontierBlock.hash, frontierBlock.representative, 
+		(BigInt(frontierBlock.balance) - BigInt(amt)).toString(), destination);
+}
+
+async function postBlock(symbol, subtype, workInput, previous, representative, balance, link) {
+	let rawWorkThreshold = await post(ccc[symbol].server, { action: 'active_difficulty' });
+	let work_threshold = rawWorkThreshold.network_current;
+	if (subtype == 'receive') work_threshold = rawWorkThreshold.network_receive_current;
+
+	let prework = (await post(ccc[symbol].server, {action: 'work_generate', hash: workInput, difficulty: work_threshold}));
+	if (!prework) {
+		showMsg("Proof of work failed. Amount NOT sponsored; try again.");
+		return false;
+	}
+	let work = prework.work;
+	if (work === undefined) work = null;
+	
+	let block = ccc[symbol].createBlock(XNO.privateKey, {
+		work: work,
+		previous: previous,
+		representative: representative.replace('ban_', 'nano_'),
+		balance: balance,
+		link: link.replace('ban_', 'nano_')
+	});
+	
+	if (symbol == "BAN") {
+		block.block.representative = block.block.representative.replace('nano_', 'ban_');
+		block.block.representative = block.block.representative.replace('xrb_', 'ban_');
+		block.block.account = block.block.account.replace('nano_', 'ban_');
+		block.block.account = block.block.account.replace('xrb_', 'ban_');
+		delete block.block.link_as_account;
+	}
+	
+	let formData = {action: 'process', json_block: true, subtype: subtype, block: block.block};
+	if (work === null) {
+		formData.do_work = true;
+		formData.block.work = undefined;
+	}
+	post(ccc[symbol].server, formData);
+	return confirmBlock(symbol, block.hash);
+}
+
+
+function confirmBlock(symbol, hash) {
+	return new Promise(async function(resolve, reject) {
+		let firstBlockInfo = await ccc[symbol].getBlock(hash);
+		if (firstBlockInfo && firstBlockInfo.confirmed == "true") resolve(firstBlockInfo);
+		else {
+			let counter = 0;
+			waitCheckHash();
+			function waitCheckHash() {
+				setTimeout(async function() {
+					let blockInfo = await ccc[symbol].getBlock(hash);
+					if (blockInfo && blockInfo.confirmed == "true") resolve(hash);
+					else if (counter < 15) {
+						counter++;
+						waitCheckHash();
+					} else {
+						showMsg("Transfer seems to have failed or is delayed.");
+						resolve();
+					}
+				}, 1000);
+			}
+		}
+	});
+}
+
+function fetchFrontier(symbol, accountInfo) {
+	if (!accountInfo || !accountInfo.frontier) return false;
+	return post(ccc[symbol].server, {action: 'block_info', json_block: true, hash: accountInfo.frontier}).then(function(res) {
+		if (!res) return false;
+		let fetchedFrontierBlock = res.contents;
+
+		let producedFrontierBlock = ccc[symbol].createBlock(XNO.privateKey, {
+			work: fetchedFrontierBlock.work,
+			previous: fetchedFrontierBlock.previous,
+			representative: accountInfo.representative.replace('ban_', 'nano_'),
+			balance: accountInfo.balance,
+			link: fetchedFrontierBlock.link
+		}).block;	
+		if (fetchedFrontierBlock.signature != producedFrontierBlock.signature) {
+			console.error(fetchedFrontierBlock);
+			console.error(producedFrontierBlock);
+			alert("Frontier block failed verification. This should NOT happen.");
+			return false;
+		}
+		fetchedFrontierBlock.hash = accountInfo.frontier;
+		return fetchedFrontierBlock;
+	});
+}
+
+function rawFromUnit(symbol, str) {
+	let shift = ccc[symbol].shift;
+	let parts = str.toString().split(".");	
+	let fraction = '';
+	if (parts.length > 1) fraction = parts[1];
+	while (fraction.length < shift) {
+		fraction += '0';
+	}
+	return `${parts[0]}${fraction}`;
+}
+
+async function withdraw(symbol, elt, amt, destaddr, them) {
+	elt.disabled = true;
+	let totalAmt = BigInt(rawFromUnit(symbol, amt));
+	let balance = BigInt(rawFromUnit(symbol, 100)); // temporary
+	if (totalAmt <= balance) {
+		showMsg("Sponsoring " + them + "...", null, true);
+		let sendResp = await ccc[symbol].sendTo(destaddr, totalAmt.toString());
+		if (sendResp) {
+			console.log(sendResp);
+			showMsg("Sponsored " + them + " with " + amt + " " + symbol + "!");
+			D('sponsorInput').value = "";
+		}
+	} else showMsg("Insufficient funds.");
+	elt.disabled = false;
+}
+
+function sendMoney(elt) {
+	if (D('sponsorInput').validationMessage == "Please enter a number." || D('sponsorInput').value <= 0) {
+		showMsg("Enter a positive value.");
+		flash(D('sponsorInput'));
+	} else withdraw("XNO", elt, D('sponsorInput').value, D('theirAddress').textContent, D('theirFunName').textContent);
+}
+
 
 // Global variables and macros; and initializers ///////////////////////////////////////////////////////////////////////
 
@@ -546,6 +792,7 @@ function queryBrowse(userid, tag) {
 		
 	D('sponsor').disabled = true;	
 	D('subscribe').disabled = true;	
+	if (active('sponsor')) sponsorHandler(D(('sponsor')));
 	
 	D('theirFunName').style.fontWeight = "";
 	D('theirFunName').style.color = "";	
@@ -613,6 +860,25 @@ function closeBio() {
 	D('bio-name').value = "";
 }
 
+
+function sponsorHandler(elt) {
+	if (active(elt)) {
+		D('bioSponsor').style.display = "none";
+		D('bioLine').style.display = "";
+		//D('bio').style.display = "";
+		showAccordion(D('bio'));
+		D('bio').style.marginTop = "30px";
+		D('bio').style.marginBottom = "40px";
+		D('sponsorInput').value = "";
+	} else {
+		D('bioSponsor').style.display = "";
+		D('bioLine').style.display = "none";
+		//D('bio').style.display = "none";
+		closeAccordion(D('bio'));
+	}
+	toggle(elt);
+}
+
 function subscribeHandler() {
 	if (D(D('browseHeading').title)) flash(D(D('browseHeading').title));
 	else {
@@ -642,7 +908,7 @@ function addTag() {
 	D('set-tag').select();
 }
 
-function post() {
+function publish() {
 	if (!D('postTitle').value.trim()) {
 		alert("Title is required.");
 		return false;
@@ -1380,13 +1646,13 @@ function importSeed() {
 		
 		clearDOM(D('subscriptions'));
 		if (XNO.address) makeSubLi(XNO.address);
-		if (D('browseHeading').title) {
+		if (D('browseHeading').title && D('browseHeading').title != XNO.address) {
 			D('subscribe').disabled = false;
 			if (D('browseHeading').title.substring(0, 5) == "nano_") D('sponsor').disabled = false;
 		}
 		
 		localStorage.setItem("localSeed", XNO.seed);
-		closeSubAccordion(D('editPanel'));
+		closeAccordion(D('editPanel'));
 		if (ws && ws.readyState == 1) {
 			let ts = Date.now();
 			console.log({userid: XNO.address, ts, signature:XNO.sign(ts, XNO.address)});
@@ -1413,7 +1679,8 @@ function queryPost(postid) {
 	if (!postid) postid = readPostid;
 	let split = postid.split("-");
 	let userid = split[0];
-	let createdts = parseInt(split[1]);		
+	let createdts = parseInt(split[1]);	
+	console.log({ userid: userid, createdts: createdts });
 	ws.emit('queryPost', { userid: userid, createdts: createdts });	
 }
 
@@ -1518,6 +1785,9 @@ function clearSeed() {
 	clearDOM(D('library'));
 	D('libraryPlaceholder').style.display = "";	
 	if (D('creationEdit').title) cancelPost(true);
+	D('subscribe').disabled = true;
+	D('sponsor').disabled = true;
+	if (active('sponsor')) sponsorHandler(D(('sponsor')));
 }
 
 function clickClearSeed() {
@@ -1534,9 +1804,7 @@ function clickClearSeed() {
 	D("clear").disabled = true;
 	D("submitButton").disabled = true;
 	D("comment").disabled = true;
-	D('subscribe').disabled = true;
-	D('sponsor').disabled = true;
-	closeSubAccordion(D('editPanel'));
+	closeAccordion(D('editPanel'));
 	//D("profilePanel").style.display = "none";
 	D("libraryPlaceholder").textContent = "Read something! (Log in to persist this list.)";
 	
@@ -1674,15 +1942,7 @@ return document.getElementById(string);
 function toggleSubAccordion(but) {
 	let obj = but.parentNode.lastElementChild;
 	if (obj.style.maxHeight == "0px") openSubAccordion(but.parentNode);
-	else closeSubAccordion(obj); 
-}
-
-function closeSubAccordion(obj) {
-	if (obj.style.maxHeight != "0px") showAccordion(obj);
-	setTimeout(function() { 
-		obj.style.maxHeight = "0px";
-		obj.style.marginTop = "0px";
-	}, 1);
+	else closeAccordion(obj); 
 }
 
 function openSubAccordion(but) {
@@ -1691,6 +1951,15 @@ function openSubAccordion(but) {
 		showAccordion(obj);	
 		setTimeout(function() { if (obj.style.maxHeight != "0px") obj.style.maxHeight = ""; }, 100);
 	}
+}
+
+function closeAccordion(obj) {
+	if (obj.style.maxHeight != "0px") showAccordion(obj);
+	setTimeout(function() { 
+		obj.style.maxHeight = "0px";
+		obj.style.marginTop = "0px";
+		obj.style.marginBottom = "0px";
+	}, 1);
 }
 
 function showAccordion(obj) { obj.style.maxHeight = obj.scrollHeight + "px"; }
@@ -1926,6 +2195,13 @@ function addTabbing(elt) {
 function active(elt) {
 	if (typeof elt === 'string' || elt instanceof String) elt = D(elt);
 	return elt.classList.contains('active');
+}
+
+
+function networkFailMsg(error) {
+	if (!error || error.message == "Network Error") showMsg("Unable to connect to network.");
+	else showMsg("Transfer seems to have failed or is delayed.");
+	return false;
 }
 
 </script>
