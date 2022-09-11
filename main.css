@@ -296,6 +296,55 @@ a:hover {
 	border-radius:5px;
 }
 
+
+:root {
+  --hue: 0;
+  --sat: 70%;
+	
+  --Llight:60%;
+  --Mlight:85%;
+  --Hlight:90%;
+}
+
+input[type=range].colorslider {
+  opacity:0.1;
+  -webkit-appearance: none;
+  outline: none;
+  border: 0px solid #000000;
+  width: calc(100% - 20px);
+  height: 15px;
+  border-radius: 20px;
+  display:block;
+  margin: 10px auto;
+  background: linear-gradient(to right, hsl(0, var(--sat), var(--Llight)) 0%, hsl(30, var(--sat),var(--Llight)) 8.3%, hsl(60, var(--sat), var(--Llight)) 16.6%, hsl(90, var(--sat), var(--Llight)) 25%, hsl(120, var(--sat), var(--Llight)) 33.3%, hsl(150, var(--sat), var(--Llight)) 41.6%, hsl(180, var(--sat), var(--Llight)) 50%, hsl(210, var(--sat), var(--Llight)) 58.3%, hsl(240, var(--sat), var(--Llight)) 66.6%, hsl(270, var(--sat), var(--Llight)) 75%, hsl(300, var(--sat), var(--Llight)) 83.3%, hsl(330, var(--sat), var(--Llight)) 91.6%, hsl(360, var(--sat), var(--Llight)) 100%);
+  touch-action: none;
+}
+
+input[type=range].colorslider:hover {
+	opacity:1;
+}
+
+.colorslider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 20px;
+  height: 25px;
+  border-radius: 20px; 
+  background: hsl(var(--hue), var(--sat), var(--Llight));
+  cursor: pointer;
+  border: 2px solid white;
+}
+
+.colorslider::-moz-range-thumb {
+  width: 20px;
+  height: 25px;
+  border-radius: 20px;
+  background: hsl(var(--hue), var(--sat), var(--Llight));
+  cursor: pointer;
+  border: 2px solid white;
+}
+
+
 /*-----------*/
 
 /* Width */
