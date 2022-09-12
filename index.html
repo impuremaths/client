@@ -793,13 +793,18 @@ function setupWebsocket(restart) {
 	});
 	
 	ws.on('queryPostResponse', function(data) {
+		console.log("query post response: ");
+		console.log(data);
 		let oldPost = readPostid && (JSON.stringify(data.content) == JSON.stringify(postCache[readPostid].content));
 		let oldEditPost = editPostid && (JSON.stringify(data.content) == JSON.stringify(postCache[editPostid].content));
 		cachePost(data);
 		if (editPostid == data.postid) {
 			fillEdit(data.postid, oldEditPost); 
 			editPostid = "";
-		} else fillPost(data.postid, oldPost);
+		} else {
+			console.log(oldPost);
+			fillPost(data.postid, oldPost);
+		}
 	});
 	
 	ws.on('updatePostResponse', function(data) { 
@@ -1742,7 +1747,7 @@ function importSeed() {
 		clearSeed();		
 		XNO.unpackSeed(seed, parseInt(index));
 		
-		D('displayName').textContent = funName(XNO.address, true);
+		D('displayName').textContent = funName(XNO.address);
 		
 		D("current").disabled = false;
 		D("clear").disabled = false;
@@ -2031,11 +2036,11 @@ window.addEventListener('keydown', function(evt) {
 
 // UI helper library ///////////////////////////////////////////////////////////////////////
 
-function funName(userid, pencil) {
+function funName(userid, generated) {
 	let pencilLiteral = "";
 	// if (pencil) pencilLiteral = "✏️ ";
-	if (cacheDisplayNames[userid]) return pencilLiteral + cacheDisplayNames[userid];
-	return pencilLiteral + adj[parseInt(XNO.pubFromAddr(userid).substring(0, 10), 16) % adj.length] + " " 
+	if (cacheDisplayNames[userid] && !generated) return cacheDisplayNames[userid];
+	return adj[parseInt(XNO.pubFromAddr(userid).substring(0, 10), 16) % adj.length] + " " 
 											+ animals[parseInt(XNO.pubFromAddr(userid).substring(0, 10), 16) % animals.length];
 }
 
