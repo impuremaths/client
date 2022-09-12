@@ -653,7 +653,10 @@ function cyclePending(symbol) {
 // Global variables and macros; and initializers ///////////////////////////////////////////////////////////////////////
 
 var readPostid = "";
+var readPostContent = "";
 var editPostid = "";
+var editPostContent = "";
+
 var DOMdisplayNames = {};
 var cacheDisplayNames = {};
 var postCache = {};
@@ -793,18 +796,9 @@ function setupWebsocket(restart) {
 	});
 	
 	ws.on('queryPostResponse', function(data) {
-		console.log("query post response: ");
-		console.log(data);
-		let oldPost = readPostid && (JSON.stringify(data.content) == JSON.stringify(postCache[readPostid].content));
-		let oldEditPost = editPostid && (JSON.stringify(data.content) == JSON.stringify(postCache[editPostid].content));
 		cachePost(data);
-		if (editPostid == data.postid) {
-			fillEdit(data.postid, oldEditPost); 
-			editPostid = "";
-		} else {
-			console.log(oldPost);
-			fillPost(data.postid, oldPost);
-		}
+		if (editPostid == data.postid) fillEdit(data.postid); 
+		if (readPostid == data.postid) fillPost(data.postid);
 	});
 	
 	ws.on('updatePostResponse', function(data) { 
@@ -1306,7 +1300,7 @@ function fullLabel(postid, library) {
 	return label;
 }
 
-function fillPost(postid, oldPost) {
+function fillPost(postid) {
 	if (new URLSearchParams(window.location.search).get('postid') != postid) {		
 		let url = new URL(window.location);
 		url.search = new URLSearchParams({postid});
@@ -1365,7 +1359,9 @@ function fillPost(postid, oldPost) {
 	
 	// content
 	if (metaData.content) {
-		if (!oldPost) {
+		let theNewContent = JSON.stringify(metaData.content);
+		if (theNewContent != readPostContent) {
+			readPostContent = theNewContent;
 			if (typeof metaData.content === "string") D('readContent').textContent = metaData.content;
 			else fillContent(D('readContent'), metaData.content);
 		}
@@ -1428,13 +1424,22 @@ function fillContent(elt, content) {
 	}
 }
 
-function fillEdit(postid, oldEditPost) {
+function fillEdit(postid) {
+	if (!postid) postid = readPostid;
 	loadPanel('post');
 	showEditor();
-	if (!oldEditPost && hasDraft() && !confirm("Clear current draft?")) return false;
-	if (!postid) postid = readPostid;
-	editPostid = postid;
+	
 	let metaData = postCache[postid];
+	if (!metaData) return false;
+	
+	let theNewContent = JSON.stringify(metaData.content);
+	if (postid == editPostid && theNewContent == editPostContent) return false;
+	
+	if (hasDraft() && !confirm("Clear current draft?")) return false;
+	
+	editPostid = postid;
+	editPostContent = theNewContent;
+	
 	D('editid').style.display = "";
 	D('creationEdit').textContent = new Date(metaData.createdts).toLocaleDateString();
 	D('creationEdit').title = metaData.createdts;
@@ -1443,19 +1448,18 @@ function fillEdit(postid, oldEditPost) {
 		D('modificationEdit').title = metaData.modifiedts;
 	}	
 	
-	if (!oldEditPost) {
-		clearDOM(D('postContent'));
-		if (typeof metaData.content === "string") {	
-			let block = appendBlock();
-			block.firstChild.value = metaData.content;
-		} else if (metaData.content) {
-			for (let i = 0; i < metaData.content.length; i++) {
-				let block = appendBlock(metaData.content[i].type);
-				if (metaData.content[i].type == "image") block.firstChild.firstChild.value = metaData.content[i].content;
-				else block.firstChild.value = metaData.content[i].content;
-			}
-		} 
-	}
+	clearDOM(D('postContent'));
+	if (typeof metaData.content === "string") {	
+		let block = appendBlock();
+		block.firstChild.value = metaData.content;
+	} else if (metaData.content) {
+		for (let i = 0; i < metaData.content.length; i++) {
+			let block = appendBlock(metaData.content[i].type);
+			if (metaData.content[i].type == "image") block.firstChild.firstChild.value = metaData.content[i].content;
+			else block.firstChild.value = metaData.content[i].content;
+		}
+	} 
+	
 	D('postTitle').value = metaData.title;
 	
 	let url = new URL(window.location);
@@ -1563,6 +1567,7 @@ function cancelPost(override) {
 	if (!override && hasDraft() && !confirm("Clear current draft?")) return false;
 	showEditor();
 	editPostid = "";
+	editPostContent = "";
 	D('editid').style.display = "none";
 	D('creationEdit').textContent = " - ";
 	D('creationEdit').title = "";
