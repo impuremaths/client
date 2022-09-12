@@ -84,8 +84,8 @@
 					<div style="display:flex; justify-content:space-between; white-space:nowrap">
 						<div><span id="info" style="font-weight:600; margin-right:5px;"></span></div>
 						<div>
-							<button id="subscribe" onclick="subscribeHandler()" autocomplete="off" class="left" disabled>Subscribe</button>
-							<button id="sponsor" onclick="sponsorHandler(this)" autocomplete="off" class="right" disabled>Sponsor</button>		
+							<button id="subscribe" onclick="subscribeHandler()" autocomplete="off" style="font-size:0.85em" disabled>Subscribe</button>
+							<button id="sponsor" onclick="sponsorHandler(this)" autocomplete="off" style="font-size:0.85em" disabled>Sponsor</button>		
 						</div>
 					</div>
 					
@@ -95,12 +95,14 @@
 						
 						<div id="bioLine" style="background-color:#e4e7e7; height:2px; border-radius:20px; margin:30px;"></div>
 				
-						<div style="font-size:0.85em; margin-top:20px; color:#888">Display name</div>
-						<div id="theirFunName" style="margin:5px 10px 15px 10px;"> - </div>					
-						<div style="font-size:0.85em; color:#888">Unique public address</div>
-						<div class='address' id="theirAddress" style="margin:5px 10px 15px 10px;" onclick="clickCopy(this, this.textContent)"> - </div>
-						<div style="font-size:0.85em; color:#888">Minimum sponsorship for exclusive content (30 days)</div>
-						<div id="theirThreshold" style="margin:5px 10px 15px 10px;"> - </div>
+						<div id="bioMeta" style="display:none">
+							<div style="font-size:0.85em; margin-top:20px; color:#888">Display name</div>
+							<div id="theirFunName" style="margin:5px 10px 15px 10px;"> - </div>					
+							<div style="font-size:0.85em; color:#888">Unique public address</div>
+							<div class='address' id="theirAddress" style="margin:5px 10px 15px 10px;" onclick="clickCopy(this, this.textContent)"> - </div>
+							<div style="font-size:0.85em; color:#888">Minimum sponsorship for exclusive content (30 days)</div>
+							<div id="theirThreshold" style="margin:5px 10px 15px 10px;"> - </div>
+						</div>
 						
 						<div id="bioSponsor" style="display:none; margin:15px">
 							<div style="display:flex; justify-content:space-between; align-items:baseline">
@@ -193,7 +195,7 @@
 				
 				<textarea id="commentContent" style="margin-top:10px; margin-bottom:10px; height:80px; width:100%; display:none" autocomplete="off" onkeyup="commentKeypress()" oninput="commentKeypress()" placeholder="Comment..."></textarea>
 				<div style="display:flex; justify-content:right; margin-right:10px">
-				<button id="comment" style="margin-top:5px; font-size:0.85em" onclick="comment()" disabled>Comment</button>
+				<button id="comment" style="font-size:0.85em" onclick="comment()" disabled>Comment</button>
 				</div>
 				<ul id="readComments" style="white-space:pre-wrap;"><ul>
 			</div>
@@ -924,17 +926,20 @@ function queryBrowse(userid, tag) {
 		queueDOMdisplayName(userid, D('browseHeading'));
 		queueDOMdisplayName(userid, D('theirFunName'));
 		D('bio').textContent = "Full of possibilities."
+		D('bioMeta').style.display = "";
 	} else if (tag) {	
 		if (XNO.address) D('subscribe').disabled = false;
 		D('browseHeading').title = tag;
 		D('browseHeading').textContent = tag;	
 		D('theirFunName').textContent = tag;
 		D('bio').textContent = "An unmoderated tag."
+		D('bioMeta').style.display = "none";
 	} else {	
 		D('browseHeading').title = "";
 		D('browseHeading').textContent = "Recent";
 		D('theirFunName').textContent = " - ";
 		D('bio').textContent = "The firehose (trickle) of recent posts."
+		D('bioMeta').style.display = "none";
 	}
 	D('browseHeading').onclick = function() { queryBrowse(userid, tag); };
 	
@@ -1209,7 +1214,9 @@ function fullLabel(postid, library) {
 	
 	if (data.tags) {
 		for (let i = 0; i < data.tags.length; i++) {
-			let tag = make('a', " • " + data.tags[i]);
+			let displayStr = data.tags[i];
+			if (displayStr.length > 32) displayStr = displayStr.substring(0, 32) + "...";
+			let tag = make('a', " • " + displayStr);
 			tags.appendChild(tag);
 			tag.onclick = function() {
 				event.stopPropagation();
@@ -1226,8 +1233,8 @@ function fullLabel(postid, library) {
 	postDate.title = data.createdts;
 	postMeta.appendChild(postDate);	
 	
-	if (data.modifiedts && data.modifiedts != data.createdts) {
-		let postModified = make('span', " - " + timeSince(data.modifiedts));
+	if (data.modifiedts && timeSince(data.modifiedts) != timeSince(data.createdts)) {
+		let postModified = make('span', " (" + timeSince(data.modifiedts) + ")");
 		postModified.title = data.modifiedts;
 		postMeta.appendChild(postModified);
 	}	
@@ -1324,8 +1331,10 @@ function fillPost(postid, oldPost) {
 	
 	while (D('tags').children.length > 1) D('tags').removeChild(D('tags').lastElementChild);
 	if (metaData.tags) {
-		for (let i = 0; i < metaData.tags.length; i++) {
-			let tag = make('a', " • " + metaData.tags[i]);
+		for (let i = 0; i < metaData.tags.length; i++) {		
+			let displayStr = metaData.tags[i];
+			if (displayStr.length > 32) displayStr = displayStr.substring(0, 32) + "...";
+			let tag = make('a', " • " + displayStr);
 			tag.style = "cursor:pointer";
 			D('tags').appendChild(tag);
 			tag.onclick = function() {
@@ -1338,7 +1347,7 @@ function fillPost(postid, oldPost) {
 	D('creation').textContent = new Date(metaData.createdts).toLocaleDateString();
 	D('creation').title = metaData.createdts;
 	if (metaData.modifiedts && metaData.modifiedts != metaData.createdts) {
-		D('modification').textContent = " - " + new Date(metaData.modifiedts).toLocaleDateString();
+		D('modification').textContent = " (" + new Date(metaData.modifiedts).toLocaleDateString() + ")";
 		D('modification').title = metaData.modifiedts;
 		D('modification').style.display = "";
 	} else {
@@ -1425,7 +1434,7 @@ function fillEdit(postid, oldEditPost) {
 	D('creationEdit').textContent = new Date(metaData.createdts).toLocaleDateString();
 	D('creationEdit').title = metaData.createdts;
 	if (metaData.modifiedts && metaData.createdts != metaData.modifiedts) {
-		D('modificationEdit').textContent = " - " + new Date(metaData.modifiedts).toLocaleDateString();
+		D('modificationEdit').textContent = " (" + new Date(metaData.modifiedts).toLocaleDateString() + ")";
 		D('modificationEdit').title = metaData.modifiedts;
 	}	
 	
@@ -1581,17 +1590,19 @@ function makeMetaLabel(userid, createdts, modifiedts) {
 	};	
 	queueDOMdisplayName(userid, postAuthor);
 	
-	let postDate = make('span', " • " + timeSince(createdts));	
+	let postDate = make('span', "\xa0\xa0" + timeSince(createdts));	
 	postDate.title = createdts;
+	postDate.style.color = "#888";
 		
 	let postMeta = make('div');
 	postMeta.style = "font-size:0.85em; overflow:hidden; text-overflow:ellipsis";
 	postMeta.appendChild(postAuthor);
 	postMeta.appendChild(postDate);	
 	
-	if (modifiedts && modifiedts != createdts) {
-		let postModified = make('span', " - " + timeSince(modifiedts));
+	if (modifiedts && timeSince(modifiedts) != timeSince(createdts)) {
+		let postModified = make('span', " (" + timeSince(modifiedts) + ")");
 		postModified.title = modifiedts;
+		postModified.style.color = "#888";
 		postMeta.appendChild(postModified);
 	}
 	
