@@ -887,7 +887,6 @@ function queryBrowse(userid, tag) {
 		
 	D('sponsor').disabled = true;	
 	D('subscribe').disabled = true;	
-	if (active('sponsor')) sponsorHandler(D(('sponsor')));
 	
 	D('theirFunName').style.fontWeight = "";
 	D('theirFunName').style.color = "";	
@@ -950,6 +949,7 @@ function queryBrowse(userid, tag) {
 		
 		if ((!userid && !tag) || !D('popularTags').children.length) ws.emit('queryTagCounts');
 	}
+	if (active('sponsor')) sponsorHandler(D('sponsor'));
 	loadPanel('browse');
 }
 
@@ -1117,7 +1117,8 @@ function showPreview(elt) {
 	D('postPreview').style.display = "";
 }
 
-function loadPanel(type) {	
+function loadPanel(type) {
+	if (type != "browse" && active('sponsor')) sponsorHandler(D('sponsor'));
 	if (D('browse').style.display != 'none') browseHeight = Math.ceil(D('secondDiv').scrollTop);
 	if (D('read').style.display != 'none') readHeight = Math.ceil(D('secondDiv').scrollTop);
 	if (D('post').style.display != 'none') postHeight = Math.ceil(D('secondDiv').scrollTop);
@@ -1164,7 +1165,7 @@ function cachePost(metaData) {
 }
 
 function activeBar(elt) {
-	elt.style.borderLeft = "solid 4px #aaa";		
+	elt.style.borderLeft = "solid 4px #888";		
 	elt.style.paddingLeft = "5px";
 }
 
@@ -1388,7 +1389,7 @@ function fillContent(elt, content) {
 			let jsbox = make("iframe");
 			jsbox.style = "width:100%; height:0px; border-top:0px; border-bottom:0px; border-left:4px solid white; border-right:0px; border-radius:4px 0px 0px 4px";
 			jsbox.onmouseenter = function() {
-				jsbox.style.borderColor = "#aaa";
+				jsbox.style.borderColor = "#888";
 			}
 			jsbox.onmouseleave = function() {
 				jsbox.style.borderColor = "transparent";
@@ -1904,7 +1905,7 @@ function clearSeed() {
 	if (D('creationEdit').title) cancelPost(true);
 	D('subscribe').disabled = true;
 	D('sponsor').disabled = true;
-	if (active('sponsor')) sponsorHandler(D(('sponsor')));
+	if (active('sponsor')) sponsorHandler(D('sponsor'));
 }
 
 function clickClearSeed() {
@@ -1972,6 +1973,7 @@ function loadURL() {
 	if (postid) {
 		if (ws && ws.readyState == 1 && !D('browseHeading').textContent) queryBrowse();
 		if (postCache[postid]) fillPost(postid);
+		else readPostid = postid;
 		if (!postCache[postid] || !postCache[postid].comments) queryPost(postid);
 		loadPanel('read');
 	} else if (tag) queryBrowse(null, tag);
@@ -2035,7 +2037,10 @@ window.addEventListener('keydown', function(evt) {
 			if (active('postButton') && document.activeElement.tagName.toLowerCase() != 'input' && document.activeElement.tagName.toLowerCase() != 'textarea') {
 				D('postContent').firstElementChild.firstElementChild.focus();
 			}
-		} else if (evt.keyCode == 87) if (active('postButton') && D('postPreview').style.display == "none") showPreview();
+		} else if (evt.keyCode == 87) if (active('postButton') && D('postPreview').style.display == "none") {
+			event.preventDefault();
+			showPreview();
+		}
 	}
 });
 
