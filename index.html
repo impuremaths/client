@@ -82,7 +82,7 @@
 				<div style="flex-basis:1px; flex-grow:2; margin-right:20px; overflow:hidden">
 				
 					<div style="display:flex; justify-content:space-between; white-space:nowrap">
-						<div><span id="info" style="font-weight:600; margin-right:5px;"></span></div>
+						<div><button id="info" style="font-size:0.85em">Edit Profile</button></div>
 						<div>
 							<button id="subscribe" onclick="subscribeHandler()" autocomplete="off" style="font-size:0.85em" disabled>Subscribe</button>
 							<button id="sponsor" onclick="sponsorHandler(this)" autocomplete="off" style="font-size:0.85em" disabled>Sponsor</button>		
@@ -881,9 +881,7 @@ function queryBrowse(userid, tag) {
 	}
 	
 	closeBio();
-	D('info').textContent = "";
-	D('info').onclick = "";
-	D('info').style.cursor = "";
+	D('info').style.display = "none";
 		
 	D('sponsor').disabled = true;	
 	D('subscribe').disabled = true;	
@@ -903,8 +901,7 @@ function queryBrowse(userid, tag) {
 		//D('browseHeading').style.color = funColor(userid);
 		
 		if (userid == XNO.address) {
-			D('info').textContent = "Edit ✏️";
-			D('info').style.cursor = "pointer";
+			D('info').style.display = "";
 			D('info').onclick = function() {			
 				if (D('bioContent').style.display == "none") {	
 					inputEvent(D('colorslider'), parseInt(XNO.pubFromAddr(userid).substring(0, 10), 16) % 360);
@@ -913,7 +910,8 @@ function queryBrowse(userid, tag) {
 					clearDOM(D('bioBlocks'));
 					appendBlock("text", null, D('bioBlocks'));	
 					D('bio-name').focus();
-				}
+					D('info').classList.add('active');
+				} else closeBio();
 			};
 		}
 		D('theirAddress').textContent = userid;
@@ -958,6 +956,7 @@ function closeBio() {
 	D('bioPreview').style.display = "";
 	clearDOM(D('bioBlocks'));
 	D('bio-name').value = "";
+	D('info').classList.remove('active');
 }
 
 
