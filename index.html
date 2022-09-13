@@ -41,7 +41,7 @@
 		
 		<div id="subPanel" class="objectWrapper" style="padding-right:0px; overflow:hidden; display:none; flex-direction:column; flex-shrink:0; max-height:33vh" onclick="openSubAccordion(this)">
 			<div class="clickFlash leftRightBase" style="margin-top:0px; margin:0px 10px" onclick="toggleSubAccordion(this)">
-				<strong>Subscriptions</strong>
+				<span style="font-size:0.9em; color:#888; margin-left:0px">Subscriptions</span>
 			</div>
 			<div class="accordion">
 				<ul id="subscriptions" style="overflow:auto; max-height:calc(100% - 15px); margin-left:10px; margin-top:10px; margin-bottom:10px;"></ul>
@@ -50,7 +50,7 @@
 
 		<div class="objectWrapper" style="padding-right:0px; margin-bottom:10px; overflow:hidden; display:flex; flex-direction:column" onclick="openSubAccordion(this)">
 			<div class="clickFlash leftRightBase" style="margin-top:0px; margin:0px 10px" onclick="toggleSubAccordion(this)">
-				<strong>Library</strong>
+				<span style="font-size:0.9em; color:#888; margin-left:0px">Library</span>
 			</div>
 			<div class="accordion">
 				<div id="libraryPlaceholder" style="font-style:italic; color:#888; text-align:center; margin-top:20px">Read something! (Log in to persist this list.)</div>
@@ -118,7 +118,7 @@
 						<input class="colorslider" id="colorslider" type="range" min="0" max="360" step="1" oninput="color(this)" value="0" autocomplete="off"/>														
 														
 						<div id="bioBlocks" style="margin-top:40px; margin-bottom:40px"></div>
-						<div style="font-size:0.9em; margin-top:20px;">Minimum sponsorship for exclusive content (30 days):</div>
+						<div style="font-size:0.85em; margin-top:20px;">Minimum sponsorship for exclusive content (30 days):</div>
 						<div style="display:flex; justify-content:right; margin-top:5px; align-items:baseline">
 						<input onkeyup="" onkeydown="" placeholder="0.00" onblur="prepTwoDigit(this)" style="margin-left:20px; margin-right:5px; text-align:right; flex-grow:1; flex-basis:1px; overflow:hidden; text-overflow:ellipsis;" type="number" step="0.01" min="0"><span style="font-size:0.9em">XNO</span>
 						</div>
