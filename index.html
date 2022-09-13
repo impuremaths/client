@@ -985,6 +985,7 @@ function subscribeHandler() {
 		makeSubLi(D('browseHeading').title);
 		if (ws && ws.readyState == 1) ws.emit("subscribe", {userid: D('browseHeading').title});
 	}
+	D(D('browseHeading').title).scrollIntoView({behavior: "smooth", block:"nearest"});
 }
 
 function addTag() {
@@ -1278,6 +1279,7 @@ function fullLabel(postid, library) {
 		event.stopPropagation();
 		if (!D(postid)) addToLib(postid, true);
 		flash(D(postid));
+		D(postid).scrollIntoView({behavior: "smooth", block:"nearest"});
 	}
 	
 	let label = make('div');
