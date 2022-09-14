@@ -890,6 +890,7 @@ function queryBrowse(userid, tag) {
 	D('theirFunName').style.color = "";	
 	D('theirThreshold').textContent = " - ";
 	D('theirAddress').textContent = " - ";
+	D('bioMeta').style.display = "none";
 	
 	if (userid) {		
 		if (XNO.address && userid != XNO.address) {
@@ -900,20 +901,7 @@ function queryBrowse(userid, tag) {
 		D('browseHeading').textContent = funName(userid);
 		//D('browseHeading').style.color = funColor(userid);
 		
-		if (userid == XNO.address) {
-			D('info').style.display = "";
-			D('info').onclick = function() {			
-				if (D('bioContent').style.display == "none") {	
-					inputEvent(D('colorslider'), parseInt(XNO.pubFromAddr(userid).substring(0, 10), 16) % 360);
-					D('bioPreview').style.display = "none";
-					D('bioContent').style.display = "";
-					clearDOM(D('bioBlocks'));
-					appendBlock("text", null, D('bioBlocks'));	
-					D('bio-name').focus();
-					D('info').classList.add('active');
-				} else closeBio();
-			};
-		}
+		if (userid == XNO.address) D('info').style.display = "";
 		D('theirAddress').textContent = userid;
 		D('theirFunName').textContent = funName(userid);
 		D('theirFunName').style.fontWeight = "600";
@@ -929,13 +917,11 @@ function queryBrowse(userid, tag) {
 		D('browseHeading').textContent = tag;	
 		D('theirFunName').textContent = tag;
 		D('bio').textContent = "An unmoderated tag."
-		D('bioMeta').style.display = "none";
 	} else {	
 		D('browseHeading').title = "";
 		D('browseHeading').textContent = "Recent";
 		D('theirFunName').textContent = " - ";
 		D('bio').textContent = "The firehose (trickle) of recent posts."
-		D('bioMeta').style.display = "none";
 	}
 	D('browseHeading').onclick = function() { queryBrowse(userid, tag); };
 	
@@ -950,6 +936,18 @@ function queryBrowse(userid, tag) {
 	if (active('sponsor')) sponsorHandler(D('sponsor'));
 	loadPanel('browse');
 }
+
+D('info').onclick = function() {			
+	if (D('bioContent').style.display == "none") {	
+		inputEvent(D('colorslider'), parseInt(XNO.pubFromAddr(XNO.address).substring(0, 10), 16) % 360);
+		D('bioPreview').style.display = "none";
+		D('bioContent').style.display = "";
+		clearDOM(D('bioBlocks'));
+		appendBlock("text", null, D('bioBlocks'));	
+		D('bio-name').focus();
+		D('info').classList.add('active');
+	} else closeBio();
+};
 
 function closeBio() {
 	D('bioContent').style.display = "none";
@@ -1752,27 +1750,24 @@ function importSeed() {
 		return false;
 	} else {
 		clearSeed();		
-		XNO.unpackSeed(seed, parseInt(index));
-		
+		XNO.unpackSeed(seed, parseInt(index));		
 		D('displayName').textContent = funName(XNO.address);
 		
 		D("current").disabled = false;
 		D("clear").disabled = false;
 		D("submitButton").disabled = false;
-		//D("profilePanel").style.display = "";
 		D("libraryPlaceholder").textContent = "Read something!";
-		
 		D("subPanel").style.display = "flex";
 		
-		clearDOM(D('subscriptions'));
-		if (XNO.address) makeSubLi(XNO.address);
-		if (D('browseHeading').title && D('browseHeading').title != XNO.address) {
-			D('subscribe').disabled = false;
-			if (D('browseHeading').title.substring(0, 5) == "nano_") D('sponsor').disabled = false;
+		makeSubLi(XNO.address);
+		if (D('browseHeading').title) {
+			if (D('browseHeading').title != XNO.address) {
+				D('subscribe').disabled = false;
+				if (D('browseHeading').title.substring(0, 5) == "nano_") D('sponsor').disabled = false;
+			} else D('info').style.display = "";
 		}
 		
 		localStorage.setItem("localSeed", XNO.seed);
-		closeAccordion(D('editPanel'));
 		if (ws && ws.readyState == 1) {
 			let ts = Date.now();
 			console.log({userid: XNO.address, ts, signature:XNO.sign(ts, XNO.address)});
@@ -1782,6 +1777,45 @@ function importSeed() {
 		refreshData("XNO");
 	}
 }
+
+
+function clearSeed() {
+	// clearing actions that are needed even if switching accounts
+	
+	clearDOM(D('subscriptions'));
+	clearDOM(D('library'));
+	D('libraryPlaceholder').style.display = "";	
+	if (D('creationEdit').title) cancelPost(true);
+	D('subscribe').disabled = true;
+	D('sponsor').disabled = true;
+	if (active('sponsor')) sponsorHandler(D('sponsor'));
+	closeAccordion(D('editPanel'));
+	D('balance').textContent = "0.00";
+	
+	closeBio();
+	D('info').style.display = "none";
+}
+
+function clickClearSeed() {
+	clearSeed();	
+	XNO.privateKey = "";
+	XNO.publicKey = "";
+	XNO.address = "";
+	XNO.seed = "";
+	XNO.encryptKey = "";	
+	inputEvent(D('seed'), "");
+	D('displayName').textContent = "Guest";	
+	
+	D("current").disabled = true;	
+	D("clear").disabled = true;
+	D("submitButton").disabled = true;
+	D("libraryPlaceholder").textContent = "Read something! (Log in to persist this list.)";
+	D("subPanel").style.display = "none";
+	D("comment").disabled = true;
+	
+	localStorage.removeItem("localSeed");
+}
+
 
 function queueDOMdisplayName(userid, elt) {
 	if (!DOMdisplayNames[userid]) DOMdisplayNames[userid] = [elt];
@@ -1896,41 +1930,6 @@ function showCurrent() {
 		D(`seed`).value = XNO.seed;
 		flash(D(`seed`));
 	} else console.log("No seed loaded.");
-}
-
-function clearSeed() {
-	// clearing actions that are needed even if switching accounts
-	clearDOM(D('subscriptions'));
-	clearDOM(D('library'));
-	D('libraryPlaceholder').style.display = "";	
-	if (D('creationEdit').title) cancelPost(true);
-	D('subscribe').disabled = true;
-	D('sponsor').disabled = true;
-	if (active('sponsor')) sponsorHandler(D('sponsor'));
-}
-
-function clickClearSeed() {
-	XNO.privateKey = "";
-	XNO.publicKey = "";
-	XNO.address = "";
-	XNO.seed = "";
-	XNO.encryptKey = "";
-	
-	clearSeed();	
-	inputEvent(D('seed'), "");
-	
-	D("current").disabled = true;	
-	D("clear").disabled = true;
-	D("submitButton").disabled = true;
-	D("comment").disabled = true;
-	closeAccordion(D('editPanel'));
-	//D("profilePanel").style.display = "none";
-	D("libraryPlaceholder").textContent = "Read something! (Log in to persist this list.)";
-	
-	D("subPanel").style.display = "none";
-	D('displayName').textContent = "Guest";	
-	D('balance').textContent = "0.00";
-	localStorage.removeItem("localSeed");
 }
 
 function toggleVisibility() {
