@@ -79,7 +79,7 @@
 					<ul id="discovery"></ul>
 				</div>
 				
-				<div style="flex-basis:1px; flex-grow:2; margin-right:20px; overflow:hidden">
+				<div style="flex-basis:1px; flex-grow:2; margin-right:20px; margin-top:15px; overflow:hidden">
 				
 					<div style="display:flex; justify-content:space-between; white-space:nowrap">
 						<div><button id="info" style="font-size:0.85em">Edit Profile</button></div>
@@ -766,14 +766,18 @@ function setupWebsocket(restart) {
 	
 	function receiveDOMdisplayName(userid, displayname) {
 		if (displayname) cacheDisplayNames[userid] = displayname;
-		else delete cacheDisplayNames[userid];
+		else delete cacheDisplayNames[userid];		
+		let theName = funName(userid);
+		
 		if (DOMdisplayNames[userid]) {
-			let theName = funName(userid)
 			for (let j = 0; j < DOMdisplayNames[userid].length; j++) {
 				DOMdisplayNames[userid][j].textContent = theName;
 			}
 		}
 		delete DOMdisplayNames[userid];
+		
+		let urluserid = new URLSearchParams(window.location.search).get('userid');
+		if (urluserid == userid) document.title = funName(userid) + " - mktplc";
 	}
 	
 	ws.on('queryUsersResponse', function(data) { 
