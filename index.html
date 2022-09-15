@@ -79,9 +79,9 @@
 					<ul id="discovery"></ul>
 				</div>
 				
-				<div style="flex-basis:1px; flex-grow:2; margin-right:20px; margin-top:15px; overflow:hidden">
+				<div style="flex-basis:1px; flex-grow:2; margin-right:20px; overflow:hidden">
 				
-					<div style="display:flex; justify-content:space-between; white-space:nowrap">
+					<div style="display:flex; justify-content:space-between; white-space:nowrap; margin-top:15px;">
 						<div><button id="info" style="font-size:0.85em">Edit Profile</button></div>
 						<div>
 							<button id="subscribe" onclick="subscribeHandler()" autocomplete="off" style="font-size:0.85em" disabled>Subscribe</button>
@@ -112,7 +112,7 @@
 						</div>
 					</div>
 					
-					<div id="bioContent" style="display:none">					
+					<div id="bioEditor" style="display:none">					
 						<input id="bio-name" style="width:100%; margin-bottom:10px; margin-top:30px; font-size:1em; font-weight:600" autocomplete="off" placeholder="Public display name..." type="text" onkeyup="if (event.keyCode == 27) this.value = '';">
 
 						<input class="colorslider" id="colorslider" type="range" min="0" max="360" step="1" oninput="color(this)" value="0" autocomplete="off"/>														
@@ -134,12 +134,12 @@
 		
 			<div style="flex-basis:1px; flex-grow:2; margin-right:50px; position:relative">
 			
-				<div style="display:flex; justify-content:center; position:absolute; right:0px; top:-10px;">
+				<div style="display:flex; justify-content:center; position:absolute; right:0px; top:-15px;">
 					<button id="editButton" class="left active" onclick="showEditor()">Editor</button><button id="previewButton" class="right" style="margin-left:5px" onclick="showPreview()">Preview</button>
 				</div>
 				
-				<div id="postContent" style="margin-bottom:40px; margin-top:40px"></div>
-				<div id="postPreview" style="white-space:pre-wrap; margin-bottom:40px; margin-top:40px; display:none">Hi</div>
+				<div id="postEditor" style="margin-bottom:40px; margin-top:30px"></div>
+				<div id="postPreview" style="white-space:pre-wrap; margin-bottom:40px; margin-top:30px; display:none"></div>
 				
 			</div>
 			
@@ -189,7 +189,7 @@
 		<div id="read" style="display:none; margin-bottom:80px; max-width:1200px">
 			<div style="flex-basis:1px; flex-grow:2; margin-right:50px;">
 				
-				<div id="readContent" style="white-space:pre-wrap; margin-bottom:40px; margin-top:40px">Browse for something interesting. Content displays here.</div>
+				<div id="readContent" style="white-space:pre-wrap; margin-bottom:40px; margin-top:30px">Browse for something interesting. Content displays here.</div>
 				
 				<div style="background-color:#e4e7e7; height:2px; border-radius:20px; margin:30px;"></div>
 				
@@ -942,10 +942,10 @@ function queryBrowse(userid, tag) {
 }
 
 D('info').onclick = function() {			
-	if (D('bioContent').style.display == "none") {	
+	if (D('bioEditor').style.display == "none") {	
 		inputEvent(D('colorslider'), parseInt(XNO.pubFromAddr(XNO.address).substring(0, 10), 16) % 360);
 		D('bioPreview').style.display = "none";
-		D('bioContent').style.display = "";
+		D('bioEditor').style.display = "";
 		clearDOM(D('bioBlocks'));
 		appendBlock("text", null, D('bioBlocks'));	
 		D('bio-name').focus();
@@ -954,7 +954,7 @@ D('info').onclick = function() {
 };
 
 function closeBio() {
-	D('bioContent').style.display = "none";
+	D('bioEditor').style.display = "none";
 	D('bioPreview').style.display = "";
 	clearDOM(D('bioBlocks'));
 	D('bio-name').value = "";
@@ -1024,11 +1024,11 @@ function publish() {
 	catch { next = "" };
 	
 	let content = [];
-	for (let i = 0; i < D('postContent').children.length; i++) {
-		if (D('postContent').children[i].firstChild.title == "image")
-			content.push({content:D('postContent').children[i].firstChild.firstChild.value, type:D('postContent').children[i].firstChild.title});
-		else if (D('postContent').children[i].firstChild.value)
-			content.push({content:D('postContent').children[i].firstChild.value, type:D('postContent').children[i].firstChild.title});
+	for (let i = 0; i < D('postEditor').children.length; i++) {
+		if (D('postEditor').children[i].firstChild.title == "image")
+			content.push({content:D('postEditor').children[i].firstChild.firstChild.value, type:D('postEditor').children[i].firstChild.title});
+		else if (D('postEditor').children[i].firstChild.value)
+			content.push({content:D('postEditor').children[i].firstChild.value, type:D('postEditor').children[i].firstChild.title});
 	}
 	
 	let tags = [];
@@ -1091,31 +1091,31 @@ function showEditor() {
 	clearDOM(D('postPreview'));
 	D('editButton').classList.add('active');
 	D('previewButton').classList.remove('active');
-	D('postContent').style.display = "";
+	D('postEditor').style.display = "";
 	D('postPreview').style.display = "none";
 }
 
 function hasDraft() {
-	for (let i = 0; i < D('postContent').children.length; i++) {
-		if (D('postContent').children[i].firstChild.title == "image") return true;
-		else if (D('postContent').children[i].firstChild.value) return true;
+	for (let i = 0; i < D('postEditor').children.length; i++) {
+		if (D('postEditor').children[i].firstChild.title == "image") return true;
+		else if (D('postEditor').children[i].firstChild.value) return true;
 	}
 	return false;
 }
 
 function showPreview(elt) {
 	let content = [];
-	for (let i = 0; i < D('postContent').children.length; i++) {
-		if (D('postContent').children[i].firstChild.title == "image")
-			content.push({content:D('postContent').children[i].firstChild.firstChild.value, type:D('postContent').children[i].firstChild.title});
-		else if (D('postContent').children[i].firstChild.value)
-			content.push({content:D('postContent').children[i].firstChild.value, type:D('postContent').children[i].firstChild.title});
+	for (let i = 0; i < D('postEditor').children.length; i++) {
+		if (D('postEditor').children[i].firstChild.title == "image")
+			content.push({content:D('postEditor').children[i].firstChild.firstChild.value, type:D('postEditor').children[i].firstChild.title});
+		else if (D('postEditor').children[i].firstChild.value)
+			content.push({content:D('postEditor').children[i].firstChild.value, type:D('postEditor').children[i].firstChild.title});
 	}
 	fillContent(D('postPreview'), content);
 	
 	D('previewButton').classList.add('active');
 	D('editButton').classList.remove('active');
-	D('postContent').style.display = "none";
+	D('postEditor').style.display = "none";
 	D('postPreview').style.display = "";
 }
 
@@ -1452,7 +1452,7 @@ function fillEdit(postid) {
 		D('modificationEdit').title = metaData.modifiedts;
 	}	
 	
-	clearDOM(D('postContent'));
+	clearDOM(D('postEditor'));
 	if (typeof metaData.content === "string") {	
 		let block = appendBlock();
 		block.firstChild.value = metaData.content;
@@ -1485,7 +1485,7 @@ function fillEdit(postid) {
 }
 
 function appendBlock(type, previous, parent) {
-	if (!parent) parent = D('postContent');
+	if (!parent) parent = D('postEditor');
 	let block = make('div');
 	block.tabIndex = "-1";
 	let textbox = make('textarea');
@@ -1550,7 +1550,7 @@ function appendBlock(type, previous, parent) {
 	
 	let buttonParent = make('div');
 	buttonParent.style = "margin-top:10px; margin-bottom:20px; display:flex; justify-content:space-between";
-	if (parent == D('postContent')) buttonParent.appendChild(sponsBut);
+	if (parent == D('postEditor')) buttonParent.appendChild(sponsBut);
 	else buttonParent.style.justifyContent = "right";
 	buttonParent.appendChild(buttonPanel);
 	
@@ -1578,7 +1578,7 @@ function cancelPost(override) {
 	D('modificationEdit').textContent = "";
 	D('modificationEdit').title = "";	
 	
-	clearDOM(D('postContent'));	
+	clearDOM(D('postEditor'));	
 	appendBlock();	
 	
 	D('postTitle').value = "";	
@@ -2037,9 +2037,9 @@ window.addEventListener('keydown', function(evt) {
 		else if (evt.keyCode == 51) loadPanel('post');		
 		else if (evt.keyCode == 81) {
 			if (active('readButton') && readPostid && postCache[readPostid].userid == XNO.address) fillEdit();
-			else if (active('postButton') && D('postContent').style.display == "none") showEditor();
+			else if (active('postButton') && D('postEditor').style.display == "none") showEditor();
 			if (active('postButton') && document.activeElement.tagName.toLowerCase() != 'input' && document.activeElement.tagName.toLowerCase() != 'textarea') {
-				D('postContent').firstElementChild.firstElementChild.focus();
+				D('postEditor').firstElementChild.firstElementChild.focus();
 			}
 		} else if (evt.keyCode == 87) if (active('postButton') && D('postPreview').style.display == "none") {
 			event.preventDefault();
