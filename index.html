@@ -662,6 +662,7 @@ var readPostid = "";
 var readPostContent = "";
 var editPostid = "";
 var editPostContent = "";
+var editPostPending = false;
 
 var DOMdisplayNames = {};
 var cacheDisplayNames = {};
@@ -807,7 +808,7 @@ function setupWebsocket(restart) {
 	
 	ws.on('queryPostResponse', function(data) {
 		cachePost(data);
-		if (editPostid == data.postid) fillEdit(data.postid); 
+		if (editPostid == data.postid && editPostPending) fillEdit(data.postid, true); 
 		if (readPostid == data.postid) fillPost(data.postid);
 	});
 	
@@ -1252,7 +1253,6 @@ function fullLabel(postid, library) {
 		editBut.onclick = function() {
 			event.stopPropagation();
 			fillEdit(postid);
-			queryPost(postid);
 		}
 		postMeta.appendChild(editBut);		
 	}
@@ -1434,10 +1434,14 @@ function fillContent(elt, content) {
 	}
 }
 
-function fillEdit(postid) {
+function fillEdit(postid, officialData) {
+	if (!officialData) {
+		loadPanel('post');
+		showEditor();
+	}
+	editPostPending = !officialData;	
+	
 	if (!postid) postid = readPostid;
-	loadPanel('post');
-	showEditor();
 	
 	let metaData = postCache[postid];
 	if (!metaData) return false;
