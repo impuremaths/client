@@ -903,6 +903,8 @@ function queryBrowse(userid, tag) {
 	D('theirAddress').textContent = " - ";
 	D('bioMeta').style.display = "none";
 	
+	D('browseHeading').style.color = "";
+	
 	if (userid) {		
 		if (XNO.address && userid != XNO.address) {
 			D('subscribe').disabled = false;	
@@ -910,7 +912,7 @@ function queryBrowse(userid, tag) {
 		}
 		D('browseHeading').title = userid;
 		D('browseHeading').textContent = funName(userid);
-		//D('browseHeading').style.color = funColor(userid);
+		D('browseHeading').style.color = funColor(userid);
 		
 		if (userid == XNO.address) D('info').style.display = "";
 		D('theirAddress').textContent = userid;
