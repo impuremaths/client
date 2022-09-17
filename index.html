@@ -1669,6 +1669,7 @@ function addComment(commentData) {
 				editPanel.style.display = "";
 				editPanel.value = D(commentData.commentid).textContent;
 				this.textContent = " • Cancel";
+				editPanel.focus();
 			} else {
 				editPanel.style.display = "none";
 				if (editPanel.value && editPanel.value != D(commentData.commentid).textContent)
