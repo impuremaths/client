@@ -191,12 +191,13 @@
 				
 				<div id="readContent" style="white-space:pre-wrap; margin-bottom:40px; margin-top:30px">Browse for something interesting. Content displays here.</div>
 				
-				<div style="background-color:#e4e7e7; height:2px; border-radius:20px; margin:30px;"></div>
 				
-				<textarea id="commentContent" style="margin-top:10px; margin-bottom:10px; height:80px; width:100%; display:none" autocomplete="off" onkeyup="commentKeypress()" oninput="commentKeypress()" placeholder="Comment..."></textarea>
+				<textarea id="commentContent" style="margin-top:10px; margin-bottom:10px; height:80px; width:100%; display:none; font-family:Segoe UI, Source Sans Pro, Roboto, Helvetica, sans-serif; font-size:0.9em" autocomplete="off" onkeyup="commentKeypress()" oninput="commentKeypress()" placeholder="Comment..."></textarea>
 				<div style="display:flex; justify-content:right; margin-right:10px">
-				<button id="comment" style="font-size:0.85em" onclick="comment()" autocomplete="off" disabled>Comment</button>
+					<div style="background-color:#e4e7e7; height:2px; border-radius:20px; margin:auto 10px; flex-grow:1"></div>
+					<button id="comment" style="font-size:0.85em" onclick="comment()" autocomplete="off" disabled>Comment</button>
 				</div>
+				
 				<ul id="readComments" style="white-space:pre-wrap;"><ul>
 			</div>
 			
@@ -235,6 +236,7 @@
 // crypto methods ///////////////////////////////////////////////////////////////////////
 
 var XNO = {};
+var hardMax = 100;
 
 XNO.checkSeed = function(seed) { return typeof seed === "string" && /^[0-9a-fA-F]{64}$/.test(seed);};
 
@@ -253,7 +255,6 @@ XNO.generateSeed = function() {
 	crypto.getRandomValues(seed);
 	return Array.prototype.map.call(seed, (x) => ('00' + x.toString(16)).slice(-2)).join('').toUpperCase();
 };
-
 
 XNO.derivePrivateKey = function(seed, index) {
   const indexBuffer = new ArrayBuffer(4)
@@ -598,7 +599,10 @@ async function withdraw(symbol, elt, amt, destaddr, them) {
 	elt.disabled = true;
 	let totalAmt = BigInt(rawFromUnit(symbol, amt));
 	let balance = BigInt(rawFromUnit(symbol, D('balance').textContent));
-	if (totalAmt <= balance) {
+	let safetyMax = BigInt(rawFromUnit(symbol, hardMax));
+	if (totalAmt > safetyMax) showMsg("Send limit for our built-in wallet: " + hardMax + " XNO");
+	else if (totalAmt > balance) showMsg("Insufficient funds.");
+	else {
 		showMsg("Sponsoring \'" + them + "\'...", null, true);
 		let sendResp = await ccc[symbol].sendTo(destaddr, totalAmt.toString());
 		if (sendResp) {
@@ -608,8 +612,9 @@ async function withdraw(symbol, elt, amt, destaddr, them) {
 			D('sponsorInput').value = "";
 			refreshData(symbol);
 		}
-	} else showMsg("Insufficient funds.");
+	}
 	elt.disabled = false;
+	return false;
 }
 
 function sendMoney(elt) {
@@ -1639,7 +1644,8 @@ function addComment(commentData) {
 		editBut.style.cursor = "pointer";
 		
 		editPanel.placeholder = "Reply...";
-		editPanel.style = "margin-bottom:10px; margin-top:10px; width:100%; display:none";		
+		editPanel.style = "margin-bottom:10px; margin-top:10px; width:100%; display:none; font-size:0.9em";	
+		editPanel.style.fontFamily = "Segoe UI, Source Sans Pro, Roboto, Helvetica, sans-serif";
 		editPanel.oninput = function() {
 			if (editPanel.value) editBut.textContent = " • Send Edit";
 			else editBut.textContent = " • Cancel";
@@ -1688,7 +1694,8 @@ function addComment(commentData) {
 		// reply editor
 		let repPanel = make('textarea');
 		let repBut = make('button', "Reply");
-		repPanel.style = "display:none; margin-left:20px; margin-bottom:10px; margin-top:20px; width:calc(100% - 20px);";
+		repPanel.style = "display:none; margin-left:20px; margin-bottom:10px; margin-top:20px; width:calc(100% - 20px); font-size:0.9em";		
+		repPanel.style.fontFamily = "Segoe UI, Source Sans Pro, Roboto, Helvetica, sans-serif";
 		repPanel.placeholder = "Reply...";
 		repPanel.oninput = function() {
 			if (repPanel.value) repBut.textContent = "Reply";
@@ -1723,7 +1730,10 @@ function addComment(commentData) {
 		};
 		
 		let repButHolder = make('div');
-		repButHolder.style = "display:flex; justify-content:right; margin-right:10px";
+		repButHolder.style = "display:flex; justify-content:right; margin-right:10px; margin-bottom:20px;";
+		let repLine = make('div');
+		repLine.style = "background-color:#e4e7e7; height:2px; border-radius:20px; margin:auto 10px auto 30px; flex-grow:1";
+		repButHolder.appendChild(repLine);
 		repButHolder.appendChild(repBut);
 		D('readComments').appendChild(repButHolder);
 	}
