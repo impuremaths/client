@@ -1074,7 +1074,7 @@ function checkTitle(elt) {
 }
 
 function commentKeypress() {
-	if (event.keyCode == 27) {
+	if (event.keyCode == 27 && !D('commentContent').value.length) {
 		D('commentContent').value = "";
 		D('commentContent').style.display = "none";
 		D("comment").textContent = "Comment";
