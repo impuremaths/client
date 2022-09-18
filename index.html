@@ -2019,8 +2019,7 @@ function setData(type) {
 					else content.push({content:D('bioBlocks').children[i].firstChild.value, type:D('bioBlocks').children[i].firstChild.title});
 				}
 			}
-			console.log({displayname:D('bio-name').value, color:D('colorslider').value, bio:content, sponsor_price: D('inputPrice').value });
-			ws.emit('updateUser', {displayname:D('bio-name').value, color:parseInt(D('colorslider').value), bio:content, sponsor_price: D('inputPrice').value });
+			ws.emit('updateUser', {displayname:D('bio-name').value, color:parseInt(D('colorslider').value), bio:content, sponsor_price: parseInt(D('inputPrice').value) });
 			closeBio();
 		}
 	} else console.error("Need code to set " + type);
