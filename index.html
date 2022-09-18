@@ -1437,21 +1437,18 @@ function fillContent(elt, content) {
 }
 
 function fillEdit(postid, officialData) {
-	if (!officialData) {
-		loadPanel('post');
-		showEditor();
-	}
 	editPostPending = !officialData;	
-	
 	if (!postid) postid = readPostid;
+	if (editPostPending) {
+		loadPanel('post');
+		queryPost(postid);
+	}
 	
 	let metaData = postCache[postid];
-	if (!metaData) return false;
-	
+	if (!metaData) return false;	
 	let theNewContent = JSON.stringify(metaData.content);
-	if (postid == editPostid && theNewContent == editPostContent) return false;
-	
-	if (hasDraft() && !confirm("Clear current draft?")) return false;
+	if (postid == editPostid && theNewContent == editPostContent) return false;	
+	if (!cancelPost()) return false;
 	
 	editPostid = postid;
 	editPostContent = theNewContent;
@@ -1464,7 +1461,6 @@ function fillEdit(postid, officialData) {
 		D('modificationEdit').title = metaData.modifiedts;
 	}	
 	
-	clearDOM(D('postEditor'));
 	if (typeof metaData.content === "string") {	
 		let block = appendBlock();
 		block.firstChild.value = metaData.content;
@@ -1480,11 +1476,16 @@ function fillEdit(postid, officialData) {
 	
 	let url = new URL(window.location);
 	url.search = new URLSearchParams({postid: metaData.prev_});
-	if (metaData.prev_) inputEvent(D('set-prev'), url.href);
+	if (metaData.prev_) {
+		inputEvent(D('set-prev'), url.href);
+		D("recip-prev").classList.remove('active');
+	}
 	url.search = new URLSearchParams({postid: metaData.next_});	
-	if (metaData.next_) inputEvent(D('set-next'), url.href);
+	if (metaData.next_) {
+		inputEvent(D('set-next'), url.href);
+		D("recip-next").classList.remove('active');
+	}
 	
-	clearDOM(D('editTags'));
 	if (metaData.tags) {
 		for (let i = 0; i < metaData.tags.length; i++) {
 			D('set-tag').value = metaData.tags[i];
@@ -1602,6 +1603,7 @@ function cancelPost(override) {
 	
 	D('submitButton').textContent = "Publish";
 	D('clearButton').textContent = "Clear";
+	return true;
 }
 
 function makeMetaLabel(userid, createdts, modifiedts) {	
