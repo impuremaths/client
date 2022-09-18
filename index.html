@@ -899,8 +899,6 @@ function queryBrowse(userid, tag) {
 		D('theirFunName').style.fontWeight = "600";
 		identify(D('theirFunName'), userid);
 		D('theirAddress').textContent = userid;
-		queueDOMdisplayName(userid, D('browseHeading'));
-		queueDOMdisplayName(userid, D('theirFunName'));
 		
 		D('browseHeading').title = userid;
 		identify(D('browseHeading'), userid);
@@ -920,7 +918,11 @@ function queryBrowse(userid, tag) {
 	
 	if (ws && ws.readyState == 1) {
 		D('loadingMsg').style.display = "";
-		if (userid) ws.emit("queryPostsFromUser", {userid});
+		if (userid) {
+			queueDOMdisplayName(userid, D('browseHeading'));
+			queueDOMdisplayName(userid, D('theirFunName'));
+			ws.emit("queryPostsFromUser", {userid});
+		}
 		else if (tag) ws.emit("queryTag", {tag});
 		else ws.emit('queryPostsRecent');
 		
