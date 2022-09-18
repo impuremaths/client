@@ -1467,6 +1467,7 @@ function fillEdit(postid, officialData) {
 		D('modificationEdit').title = metaData.modifiedts;
 	}	
 	
+	clearDOM(D('postEditor'));	
 	if (typeof metaData.content === "string") {	
 		let block = appendBlock();
 		block.firstChild.value = metaData.content;
