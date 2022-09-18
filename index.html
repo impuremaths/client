@@ -120,7 +120,7 @@
 						<div id="bioBlocks" style="margin-top:40px; margin-bottom:40px"></div>
 						<div style="font-size:0.85em; margin-top:20px;">Minimum sponsorship for exclusive content (30 days):</div>
 						<div style="display:flex; justify-content:right; margin-top:5px; align-items:baseline">
-						<input onkeyup="" onkeydown="" placeholder="0.00" onblur="prepTwoDigit(this)" style="margin-left:20px; margin-right:5px; text-align:right; flex-grow:1; flex-basis:1px; overflow:hidden; text-overflow:ellipsis;" type="number" step="0.01" min="0"><span style="font-size:0.9em">XNO</span>
+						<input id="inputPrice" onkeyup="" onkeydown="" autocomplete="off" placeholder="0.00" onblur="prepTwoDigit(this)" style="margin-left:20px; margin-right:5px; text-align:right; flex-grow:1; flex-basis:1px; overflow:hidden; text-overflow:ellipsis;" type="number" step="0.01" min="0"><span style="font-size:0.9em">XNO</span>
 						</div>
 						
 						<button onclick="setData('name')" style="margin-top:30px">Update</button>
@@ -666,6 +666,7 @@ var editPostPending = false;
 
 var DOMdisplayNames = {};
 var cacheDisplayNames = {};
+var cacheColor = {};
 var postCache = {};
 const enc = new TextEncoder();
 const dec = new TextDecoder();
@@ -741,11 +742,6 @@ function setupWebsocket(restart) {
 		console.log(new Date(data));
 	});
 	
-	ws.on('updateDisplayNameResponse', function(data) {
-		if (data && data.displayname) receiveDOMdisplayName(data.userid, data.displayname);
-		closeBio();
-	});
-	
 	ws.on('authenticateUserResponse', function(data) {
 		clearDOM(D('subscriptions'));
 		if (XNO.address) makeSubLi(XNO.address);
@@ -754,10 +750,8 @@ function setupWebsocket(restart) {
 				makeSubLi(data.edges[i].userid, data.edges[i].lastaccessedts, data.edges[i].lastpublishedts);
 			}
 			requestNames();
-		}
-		
-		if (data && data.displayname) receiveDOMdisplayName(data.userid, data.displayname);
-		console.log("Authenticated! Requesting library...");
+		}		
+		receiveDOMdisplayName(data.userid, data.displayname, data.color);
 		ws.emit('queryLibrary');
 	});
 	
@@ -771,25 +765,9 @@ function setupWebsocket(restart) {
 		requestNames();
 	});
 	
-	function receiveDOMdisplayName(userid, displayname) {
-		if (displayname) cacheDisplayNames[userid] = displayname;
-		else delete cacheDisplayNames[userid];		
-		let theName = funName(userid);
-		
-		if (DOMdisplayNames[userid]) {
-			for (let j = 0; j < DOMdisplayNames[userid].length; j++) {
-				DOMdisplayNames[userid][j].textContent = theName;
-			}
-		}
-		delete DOMdisplayNames[userid];
-		
-		let urluserid = new URLSearchParams(window.location.search).get('userid');
-		if (urluserid == userid) document.title = funName(userid) + " - mktplc";
-	}
-	
 	ws.on('queryUsersResponse', function(data) { 
 		for (let i = 0; i < data.length; i++) {
-			receiveDOMdisplayName(data[i].userid, data[i].displayname);
+			receiveDOMdisplayName(data[i].userid, data[i].displayname, data[i].color);
 		}
 	});
 	
@@ -799,6 +777,7 @@ function setupWebsocket(restart) {
 	
 	ws.on('queryPostsFromUser', function (data) { 
 		fillBrowse(data.posts);
+		fillBio(data.user);
 		if (data.posts.length && D(postCache[data.posts[0].postid].userid)) D(postCache[data.posts[0].postid].userid).style.fontWeight = "";
 	});
 	
@@ -919,7 +898,7 @@ function queryBrowse(userid, tag) {
 		D('theirFunName').textContent = funName(userid);
 		D('theirFunName').style.fontWeight = "600";
 		D('theirFunName').style.color = funColor(userid);		
-		D('theirThreshold').textContent = "0.00 XNO";		
+		D('theirThreshold').textContent = "-";		
 		queueDOMdisplayName(userid, D('browseHeading'));
 		queueDOMdisplayName(userid, D('theirFunName'));
 		D('bio').textContent = "Full of possibilities."
@@ -952,7 +931,7 @@ function queryBrowse(userid, tag) {
 
 D('info').onclick = function() {			
 	if (D('bioEditor').style.display == "none") {	
-		inputEvent(D('colorslider'), parseInt(XNO.pubFromAddr(XNO.address).substring(0, 10), 16) % 360);
+		inputEvent(D('colorslider'), funColor(XNO.address));
 		D('bioPreview').style.display = "none";
 		D('bioEditor').style.display = "";
 		clearDOM(D('bioBlocks'));
@@ -1189,6 +1168,37 @@ function activeBar(elt) {
 function removeActiveBar(elt) {
 	elt.firstElementChild.style.borderLeft = "";	
 	elt.firstElementChild.style.paddingLeft = "";
+}
+
+function fillBio(data) {
+	if (data.sponsor_price) D('theirThreshold').textContent = data.sponsor_price + " XNO";
+	else D('theirThreshold').textContent = "1.00 XNO (default)";
+	
+	receiveDOMdisplayName(data.userid, data.displayname, data.color);
+	if (data.bio) fillContent(D('bio'), data.bio);
+	console.log(data);
+}
+
+function receiveDOMdisplayName(userid, displayname, color) {
+	if (displayname) cacheDisplayNames[userid] = displayname;
+	else delete cacheDisplayNames[userid];	
+	
+	if (color !== undefined) cacheColor[userid] = color;
+	else delete cacheColor[userid];	
+	
+	let theName = funName(userid);
+	let theColor = funColor(userid);
+	
+	if (DOMdisplayNames[userid]) {
+		for (let j = 0; j < DOMdisplayNames[userid].length; j++) {
+			DOMdisplayNames[userid][j].textContent = theName;
+			DOMdisplayNames[userid][j].style.color = theColor;				
+		}
+	}
+	delete DOMdisplayNames[userid];
+	
+	let urluserid = new URLSearchParams(window.location.search).get('userid');
+	if (urluserid == userid) document.title = funName(userid) + " - mktplc";
 }
 
 function fillBrowse(data) {	
@@ -1993,7 +2003,19 @@ function setData(type) {
 		if (ws && ws.readyState == 1) {		
 			queueDOMdisplayName(XNO.address, D('displayName'));
 			queueDOMdisplayName(XNO.address, D(XNO.address).lastElementChild);
-			ws.emit('updateDisplayName', { displayname: D('bio-name').value} );
+			// ws.emit('updateDisplayName', { displayname: D('bio-name').value} );
+			
+					
+			let content = [];
+			for (let i = 0; i < D('bioBlocks').children.length; i++) {
+				if (D('bioBlocks').children[i].firstChild.value) {
+					if (D('bioBlocks').children[i].firstChild.title == "image")
+						content.push({content:D('bioBlocks').children[i].firstChild.firstChild.value, type:D('bioBlocks').children[i].firstChild.title});
+					else content.push({content:D('bioBlocks').children[i].firstChild.value, type:D('bioBlocks').children[i].firstChild.title});
+				}
+			}
+			console.log({displayname:D('bio-name').value, color:D('colorslider').value, bio:content, sponsor_price: D('inputPrice').value });
+			ws.emit('updateUser', {displayname:D('bio-name').value, color:parseInt(D('colorslider').value), bio:content, sponsor_price: D('inputPrice').value });
 		}
 	} else console.error("Need code to set " + type);
 }
@@ -2100,6 +2122,7 @@ function funName(userid, generated) {
 }
 
 function funColor(userid) {
+	if (cacheColor[userid] !== undefined) return cacheColor[userid];
 	return "hsl(" + parseInt(XNO.pubFromAddr(userid).substring(0, 10), 16) % 360 + ", 100%, 27%)";
 }
 
