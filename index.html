@@ -778,7 +778,7 @@ function setupWebsocket(restart) {
 		fillBrowse(data.posts);
 		if (data.user.userid) {
 			userCache[data.user.userid] = data.user;
-			if (update) fillBio(data.user.userid);
+			fillBio(data.user.userid, !update);
 			if (D(data.user.userid)) D(data.user.userid).style.fontWeight = "";
 		}
 	});
@@ -1145,7 +1145,7 @@ function removeActiveBar(elt) {
 	elt.firstElementChild.style.paddingLeft = "";
 }
 
-function fillBio(userid) {
+function fillBio(userid, block) {
 	let data = userCache[userid];
 	if (!data) {
 		D('bio').textContent = "Full of possibilities."
@@ -1153,8 +1153,10 @@ function fillBio(userid) {
 	}
 	if (data.sponsor_price) D('theirThreshold').textContent = data.sponsor_price + " XNO";
 	else D('theirThreshold').textContent = "1.00 XNO (default)";
-	if (data.bio && data.bio.length) fillContent(D('bio'), data.bio);
-	else D('bio').textContent = "Full of possibilities."
+	if (!block) {
+		if (data.bio && data.bio.length) fillContent(D('bio'), data.bio);
+		else D('bio').textContent = "Full of possibilities."
+	}
 	receiveDOMdisplayName(data.userid, data.displayname, data.color);
 	console.log(data);
 }
