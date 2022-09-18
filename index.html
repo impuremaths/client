@@ -774,10 +774,12 @@ function setupWebsocket(restart) {
 	});
 	
 	ws.on('queryPostsFromUser', function (data) {
-		userCache[data.user.userid] = data.user;
 		fillBrowse(data.posts);
-		fillBio(data.user.userid);
-		if (D(data.user.userid)) D(data.user.userid).style.fontWeight = "";
+		if (data.user.userid) {
+			userCache[data.user.userid] = data.user;
+			fillBio(data.user.userid);
+			if (D(data.user.userid)) D(data.user.userid).style.fontWeight = "";
+		}
 	});
 	
 	ws.on('updateUserResponse', function (data) {
@@ -1161,7 +1163,7 @@ function openBio() {
 	let data = userCache[XNO.address];
 	
 	clearDOM(D('bioBlocks'));	
-	if (data.bio && data.bio.length) {
+	if (data && data.bio && data.bio.length) {
 		for (let i = 0; i < data.bio.length; i++) {
 			let block = appendBlock(data.bio[i].type, null, D('bioBlocks'));
 			if (data.bio[i].type == "image") block.firstChild.firstChild.value = data.bio[i].content;
@@ -1169,7 +1171,7 @@ function openBio() {
 		}
 	} else appendBlock("text", null, D('bioBlocks'));
 	
-	if (data.sponsor_price) D('inputPrice').value = data.sponsor_price;
+	if (data && data.sponsor_price) D('inputPrice').value = data.sponsor_price;
 	else D('inputPrice').textContent = "1.00";
 	
 	if (displayNameCache[XNO.address]) D('bio-name').value = funName(XNO.address);
