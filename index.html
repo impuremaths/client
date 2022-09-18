@@ -1361,6 +1361,10 @@ function fillPost(postid) {
 	
 	// Title and label
 	D('readTitle').textContent = metaData.title;
+	D('readTitle').style.cursor = "pointer";
+	D('readTitle').onclick = function() {
+		queryPost(postid);
+	}
 	identify(D('author'), metaData.userid);
 	D('author').title = metaData.userid;
 	
