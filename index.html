@@ -1178,6 +1178,7 @@ function cachePost(metaData) {
 	if (metaData.comments) postCache[metaData.postid].comments = metaData.comments;
 	if (metaData.prev_) postCache[metaData.postid].prev_ = metaData.prev_;
 	if (metaData.next_) postCache[metaData.postid].next_ = metaData.next_;
+	if (metaData.wall) postCache[metaData.postid].wall = metaData.wall;
 }
 
 function activeBar(elt) {
@@ -1481,6 +1482,12 @@ function fillEdit(postid, officialData) {
 			let block = appendBlock(metaData.content[i].type);
 			if (metaData.content[i].type == "image") block.firstChild.firstChild.value = metaData.content[i].content;
 			else block.firstChild.value = metaData.content[i].content;
+		}
+		
+		if (metaData.wall) {
+			for (let i = 0; i < metaData.wall.length; i++) {
+				toggle(D('postEditor').children[metaData.wall[i]].children[1].firstElementChild);
+			}
 		}
 	} 
 	
