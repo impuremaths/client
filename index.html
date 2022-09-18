@@ -193,8 +193,8 @@
 				
 				
 				<textarea id="commentContent" style="margin-top:10px; margin-bottom:15px; height:80px; width:100%; display:none; font-family:Segoe UI, Source Sans Pro, Roboto, Helvetica, sans-serif; font-size:0.9em" autocomplete="off" onkeyup="commentKeypress()" oninput="commentKeypress()" placeholder="Comment..."></textarea>
-				<div style="display:flex; justify-content:right; margin-right:10px">
-					<div style="background-color:#e4e7e7; height:2px; border-radius:20px; margin:auto 10px; flex-grow:1"></div>
+				<div style="display:flex; justify-content:right;">
+					<div style="background-color:#e4e7e7; height:2px; border-radius:20px; margin:auto 10px auto 0px; flex-grow:1"></div>
 					<button id="comment" style="font-size:0.85em" onclick="comment()" autocomplete="off" disabled>Comment</button>
 				</div>
 				
@@ -798,8 +798,8 @@ function setupWebsocket(restart) {
 	});
 	
 	ws.on('queryPostsFromUser', function (data) { 
-		fillBrowse(data);
-		if (data.length && D(postCache[data[0].postid].userid)) D(postCache[data[0].postid].userid).style.fontWeight = "";
+		fillBrowse(data.posts);
+		if (data.posts.length && D(postCache[data.posts[0].postid].userid)) D(postCache[data.posts[0].postid].userid).style.fontWeight = "";
 	});
 	
 	ws.on('queryTagResponse', function (data) { 
@@ -837,8 +837,8 @@ function setupWebsocket(restart) {
 			cachePost(data[x]);		
 			let postli = make('li');
 			postli.style = "white-space:nowrap";
-			if (readPostid == data[x].postid) activeBar(postli);
 			postli.appendChild(fullLabel(data[x].postid));
+			if (readPostid == data[x].postid) activeBar(postli);
 			D('mapul').appendChild(postli);	
 		}
 		requestNames();
@@ -1176,13 +1176,13 @@ function cachePost(metaData) {
 }
 
 function activeBar(elt) {
-	elt.style.borderLeft = "solid 4px #888";		
-	elt.style.paddingLeft = "5px";
+	elt.firstElementChild.style.borderLeft = "solid 3px #e4e7e7";		
+	elt.firstElementChild.style.paddingLeft = "10px";
 }
 
 function removeActiveBar(elt) {
-	elt.style.borderLeft = "";	
-	elt.style.paddingLeft = "";
+	elt.firstElementChild.style.borderLeft = "";	
+	elt.firstElementChild.style.paddingLeft = "";
 }
 
 function fillBrowse(data) {	
@@ -1194,8 +1194,8 @@ function fillBrowse(data) {
 		cachePost(data[i]);			
 		let postli = make('li');
 		postli.id = data[i].postid + "-disc";
-		if (readPostid == data[i].postid) activeBar(postli);
 		postli.appendChild(fullLabel(data[i].postid));
+		if (readPostid == data[i].postid) activeBar(postli);
 		D('discovery').appendChild(postli);
 	}
 	
@@ -1398,9 +1398,9 @@ function fillContent(elt, content) {
 	for (let i = 0; i < content.length; i++) {
 		if (content[i].type == "js") {
 			let jsbox = make("iframe");
-			jsbox.style = "width:100%; height:0px; border-top:0px; border-bottom:0px; border-left:4px solid white; border-right:0px; border-radius:4px 0px 0px 4px";
+			jsbox.style = "width:100%; height:0px; border-top:0px; border-bottom:0px; border-left:3px solid white; border-right:0px;";
 			jsbox.onmouseenter = function() {
-				jsbox.style.borderColor = "#888";
+				jsbox.style.borderColor = "#e4e7e7";
 			}
 			jsbox.onmouseleave = function() {
 				jsbox.style.borderColor = "transparent";
@@ -1743,9 +1743,9 @@ function addComment(commentData) {
 		};
 		
 		let repButHolder = make('div');
-		repButHolder.style = "display:flex; justify-content:right; margin-right:10px; margin-bottom:10px;";
+		repButHolder.style = "display:flex; justify-content:right; margin-bottom:10px;";
 		let repLine = make('div');
-		repLine.style = "background-color:#e4e7e7; height:2px; border-radius:20px; margin:auto 10px; flex-grow:1";
+		repLine.style = "background-color:#e4e7e7; height:2px; border-radius:20px; margin:auto 10px auto 20px; flex-grow:1";
 		repButHolder.appendChild(repLine);
 		repButHolder.appendChild(repBut);
 		D('readComments').appendChild(repButHolder);
@@ -1929,8 +1929,8 @@ function makeLibLi(postid, accessts) {
 	libli.id = postid;
 	libli.style = "white-space:nowrap";
 	if (!accessts) libli.style.fontWeight = "bold";	
-	if (postid == readPostid) activeBar(libli);
 	libli.appendChild(fullLabel(postid, true));	
+	if (postid == readPostid) activeBar(libli);
 	if (D('library').children[0]) D('library').insertBefore(libli, D('library').children[0]);
 	else {
 		D('library').appendChild(libli);
