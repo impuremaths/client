@@ -1141,9 +1141,9 @@ function fillBio(userid) {
 		D('bio').textContent = "Full of possibilities."
 		return false;
 	}
-	if (data.sponsor_price === undefined) D('theirThreshold').textContent = "1.00 XNO (default)";
-	else if (data.sponsor_price) D('theirThreshold').textContent = data.sponsor_price + " XNO";
-	else D('theirThreshold').textContent = "All content is public!";
+	if (data.sponsor_price) D('theirThreshold').textContent = data.sponsor_price + " XNO";
+	else if (data.sponsor_price === 0) D('theirThreshold').textContent = "All content is public!";
+	else D('theirThreshold').textContent = "1.00 XNO (default)";
 	if (data.bio && data.bio.length) fillContent(D('bio'), data.bio);
 	else D('bio').textContent = "Full of possibilities."
 	receiveDOMdisplayName(data.userid, data.displayname, data.color);
@@ -1186,7 +1186,7 @@ function closeBio() {
 function receiveDOMdisplayName(userid, displayname, color) {
 	if (displayname) displayNameCache[userid] = displayname;
 	else delete displayNameCache[userid];	
-	if (color !== undefined) colorCache[userid] = color;
+	if (color) colorCache[userid] = color;
 	else delete colorCache[userid];
 	
 	if (DOMdisplayNames[userid]) {
@@ -2126,9 +2126,9 @@ function funName(userid, generated) {
 											+ animals[parseInt(XNO.pubFromAddr(userid).substring(0, 10), 16) % animals.length];
 }
 
-function funColor(userid, raw) {
+function funColor(userid, raw, generated) {
 	let rawColor = parseInt(XNO.pubFromAddr(userid).substring(0, 10), 16) % 360;
-	if (colorCache[userid] !== undefined) rawColor = colorCache[userid];
+	if (colorCache[userid] && !generated) rawColor = colorCache[userid];
 	if (raw) return rawColor;
 	return "hsl(" + rawColor + ", 100%, 27%)";
 }
@@ -2404,8 +2404,10 @@ function networkFailMsg(error) {
 }
 
 function color(elt) {
-	elt.previousElementSibling.style.color = 'hsl(' + elt.value + ', 100%, 27%)';
-	setCSS('--hue', elt.value);
+	let theColor = elt.value;
+	if (theColor == 0) theColor = funColor(XNO.address, true, true);
+	elt.previousElementSibling.style.color = 'hsl(' + theColor + ', 100%, 27%)';
+	setCSS('--hue', theColor);
 }
 
 function setCSS(variable, value) { document.documentElement.style.setProperty(variable, value);}
