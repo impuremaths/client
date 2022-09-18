@@ -1194,6 +1194,7 @@ function receiveDOMdisplayName(userid, displayname, color) {
 			identify(DOMdisplayNames[userid][j], userid);			
 		}
 	}
+	D('displayName').style.color = "";
 	delete DOMdisplayNames[userid];
 	
 	let urluserid = new URLSearchParams(window.location.search).get('userid');
