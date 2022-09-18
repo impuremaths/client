@@ -1402,6 +1402,10 @@ function fillPost(postid) {
 function fillContent(elt, content) {
 	clearDOM(elt);
 	for (let i = 0; i < content.length; i++) {
+	
+		if (!content[i].content) {
+			if (content[i].type != "image") content[i].content = "[paywall]";
+		}
 		if (content[i].type == "js") {
 			let jsbox = make("iframe");
 			jsbox.style = "width:100%; height:0px; border-top:0px; border-bottom:0px; border-left:2px solid white; border-right:0px;";
@@ -1429,6 +1433,7 @@ function fillContent(elt, content) {
 			let imagediv = make("img");	
 			imagediv.src = content[i].content;
 			imagediv.alt = "[Broken image link]";
+			if (!content[i].content) imagediv.alt = "[paywall image link]";
 			imagediv.style.maxWidth = "100%";
 			let imageHolder = make('div');
 			imageHolder.style = "display:flex; justify-content:center; margin-bottom:20px";
