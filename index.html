@@ -1241,9 +1241,9 @@ function fullLabel(postid, library) {
 	tags.style = "font-size:0.85em; overflow: hidden; text-overflow:ellipsis;";
 	
 	let postAuthor = make('a');
+	postAuthor.style = "cursor:pointer; font-weight:600";
 	identify(postAuthor, data.userid);
 	postAuthor.title = data.userid;
-	postAuthor.style = "cursor:pointer; font-weight:600";
 	postAuthor.onclick = function() {
 		event.stopPropagation();
 		queryBrowse(data.userid);
@@ -1321,12 +1321,12 @@ function fullLabel(postid, library) {
 	}
 	
 	let label = make('div');
+	label.style = "overflow:hidden; cursor:pointer; padding:5px; position:relative";
 	label.appendChild(postTitle);
 	label.appendChild(tags);
 	label.appendChild(postMeta);
 	label.appendChild(actions);
 	
-	label.style = "overflow:hidden; cursor:pointer; padding:5px; position:relative";
 	label.onmouseenter = function() { actions.style.display = ""; };
 	label.onmouseleave = function() { actions.style.display = "none"; };
 	label.onclick = function() {
