@@ -1142,7 +1142,6 @@ function fillBio(userid) {
 		return false;
 	}
 	if (data.sponsor_price) D('theirThreshold').textContent = data.sponsor_price + " XNO";
-	else if (data.sponsor_price === 0) D('theirThreshold').textContent = "All content is public!";
 	else D('theirThreshold').textContent = "1.00 XNO (default)";
 	if (data.bio && data.bio.length) fillContent(D('bio'), data.bio);
 	else D('bio').textContent = "Full of possibilities."
@@ -2019,7 +2018,7 @@ function setData(type) {
 					else content.push({content:D('bioBlocks').children[i].firstChild.value, type:D('bioBlocks').children[i].firstChild.title});
 				}
 			}
-			ws.emit('updateUser', {displayname:D('bio-name').value, color:parseInt(D('colorslider').value), bio:content, sponsor_price: parseInt(D('inputPrice').value) });
+			ws.emit('updateUser', {displayname:D('bio-name').value, color:parseInt(D('colorslider').value), bio:content, sponsor_price: D('inputPrice').value });
 			closeBio();
 		}
 	} else console.error("Need code to set " + type);
