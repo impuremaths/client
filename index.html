@@ -198,7 +198,7 @@
 					<button id="comment" style="font-size:0.85em" onclick="comment()" autocomplete="off" disabled>Comment</button>
 				</div>
 				
-				<ul id="readComments" style="white-space:pre-wrap;"><ul>
+				<ul id="readComments" style="white-space:pre-wrap; margin-top:10px"><ul>
 			</div>
 			
 	
@@ -1743,9 +1743,9 @@ function addComment(commentData) {
 		};
 		
 		let repButHolder = make('div');
-		repButHolder.style = "display:flex; justify-content:right; margin-right:10px; margin-bottom:20px;";
+		repButHolder.style = "display:flex; justify-content:right; margin-right:10px; margin-bottom:10px;";
 		let repLine = make('div');
-		repLine.style = "background-color:#e4e7e7; height:2px; border-radius:20px; margin:auto 10px auto 30px; flex-grow:1";
+		repLine.style = "background-color:#e4e7e7; height:2px; border-radius:20px; margin:auto 10px; flex-grow:1";
 		repButHolder.appendChild(repLine);
 		repButHolder.appendChild(repBut);
 		D('readComments').appendChild(repButHolder);
