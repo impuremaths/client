@@ -774,10 +774,11 @@ function setupWebsocket(restart) {
 	});
 	
 	ws.on('queryPostsFromUser', function (data) {
+		let update = (!userCache[data.user.userid] || JSON.stringify(userCache[data.user.userid].content) != JSON.stringify(data.user.content));
 		fillBrowse(data.posts);
 		if (data.user.userid) {
 			userCache[data.user.userid] = data.user;
-			fillBio(data.user.userid);
+			if (update) fillBio(data.user.userid);
 			if (D(data.user.userid)) D(data.user.userid).style.fontWeight = "";
 		}
 	});
