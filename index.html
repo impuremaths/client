@@ -1715,7 +1715,7 @@ function addComment(commentData) {
 			else repBut.textContent = "Cancel";
 		};
 		repPanel.onkeyup = function() {
-			if (event.keyCode == 27) {
+			if (event.keyCode == 27 && !repPanel.value.length) {
 				repPanel.value = "";
 				repPanel.style.display = "none";
 				repBut.textContent = "Reply";
