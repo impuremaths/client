@@ -192,7 +192,7 @@
 				<div id="readContent" style="white-space:pre-wrap; margin-bottom:40px; margin-top:30px">Browse for something interesting. Content displays here.</div>
 				
 				
-				<textarea id="commentContent" style="margin-top:10px; margin-bottom:10px; height:80px; width:100%; display:none; font-family:Segoe UI, Source Sans Pro, Roboto, Helvetica, sans-serif; font-size:0.9em" autocomplete="off" onkeyup="commentKeypress()" oninput="commentKeypress()" placeholder="Comment..."></textarea>
+				<textarea id="commentContent" style="margin-top:10px; margin-bottom:15px; height:80px; width:100%; display:none; font-family:Segoe UI, Source Sans Pro, Roboto, Helvetica, sans-serif; font-size:0.9em" autocomplete="off" onkeyup="commentKeypress()" oninput="commentKeypress()" placeholder="Comment..."></textarea>
 				<div style="display:flex; justify-content:right; margin-right:10px">
 					<div style="background-color:#e4e7e7; height:2px; border-radius:20px; margin:auto 10px; flex-grow:1"></div>
 					<button id="comment" style="font-size:0.85em" onclick="comment()" autocomplete="off" disabled>Comment</button>
@@ -1656,7 +1656,7 @@ function addComment(commentData) {
 		editBut.style.cursor = "pointer";
 		
 		editPanel.placeholder = "Reply...";
-		editPanel.style = "margin-bottom:10px; margin-top:10px; width:100%; display:none; font-size:0.9em";	
+		editPanel.style = "margin-bottom:5px; margin-top:10px; width:100%; display:none; font-size:0.9em";	
 		editPanel.style.fontFamily = "Segoe UI, Source Sans Pro, Roboto, Helvetica, sans-serif";
 		editPanel.oninput = function() {
 			if (editPanel.value) editBut.textContent = " • Send Edit";
@@ -1707,7 +1707,7 @@ function addComment(commentData) {
 		// reply editor
 		let repPanel = make('textarea');
 		let repBut = make('button', "Reply");
-		repPanel.style = "display:none; margin-left:20px; margin-bottom:10px; margin-top:20px; width:calc(100% - 20px); font-size:0.9em";		
+		repPanel.style = "display:none; margin-left:20px; margin-bottom:15px; margin-top:20px; width:calc(100% - 20px); font-size:0.9em";		
 		repPanel.style.fontFamily = "Segoe UI, Source Sans Pro, Roboto, Helvetica, sans-serif";
 		repPanel.placeholder = "Reply...";
 		repPanel.oninput = function() {
@@ -1986,7 +1986,7 @@ function setData(type) {
 window.addEventListener("beforeunload", function (e) {
     var confirmationMessage = 'It looks like you have been drafting something. '
                             + 'If you leave before posting, your changes will be lost.';
-	if (hasDraft()) {
+	if (hasDraft() || D('commentContent').value.length > 0) {
 		(e || window.event).returnValue = confirmationMessage; //Gecko + IE
 		return confirmationMessage; //Gecko + Webkit, Safari, Chrome etc.
 	}
