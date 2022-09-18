@@ -1170,7 +1170,8 @@ function openBio() {
 	
 	if (displayNameCache[XNO.address]) D('bio-name').value = funName(XNO.address);
 	D('bio-name').placeholder = funName(XNO.address, true) + "...";
-	inputEvent(D('colorslider'), funColor(XNO.address, true));
+	if (colorCache[XNO.address]) inputEvent(D('colorslider'), funColor(XNO.address, false, true));
+	else inputEvent(D('colorslider'), 0);
 	D('bio-name').focus();
 }
 
@@ -2126,7 +2127,7 @@ function funName(userid, generated) {
 											+ animals[parseInt(XNO.pubFromAddr(userid).substring(0, 10), 16) % animals.length];
 }
 
-function funColor(userid, raw, generated) {
+function funColor(userid, generated, raw) {
 	let rawColor = parseInt(XNO.pubFromAddr(userid).substring(0, 10), 16) % 360;
 	if (colorCache[userid] && !generated) rawColor = colorCache[userid];
 	if (raw) return rawColor;
