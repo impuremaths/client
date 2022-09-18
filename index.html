@@ -1444,14 +1444,20 @@ function fillEdit(postid, officialData) {
 		queryPost(postid);
 	}
 	
+	let theNewContent = "";
 	let metaData = postCache[postid];
-	if (!metaData) return false;	
-	let theNewContent = JSON.stringify(metaData.content);
-	if (postid == editPostid && theNewContent == editPostContent) return false;	
+	if (metaData) {	
+		theNewContent = JSON.stringify(metaData.content);
+		if (postid == editPostid && theNewContent == editPostContent) return false;	
+	}
 	if (!cancelPost()) return false;
 	
 	editPostid = postid;
 	editPostContent = theNewContent;
+	D('submitButton').textContent = "Publish Edit";
+	D('clearButton').textContent = "Cancel Edit";
+	
+	if (!metaData) return false;
 	
 	D('editid').style.display = "";
 	D('creationEdit').textContent = new Date(metaData.createdts).toLocaleDateString();
@@ -1492,9 +1498,6 @@ function fillEdit(postid, officialData) {
 			addTag();
 		}
 	}
-	
-	D('submitButton').textContent = "Publish Edit";
-	D('clearButton').textContent = "Cancel Edit";
 }
 
 function appendBlock(type, previous, parent) {
