@@ -309,6 +309,11 @@ function twoDigit(str) {
 	while (fraction.length < 2) {
 		fraction += '0';
 	}
+	let keep = false;
+	for (let i = 0; i < fraction.length; i++) {
+		if (fraction[i] != "0") keep = true;
+	}
+	if (!keep) fraction = "00";
 	return `${parts[0]}.${fraction}`;	
 }
 
