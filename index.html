@@ -1435,7 +1435,7 @@ function fillPost(postid) {
 function fillContent(elt, content) {
 	clearDOM(elt);
 	for (let i = 0; i < content.length; i++) {	
-		if (!content[i].content && content[i].type != "image") content[i].content = "[paywall + " + content[i].type + "]";	
+		if (!content[i].content && content[i].type != "image") content[i].content = "[paywall " + content[i].type + "]";	
 		
 		let jsbox;
 		if (content[i].type == "js") {
