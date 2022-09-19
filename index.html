@@ -1435,7 +1435,7 @@ function fillPost(postid) {
 function fillContent(elt, content) {
 	clearDOM(elt);
 	for (let i = 0; i < content.length; i++) {	
-		if (!content[i].content && content[i].type != "image") content[i].content = "[paywall]";	
+		if (!content[i].content && content[i].type != "image") content[i].content = "[paywall + " + content[i].type + "]";	
 		
 		let jsbox;
 		if (content[i].type == "js") {
@@ -1456,9 +1456,11 @@ function fillContent(elt, content) {
 			jsbox.style.whiteSpace = "initial";
 		} else if (content[i].type == "image") {
 			let imagediv = make("img");	
-			imagediv.src = content[i].content;
-			imagediv.alt = "[Broken image link]";
-			if (!content[i].content) imagediv.alt = "[paywall image link]";
+			if (!content[i].content) imagediv.alt = "[paywall image]";
+			else {
+				imagediv.src = content[i].content;
+				imagediv.alt = "[Broken image link]";
+			}
 			imagediv.style.maxWidth = "100%";
 			jsbox = make('div');
 			jsbox.style = "display:flex; justify-content:center; margin-bottom:20px";
