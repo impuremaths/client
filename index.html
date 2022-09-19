@@ -708,10 +708,8 @@ function setupWebsocket(restart) {
 		if (!restart) loadURL();
 		if (XNO.address) {
 			let ts = Date.now();
-			let loginPacket = {userid: XNO.address, ts, signature:XNO.sign(ts, XNO.address)};
 			queueDOMdisplayName(XNO.address, D('displayName'));
-			ws.emit('authenticateUser', loginPacket);
-			console.log(loginPacket);
+			ws.emit('authenticateUser', {userid: XNO.address, ts, signature:XNO.sign(ts, XNO.address)});
 		}
 	};
 	ws.onclose = function() { 
@@ -747,7 +745,6 @@ function setupWebsocket(restart) {
 			for (let i = 0; i < data.edges.length; i++) {
 				makeSubLi(data.edges[i].userid, data.edges[i].lastaccessedts, data.edges[i].lastpublishedts);
 			}
-			requestNames();
 		}		
 		receiveDOMdisplayName(data.userid, data.displayname, data.color);
 		ws.emit('queryLibrary');
@@ -773,6 +770,10 @@ function setupWebsocket(restart) {
 		fillBrowse(data);
 	});
 	
+	ws.on('queryTagResponse', function (data) { 
+		fillBrowse(data); 		
+	});	
+	
 	ws.on('queryPostsFromUser', function (data) {
 		let update = (!userCache[data.user.userid] || JSON.stringify(userCache[data.user.userid].content) != JSON.stringify(data.user.content));
 		fillBrowse(data.posts);
@@ -786,10 +787,6 @@ function setupWebsocket(restart) {
 	ws.on('updateUserResponse', function (data) {
 		userCache[data.userid] = data;
 		fillBio(data.userid);		
-	});
-	
-	ws.on('queryTagResponse', function (data) { 
-		fillBrowse(data); 		
 	});
 	
 	ws.on('queryPostResponse', function(data) {
@@ -822,7 +819,7 @@ function setupWebsocket(restart) {
 		for (let x in data) {	
 			cachePost(data[x]);		
 			let postli = make('li');
-			postli.style = "white-space:nowrap";
+			postli.style.whiteSpace = "nowrap";
 			postli.appendChild(fullLabel(data[x].postid));
 			if (readPostid == data[x].postid) activeBar(postli);
 			D('mapul').appendChild(postli);	
@@ -989,14 +986,12 @@ function publish() {
 	try { next = new URLSearchParams((new URL(D('set-next').value)).search).get('postid');} 
 	catch { next = "" };
 	
-	let content = [];
+	let content = parseEditorContent(D('bioBlocks'));
 	let wall = [];
 	let k = 0;
 	for (let i = 0; i < D('postEditor').children.length; i++) {
-		if (D('postEditor').children[i].firstChild.value) {
-			if (D('postEditor').children[i].firstChild.title == "image")
-				content.push({content:D('postEditor').children[i].firstChild.firstChild.value, type:D('postEditor').children[i].firstChild.title});
-			else content.push({content:D('postEditor').children[i].firstChild.value, type:D('postEditor').children[i].firstChild.title});
+		if (D('postEditor').children[i].firstChild.title != "image" && D('postEditor').children[i].firstChild.value ||
+			D('postEditor').children[i].firstChild.title == "image" && D('postEditor').children[i].firstChild.firstChild.value) {
 			if (active(D('postEditor').children[i].children[1].firstChild)) wall.push(k);
 			k++;
 		}
@@ -1074,14 +1069,18 @@ function hasDraft() {
 	return false;
 }
 
-function showPreview(elt) {
+function parseEditorContent(elt) {
 	let content = [];
-	for (let i = 0; i < D('postEditor').children.length; i++) {
-		if (D('postEditor').children[i].firstChild.title == "image")
-			content.push({content:D('postEditor').children[i].firstChild.firstChild.value, type:D('postEditor').children[i].firstChild.title});
-		else if (D('postEditor').children[i].firstChild.value)
-			content.push({content:D('postEditor').children[i].firstChild.value, type:D('postEditor').children[i].firstChild.title});
-	}
+	for (let i = 0; i < elt.children.length; i++) {
+			if (elt.children[i].firstChild.title == "image") {
+				if (elt.children[i].firstChild.firstChild.value) content.push({content:elt.children[i].firstChild.firstChild.value, type:elt.children[i].firstChild.title});
+			} else if (elt.children[i].firstChild.value) content.push({content:elt.children[i].firstChild.value, type:elt.children[i].firstChild.title});
+	}	
+	return content;
+}
+
+function showPreview(elt) {
+	let content = parseEditorContent(D('postEditor'));
 	fillContent(D('postPreview'), content);
 	
 	D('previewButton').classList.add('active');
@@ -1164,28 +1163,33 @@ function fillBio(userid, block) {
 	console.log(data);
 }
 
+
+function fillEditorContent(data, elt) {
+	clearDOM(elt);	
+	if (data && data.length) {
+		for (let i = 0; i < data.length; i++) {
+			let block = appendBlock(data[i].type, null, elt);
+			if (data[i].type == "image") block.firstChild.firstChild.value = data[i].content;
+			else block.firstChild.value = data[i].content;
+		}
+	} else appendBlock("text", null, elt);
+}
+
 function openBio() {
 	D('bioPreview').style.display = "none";
 	D('bioEditor').style.display = "";
-	
-	let data = userCache[XNO.address];
-	
-	clearDOM(D('bioBlocks'));	
-	if (data && data.bio && data.bio.length) {
-		for (let i = 0; i < data.bio.length; i++) {
-			let block = appendBlock(data.bio[i].type, null, D('bioBlocks'));
-			if (data.bio[i].type == "image") block.firstChild.firstChild.value = data.bio[i].content;
-			else block.firstChild.value = data.bio[i].content;
-		}
-	} else appendBlock("text", null, D('bioBlocks'));
-	
-	if (data && data.sponsor_price) D('inputPrice').value = data.sponsor_price;
-	else D('inputPrice').textContent = "1.00";
 	
 	if (displayNameCache[XNO.address]) D('bio-name').value = funName(XNO.address);
 	D('bio-name').placeholder = funName(XNO.address, true) + "...";
 	if (colorCache[XNO.address]) inputEvent(D('colorslider'), funColor(XNO.address, false, true));
 	else inputEvent(D('colorslider'), 0);
+	
+	let data = userCache[XNO.address];
+	if (!data) data = {};	
+	fillEditorContent(data.bio, D('bioBlocks'));	
+	if (data.sponsor_price) D('inputPrice').value = data.sponsor_price;
+	else D('inputPrice').textContent = "1.00";
+	
 	D('bio-name').focus();
 }
 
@@ -1390,10 +1394,10 @@ function fillPost(postid) {
 		}
 	}
 	
-	D('creation').textContent = new Date(metaData.createdts).toLocaleDateString();
+	D('creation').textContent = unixToDate(metaData.createdts);
 	D('creation').title = metaData.createdts;
-	if (metaData.modifiedts && metaData.modifiedts != metaData.createdts) {
-		D('modification').textContent = " (" + new Date(metaData.modifiedts).toLocaleDateString() + ")";
+	if (metaData.modifiedts && unixToDate(metaData.modifiedts) != unixToDate(metaData.createdts)) {
+		D('modification').textContent = " (" + unixToDate(metaData.modifiedts) + ")";
 		D('modification').title = metaData.modifiedts;
 		D('modification').style.display = "";
 	} else {
@@ -1430,49 +1434,40 @@ function fillPost(postid) {
 
 function fillContent(elt, content) {
 	clearDOM(elt);
-	for (let i = 0; i < content.length; i++) {
-	
-		if (!content[i].content) {
-			if (content[i].type != "image") content[i].content = "[paywall]";
-		}
+	for (let i = 0; i < content.length; i++) {	
+		if (!content[i].content && content[i].type != "image") content[i].content = "[paywall]";	
+		
+		let jsbox;
 		if (content[i].type == "js") {
-			let jsbox = make("iframe");
-			jsbox.style = "width:100%; height:0px; border-top:0px; border-bottom:0px; border-left:2px solid white; border-right:0px;";
-			jsbox.onmouseenter = function() {
-				jsbox.style.borderColor = "#e4e7e7";
-			}
-			jsbox.onmouseleave = function() {
-				jsbox.style.borderColor = "transparent";
-			}
+			jsbox = make("iframe");
+			jsbox.style = "width:100%; height:0px; border-top:0px; border-bottom:0px; border-left:2px solid white; border-right:0px; margin-bottom:20px";
+			jsbox.onmouseenter = function() { jsbox.style.borderColor = "#e4e7e7"; }
+			jsbox.onmouseleave = function() { jsbox.style.borderColor = "transparent"; }
 			jsbox.sandbox = "allow-scripts";
 			let str = `<script>window.onload = function() {
 				window.parent.postMessage({height:Math.max( document.body.scrollHeight, document.body.offsetHeight, document.body.clientHeight,
 				document.body.parentElement.scrollHeight, document.body.parentElement.offsetHeight, document.body.parentElement.clientHeight)}, '*');
 			};<` + "/" + `script>`;
 			jsbox.srcdoc = content[i].content + str;
-			jsbox.style.marginBottom = "20px";
-			elt.appendChild(jsbox);
 		} else if (content[i].type == "md") {				
-			let mdbox = make("div");
-			mdbox.innerHTML = DOMPurify.sanitize(marked.parse(content[i].content));
-			mdbox.style.marginBottom = "20px";
-			mdbox.style.whiteSpace = "initial";
-			elt.appendChild(mdbox);				
+			jsbox = make("div");
+			jsbox.innerHTML = DOMPurify.sanitize(marked.parse(content[i].content));
+			jsbox.style.marginBottom = "20px";
+			jsbox.style.whiteSpace = "initial";
 		} else if (content[i].type == "image") {
 			let imagediv = make("img");	
 			imagediv.src = content[i].content;
 			imagediv.alt = "[Broken image link]";
 			if (!content[i].content) imagediv.alt = "[paywall image link]";
 			imagediv.style.maxWidth = "100%";
-			let imageHolder = make('div');
-			imageHolder.style = "display:flex; justify-content:center; margin-bottom:20px";
-			imageHolder.appendChild(imagediv);
-			elt.appendChild(imageHolder);
+			jsbox = make('div');
+			jsbox.style = "display:flex; justify-content:center; margin-bottom:20px";
+			jsbox.appendChild(imagediv);
 		} else {
-			let textbox = make("div", content[i].content);
-			textbox.style.marginBottom = "20px";
-			elt.appendChild(textbox);
+			jsbox = make("div", content[i].content);
+			jsbox.style.marginBottom = "20px";
 		}
+		elt.appendChild(jsbox);
 	}
 }
 
@@ -1500,24 +1495,19 @@ function fillEdit(postid, officialData) {
 	if (!metaData) return false;
 	
 	D('editid').style.display = "";
-	D('creationEdit').textContent = new Date(metaData.createdts).toLocaleDateString();
+	D('creationEdit').textContent = unixToDate(metaData.createdts);
 	D('creationEdit').title = metaData.createdts;
-	if (metaData.modifiedts && metaData.createdts != metaData.modifiedts) {
-		D('modificationEdit').textContent = " (" + new Date(metaData.modifiedts).toLocaleDateString() + ")";
+	if (metaData.modifiedts && unixToDate(metaData.createdts) != unixToDate(metaData.modifiedts)) {
+		D('modificationEdit').textContent = " (" + unixToDate(metaData.modifiedts) + ")";
 		D('modificationEdit').title = metaData.modifiedts;
 	}	
 	
-	clearDOM(D('postEditor'));	
 	if (typeof metaData.content === "string") {	
+		clearDOM(D('postEditor'));	
 		let block = appendBlock();
 		block.firstChild.value = metaData.content;
-	} else if (metaData.content) {
-		for (let i = 0; i < metaData.content.length; i++) {
-			let block = appendBlock(metaData.content[i].type);
-			if (metaData.content[i].type == "image") block.firstChild.firstChild.value = metaData.content[i].content;
-			else block.firstChild.value = metaData.content[i].content;
-		}
-		
+	} else if (metaData.content) {	
+		fillEditorContent(metaData.content, D('postEditor'));		
 		if (metaData.wall) {
 			for (let i = 0; i < metaData.wall.length; i++) {
 				toggle(D('postEditor').children[metaData.wall[i]].children[1].firstElementChild);
@@ -1982,7 +1972,7 @@ function makeSubLi(userid, lastaccessedts, lastpublishedts) {
 function makeLibLi(postid, accessts) {
 	let libli = make('li');
 	libli.id = postid;
-	libli.style = "white-space:nowrap";
+	libli.style.whiteSpace = "nowrap";
 	if (!accessts) libli.style.fontWeight = "bold";	
 	libli.appendChild(fullLabel(postid, true));	
 	if (postid == readPostid) activeBar(libli);
@@ -2034,15 +2024,7 @@ function setData(type) {
 			queueDOMdisplayName(XNO.address, D('browseHeading'));
 			// ws.emit('updateDisplayName', { displayname: D('bio-name').value} );
 			
-					
-			let content = [];
-			for (let i = 0; i < D('bioBlocks').children.length; i++) {
-				if (D('bioBlocks').children[i].firstChild.value) {
-					if (D('bioBlocks').children[i].firstChild.title == "image")
-						content.push({content:D('bioBlocks').children[i].firstChild.firstChild.value, type:D('bioBlocks').children[i].firstChild.title});
-					else content.push({content:D('bioBlocks').children[i].firstChild.value, type:D('bioBlocks').children[i].firstChild.title});
-				}
-			}
+			let content = parseEditorContent(D('bioBlocks'));
 			ws.emit('updateUser', {displayname:D('bio-name').value, color:parseInt(D('colorslider').value), bio:content, sponsor_price: D('inputPrice').value });
 			closeBio();
 		}
@@ -2239,8 +2221,10 @@ function showMsg(str, bold, hold) {
 
 function unixToDate(time) {
 	let str = new Date(time);
-	if (str.getYear() == (new Date(Date.now())).getYear()) return str.toLocaleDateString().slice(0, -5); 
-	else return str.toLocaleDateString();	
+	let format = str.toLocaleDateString(undefined,{year: 'numeric', month: 'short', day: 'numeric' });
+	//if (str.getYear() == (new Date(Date.now())).getYear()) return format.slice(0, -6); 
+	//else 
+	return format;
 }
 
 function clearDOM(myNode) {	while (myNode.firstChild) { myNode.removeChild(myNode.lastChild); } }
