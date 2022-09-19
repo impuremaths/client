@@ -90,15 +90,15 @@
 							&nbsp;<button id="sponsor" onclick="sponsorHandler(this)" autocomplete="off" style="font-size:0.85em" disabled>Sponsor</button>	
 						</div>
 				
-						<div id="bioSponsor" style="display:none;">
-							<div id="theirFunName" style="margin-top:20px; margin-bottom:10px;"> - </div>					
+						<div id="bioSponsor" style="margin-top:30px; display:none;">
+							<div id="theirFunName" style="margin-bottom:10px;"> - </div>					
 							<div style="font-size:0.85em; color:#888">Unique public address</div>
 							<div class='address' id="theirAddress" style="margin:5px 10px 15px 10px;" onclick="clickCopy(this, this.textContent)"> - </div>
 							<div style="font-size:0.85em; color:#888">Minimum sponsorship for exclusive content (30 days)</div>
 							<div id="theirThreshold" style="margin:5px 10px 15px 10px;"> - </div>
 							<div style="display:flex; justify-content:space-between; align-items:baseline; max-width:400px; margin:10px auto">
 							<input id="sponsorInput" onkeyup="" onkeydown="" placeholder="0.00" onblur="prepTwoDigit(this)" style="margin-right:5px; text-align:right; flex-grow:1; flex-basis:1px; overflow:hidden; text-overflow:ellipsis;" type="number" step="0.01" min="0" autocomplete="off"> XNO							
-							<button onclick="sendMoney(this)" style="margin-left:15px; font-size:0.85em">Send</button>
+							<button id="sendButton" onclick="sendMoney(this)" autocomplete="off" style="margin-left:15px; font-size:0.85em" disabled>Send</button>
 							</div>
 						</div>
 					</div>
@@ -882,6 +882,7 @@ function queryBrowse(userid, tag) {
 		
 	D('sponsor').disabled = true;	
 	D('subscribe').disabled = true;	
+	D('sendButton').disabled = true;
 	
 	D('theirFunName').style.fontWeight = "";
 	D('theirFunName').style.color = "";	
@@ -892,9 +893,10 @@ function queryBrowse(userid, tag) {
 	D('browseHeading').style.color = "";
 	
 	if (userid) {		
-		if (XNO.address && userid != XNO.address) {
-			D('subscribe').disabled = false;	
+		if (XNO.address) {
+			D('subscribe').disabled = false;
 			D('sponsor').disabled = false;
+			if (userid != XNO.address) D('sendButton').disabled = false;
 		}		
 		if (userid == XNO.address) D('info').style.display = "";
 		D('theirFunName').style.fontWeight = "600";
@@ -903,6 +905,7 @@ function queryBrowse(userid, tag) {
 		
 		D('browseHeading').title = userid;
 		identify(D('browseHeading'), userid);
+		D('browseHeading').style.color = "";
 		fillBio(userid);
 	} else if (tag) {	
 		if (XNO.address) D('subscribe').disabled = false;
@@ -1207,6 +1210,7 @@ function receiveDOMdisplayName(userid, displayname, color) {
 		}
 	}
 	D('displayName').style.color = "";
+	D('browseHeading').style.color = "";
 	delete DOMdisplayNames[userid];
 	
 	let urluserid = new URLSearchParams(window.location.search).get('userid');
@@ -1654,7 +1658,7 @@ function cancelPost(override) {
 
 function identify(elt, userid) {
 	elt.textContent = funName(userid);
-	elt.style.color = funColor(userid);
+	elt.style.color = funColor(userid);	
 }
 
 function makeMetaLabel(userid, createdts, modifiedts) {	
@@ -1836,9 +1840,12 @@ function importSeed() {
 		
 		makeSubLi(XNO.address);
 		if (D('browseHeading').title) {
+			D('subscribe').disabled = false;
 			if (D('browseHeading').title != XNO.address) {
-				D('subscribe').disabled = false;
-				if (D('browseHeading').title.substring(0, 5) == "nano_") D('sponsor').disabled = false;
+				if (D('browseHeading').title.substring(0, 5) == "nano_") {
+					D('sponsor').disabled = false;
+					D('sendButton').disabled = false;
+				}
 			} else D('info').style.display = "";
 		}
 		
@@ -1863,6 +1870,7 @@ function clearSeed() {
 	if (D('creationEdit').title) cancelPost(true);
 	D('subscribe').disabled = true;
 	D('sponsor').disabled = true;
+	D('sendButton').disabled = true;
 	if (active('sponsor')) sponsorHandler(D('sponsor'));
 	closeAccordion(D('editPanel'));
 	D('balance').textContent = "0.00";
