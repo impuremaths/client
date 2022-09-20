@@ -792,7 +792,6 @@ function setupWebsocket(restart) {
 	ws.on('queryPostResponse', function(data) {
 		cachePost(data);
 		if (editPostid == data.postid && editPostPending) fillEdit(data.postid, true); 
-		if (readPostid == data.postid) fillPost(data.postid);
 	});
 	
 	ws.on('updatePostResponse', function(data) { 
@@ -1135,6 +1134,8 @@ function cachePost(metaData) {
 	if (metaData.prev_) postCache[metaData.postid].prev_ = metaData.prev_;
 	if (metaData.next_) postCache[metaData.postid].next_ = metaData.next_;
 	if (metaData.wall) postCache[metaData.postid].wall = metaData.wall;
+	
+	if (readPostid == metaData.postid) fillPost(metaData.postid);
 }
 
 function activeBar(elt) {
