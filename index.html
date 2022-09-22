@@ -812,6 +812,8 @@ function setupWebsocket(restart) {
 	ws.on('updateCommentResponse', function(data) {	addComment(data); });
 	
 	ws.on('queryPostChainResponse', function(data) { 
+		console.log('queryPostChainResponse');
+		console.log(data);
 		clearDOM(D('mapul'));
 		for (let x in data) {	
 			cachePost(data[x]);		
