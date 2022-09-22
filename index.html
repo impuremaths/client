@@ -603,6 +603,11 @@ async function withdraw(symbol, elt, amt, destaddr, them) {
 			console.log(sendResp);
 			flash(D('balance'), unitFromRaw(symbol, BigInt(rawFromUnit(symbol, D('balance').textContent)) - totalAmt));
 			showMsg("Sponsored \'" + them + "\' with " + amt + " " + symbol + "!");
+			
+			if (ws && ws.readyState == 1) {
+				ws.emit('sponsor', {userid:destaddr, blockid:sendResp });
+			}
+			
 			D('sponsorInput').value = "";
 			refreshData(symbol);
 		}
