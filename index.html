@@ -1133,7 +1133,7 @@ function cachePost(metaData) {
 	if (metaData.next_) postCache[metaData.postid].next_ = metaData.next_;
 	if (metaData.wall) postCache[metaData.postid].wall = metaData.wall;
 	
-	if (readPostid == metaData.postid) fillPost(metaData.postid);
+	if (readPostid == metaData.postid) fillPost(metaData.postid, true);
 }
 
 function activeBar(elt) {
@@ -1347,13 +1347,13 @@ function fullLabel(postid, library) {
 	return label;
 }
 
-function fillPost(postid) {
-	if (new URLSearchParams(window.location.search).get('postid') != postid) {		
+function fillPost(postid, cache) {
+	if (!cache && new URLSearchParams(window.location.search).get('postid') != postid) {		
 		let url = new URL(window.location);
 		url.search = new URLSearchParams({postid});
 		window.history.pushState(null, "", url);
+		document.title = postCache[postid].title + " - mktplc";
 	}
-	document.title = postCache[postid].title + " - mktplc";
 	
 	D('commentContent').style.display = 'none';
 	D('commentContent').value = "";
@@ -1450,7 +1450,7 @@ function fillContent(elt, content, wall, userid) {
 					queryBrowse(userid);
 				};	
 			} else author.textContent = "author";
-			author.textContent += "'s";		
+			queueDOMdisplayName(userid, author);
 		
 			jsbox = make("div");
 			jsbox.style.textAlign = "center";
@@ -1459,7 +1459,7 @@ function fillContent(elt, content, wall, userid) {
 			
 			jsbox.appendChild(make('span', wording + " available to "));
 			jsbox.appendChild(author);
-			jsbox.appendChild(make('span', " sponsors"));
+			jsbox.appendChild(make('span', "'s sponsors"));
 		} else if (content[i].type == "js") {
 			jsbox = make("iframe");
 			jsbox.style = "width:100%; height:0px; border-top:0px; border-bottom:0px; border-left:2px solid transparent; border-right:0px; margin-bottom:20px";
