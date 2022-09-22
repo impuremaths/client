@@ -95,7 +95,7 @@
 							<div style="font-size:0.85em; color:#888">Unique public address</div>
 							<div class='address' id="theirAddress" style="margin:5px 10px 15px 10px;" onclick="clickCopy(this, this.textContent)"> - </div>
 							<div style="font-size:0.85em; color:#888">Minimum sponsorship for exclusive content (30 days)</div>
-							<div id="theirThreshold" style="margin:5px 10px 15px 10px;"> - </div>
+							<span id="theirThreshold" style="margin:5px 0px 15px 10px;">1.00</span>&nbsp;XNO
 							<div style="display:flex; justify-content:space-between; align-items:baseline; max-width:400px; margin:10px auto">
 							<input id="sponsorInput" onkeyup="" onkeydown="" placeholder="0.00" onblur="prepTwoDigit(this)" style="margin-right:5px; text-align:right; flex-grow:1; flex-basis:1px; overflow:hidden; text-overflow:ellipsis;" type="number" step="0.01" min="0" autocomplete="off"> XNO							
 							<button id="sendButton" onclick="sendMoney(this)" autocomplete="off" style="margin-left:15px; font-size:0.85em" disabled>Send</button>
@@ -597,16 +597,17 @@ async function withdraw(symbol, elt, amt, destaddr, them) {
 	if (totalAmt > safetyMax) showMsg("Send limit for built-in wallet: " + hardMax + " XNO");
 	else if (totalAmt > balance) showMsg("Insufficient funds.");
 	else {
-		showMsg("Sponsoring \'" + them + "\'...", null, true);
+		if (totalAmt >= BigInt(rawFromUnit(symbol, D('theirThreshold').textContent))) showMsg("Sponsoring \'" + them + "\'...", null, true);
+		else showMsg("Tipping \'" + them + "\'...", null, true);
 		let sendResp = await ccc[symbol].sendTo(destaddr, totalAmt.toString());
 		if (sendResp) {
 			console.log(sendResp);
 			flash(D('balance'), unitFromRaw(symbol, BigInt(rawFromUnit(symbol, D('balance').textContent)) - totalAmt));
-			showMsg("Sponsored \'" + them + "\' with " + amt + " " + symbol + "!");
 			
-			if (ws && ws.readyState == 1) {
-				ws.emit('sponsor', {userid:destaddr, blockid:sendResp });
-			}
+			if (totalAmt >= BigInt(rawFromUnit(symbol, D('theirThreshold').textContent))) {
+				showMsg("Sponsored \'" + them + "\' with " + amt + " " + symbol + "! Sponsor-only content now available.");
+				if (ws && ws.readyState == 1) ws.emit('sponsor', {userid:destaddr, blockid:sendResp });
+			} else showMsg("Tipped \'" + them + "\' " + amt + " " + symbol + "!");
 			
 			D('sponsorInput').value = "";
 			refreshData(symbol);
@@ -757,7 +758,7 @@ function setupWebsocket(restart) {
 		clearDOM(D('library'));
 		data.sort(function(x, y) { return Math.round(x.pushedts - y.pushedts); });
 		for (let i = 0; i < data.length; i++) {
-			cachePost(data[i]);
+			cachePost(data[i], true);
 			makeLibLi(data[i].postid, data[i].lastaccessedts);
 		}
 		requestNames();
@@ -819,7 +820,7 @@ function setupWebsocket(restart) {
 	ws.on('queryPostChainResponse', function(data) { 
 		clearDOM(D('mapul'));
 		for (let x in data) {	
-			cachePost(data[x]);		
+			cachePost(data[x], true);		
 			let postli = make('li');
 			postli.style.whiteSpace = "nowrap";
 			postli.appendChild(fullLabel(data[x].postid));
@@ -886,7 +887,7 @@ function queryBrowse(userid, tag) {
 	D('theirFunName').style.color = "";	
 	D('theirFunName').textContent = "\xa0-\xa0";
 	D('theirAddress').textContent = "\xa0-\xa0";
-	D('theirThreshold').textContent = "\xa0-\xa0";
+	D('theirThreshold').textContent = "1.00";
 	
 	if (userid) {		
 		if (XNO.address) {
@@ -1115,7 +1116,7 @@ function loadPanel(type) {
 	}
 }
 
-function cachePost(metaData) {
+function cachePost(metaData, cacheOnly) {
 	if (!metaData.postid) metaData.postid = metaData.userid + "-" + metaData.createdts.toString();	
 	if (!metaData.userid) {
 		let split = metaData.postid.split("-");
@@ -1138,7 +1139,7 @@ function cachePost(metaData) {
 	if (metaData.next_) postCache[metaData.postid].next_ = metaData.next_;
 	if (metaData.wall) postCache[metaData.postid].wall = metaData.wall;
 	
-	if (readPostid == metaData.postid) fillPost(metaData.postid, true);
+	if (readPostid == metaData.postid) fillPost(metaData.postid, cacheOnly);
 }
 
 function activeBar(elt) {
@@ -1157,8 +1158,8 @@ function fillBio(userid, block) {
 		D('bio').textContent = "Full of possibilities."
 		return false;
 	}
-	if (data.sponsor_price) D('theirThreshold').textContent = data.sponsor_price + " XNO";
-	else D('theirThreshold').textContent = "1.00 XNO (default)";
+	if (data.sponsor_price) D('theirThreshold').textContent = data.sponsor_price;
+	else D('theirThreshold').textContent = "1.00";
 	if (!block) {
 		if (data.bio && data.bio.length) fillContent(D('bio'), data.bio);
 		else D('bio').textContent = "Full of possibilities."
@@ -1231,7 +1232,7 @@ function fillBrowse(data) {
 	clearDOM(D('discovery'));
 	
 	for (let i = 0; i < data.length; i++) {	
-		cachePost(data[i]);			
+		cachePost(data[i], true);			
 		let postli = make('li');
 		postli.id = data[i].postid + "-disc";
 		postli.appendChild(fullLabel(data[i].postid));
@@ -1352,8 +1353,8 @@ function fullLabel(postid, library) {
 	return label;
 }
 
-function fillPost(postid, cache) {
-	if (!cache && new URLSearchParams(window.location.search).get('postid') != postid) {		
+function fillPost(postid, cacheOnly) {
+	if (!cacheOnly && new URLSearchParams(window.location.search).get('postid') != postid) {		
 		let url = new URL(window.location);
 		url.search = new URLSearchParams({postid});
 		window.history.pushState(null, "", url);
@@ -1433,7 +1434,7 @@ function fillPost(postid, cache) {
 			addComment(metaData.comments[i]);
 		}	
 	}
-	if (!cache) ws.emit("queryPostChain", {userid:metaData.userid, createdts:metaData.createdts });
+	if (!cacheOnly) ws.emit("queryPostChain", {userid:metaData.userid, createdts:metaData.createdts });
 }
 
 function fillContent(elt, content, wall, userid) {
