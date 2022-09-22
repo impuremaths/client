@@ -812,8 +812,6 @@ function setupWebsocket(restart) {
 	ws.on('updateCommentResponse', function(data) {	addComment(data); });
 	
 	ws.on('queryPostChainResponse', function(data) { 
-		console.log('queryPostChainResponse');
-		console.log(data);
 		clearDOM(D('mapul'));
 		for (let x in data) {	
 			cachePost(data[x]);		
@@ -1430,7 +1428,7 @@ function fillPost(postid, cache) {
 			addComment(metaData.comments[i]);
 		}	
 	}
-	ws.emit("queryPostChain", {userid:metaData.userid, createdts:metaData.createdts });
+	if (!cache) ws.emit("queryPostChain", {userid:metaData.userid, createdts:metaData.createdts });
 }
 
 function fillContent(elt, content, wall, userid) {
