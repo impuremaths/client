@@ -63,7 +63,7 @@
 	
 	<div id="secondDiv" class="secondDiv">
 	
-		<div style="margin-top:25px; margin-bottom:50px; display:flex" >
+		<div style="margin-top:40px; padding-top:15px; padding-bottom:10px; margin-bottom:40px; display:flex; position:sticky; top:-1px; background-color:white; opacity:0.93; z-index:2" >
 			<button id="browseButton" style="min-width:fit-content" class="left active" onclick="loadPanel('browse')">Browse</button><button id="readButton" style="min-width:fit-content" class="center" onclick="loadPanel('read')" autocomplete="off">Read</button><button id="postButton" style="min-width:fit-content" class="right" onclick="loadPanel('post')" autocomplete="off">Write</button>
 		
 			<div id="popularTags" class="hideScroll" style="margin-left:40px; overflow:auto; display:flex; align-items:center; font-size:0.85em"></div>
@@ -95,7 +95,7 @@
 							<div style="font-size:0.85em; color:#888">Unique public address</div>
 							<div class='address' id="theirAddress" style="margin:5px 10px 15px 10px;" onclick="clickCopy(this, this.textContent)"> - </div>
 							<div style="font-size:0.85em; color:#888">Minimum sponsorship for exclusive content (30 days)</div>
-							<span id="theirThreshold" style="margin:5px 0px 15px 10px;">1.00</span>&nbsp;XNO
+							<span id="theirThreshold" style="margin:5px 0px 15px 10px;">&nbsp;-&nbsp;</span>&nbsp;XNO
 							<div style="display:flex; justify-content:space-between; align-items:baseline; max-width:400px; margin:10px auto">
 							<input id="sponsorInput" onkeyup="" onkeydown="" placeholder="0.00" onblur="prepTwoDigit(this)" style="margin-right:5px; text-align:right; flex-grow:1; flex-basis:1px; overflow:hidden; text-overflow:ellipsis;" type="number" step="0.01" min="0" autocomplete="off"> XNO							
 							<button id="sendButton" onclick="sendMoney(this)" autocomplete="off" style="margin-left:15px; font-size:0.85em" disabled>Send</button>
@@ -109,7 +109,7 @@
 						<input class="colorslider" id="colorslider" type="range" min="0" max="360" step="1" oninput="color(this)" value="0" autocomplete="off"/>														
 														
 						<div id="bioBlocks" style="margin-top:40px; margin-bottom:40px"></div>
-						<div style="font-size:0.85em; margin-top:20px;">Minimum sponsorship for exclusive content (30 days):</div>
+						<div style="font-size:0.85em; margin-top:20px;">Minimum sponsorship for exclusive content (30 days)</div>
 						<div style="display:flex; justify-content:right; margin-top:5px; align-items:baseline">
 						<input id="inputPrice" onkeyup="" onkeydown="" autocomplete="off" placeholder="0.00" onblur="prepTwoDigit(this)" style="margin-left:20px; margin-right:5px; text-align:right; flex-grow:1; flex-basis:1px; overflow:hidden; text-overflow:ellipsis;" type="number" step="0.01" min="0"><span style="font-size:0.9em">XNO</span>
 						</div>
@@ -597,14 +597,14 @@ async function withdraw(symbol, elt, amt, destaddr, them) {
 	if (totalAmt > safetyMax) showMsg("Send limit for built-in wallet: " + hardMax + " XNO");
 	else if (totalAmt > balance) showMsg("Insufficient funds.");
 	else {
-		if (totalAmt >= BigInt(rawFromUnit(symbol, D('theirThreshold').textContent))) showMsg("Sponsoring \'" + them + "\'...", null, true);
+		if (D('theirThreshold').textContent != "\xa0-\xa0" && totalAmt >= BigInt(rawFromUnit(symbol, D('theirThreshold').textContent))) showMsg("Sponsoring \'" + them + "\'...", null, true);
 		else showMsg("Tipping \'" + them + "\'...", null, true);
 		let sendResp = await ccc[symbol].sendTo(destaddr, totalAmt.toString());
 		if (sendResp) {
 			console.log(sendResp);
 			flash(D('balance'), unitFromRaw(symbol, BigInt(rawFromUnit(symbol, D('balance').textContent)) - totalAmt));
 			
-			if (totalAmt >= BigInt(rawFromUnit(symbol, D('theirThreshold').textContent))) {
+			if (D('theirThreshold').textContent != "\xa0-\xa0" && totalAmt >= BigInt(rawFromUnit(symbol, D('theirThreshold').textContent))) {
 				showMsg("Sponsored \'" + them + "\' with " + amt + " " + symbol + "! Sponsor-only content now available.");
 				if (ws && ws.readyState == 1) ws.emit('sponsor', {userid:destaddr, blockid:sendResp });
 			} else showMsg("Tipped \'" + them + "\' " + amt + " " + symbol + "!");
@@ -746,6 +746,7 @@ function setupWebsocket(restart) {
 		clearDOM(D('subscriptions'));
 		if (XNO.address) makeSubLi(XNO.address);
 		if (data.edges) {
+			console.log(data.edges);
 			for (let i = 0; i < data.edges.length; i++) {
 				makeSubLi(data.edges[i].userid, data.edges[i].lastaccessedts, data.edges[i].lastpublishedts);
 			}
@@ -887,7 +888,7 @@ function queryBrowse(userid, tag) {
 	D('theirFunName').style.color = "";	
 	D('theirFunName').textContent = "\xa0-\xa0";
 	D('theirAddress').textContent = "\xa0-\xa0";
-	D('theirThreshold').textContent = "1.00";
+	D('theirThreshold').textContent = "\xa0-\xa0";
 	
 	if (userid) {		
 		if (XNO.address) {
@@ -911,7 +912,7 @@ function queryBrowse(userid, tag) {
 	} else {	
 		D('browseHeading').title = "";
 		D('browseHeading').textContent = "Recent";
-		D('bio').textContent = "The firehose (trickle) of recent posts."
+		D('bio').textContent = "The trickle of recent posts."
 	}
 	
 	D('browseHeading').onclick = function() { queryBrowse(userid, tag); };
@@ -2103,7 +2104,7 @@ function loadURL() {
 	let tag = new URLSearchParams(window.location.search).get('tag');
 	let userid = new URLSearchParams(window.location.search).get('userid');
 	if (postid) {
-		if (ws && ws.readyState == 1 && !D('browseHeading').textContent) queryBrowse();
+		if (!D('browseHeading').textContent) queryBrowse();
 		if (postCache[postid]) fillPost(postid);
 		else readPostid = postid;
 		if (!postCache[postid] || !postCache[postid].comments) queryPost(postid);
