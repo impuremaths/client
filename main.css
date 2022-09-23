@@ -48,7 +48,8 @@ body {
 }
 
 .secondDiv {
-	padding:30px;
+	position:relative;
+	padding:0px 30px 30px 30px;
 	padding-left:50px;
 	overflow:auto; 
 	flex-grow:1;
