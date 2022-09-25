@@ -148,7 +148,7 @@
 						
 						
 				<div style="margin-top:40px; display:flex; justify-content:space-between; flex-grow:1">
-					<input placeHolder="Previous post (link)..." id="set-prev" autocomplete="off"
+					<input placeHolder="Previous post link (URL)..." id="set-prev" autocomplete="off"
 						   style="padding-right:30px; flex-grow:1; width:1px" type="text" autocapitalize="off" onkeyup="if (event.keyCode == 27) this.value = ''; checkTitle(this);" oninput="checkTitle(this);">
 					<button tabindex="-1" class="close-icon" onclick="closeCopy(this.previousElementSibling)"></button>
 				</div>
@@ -159,7 +159,7 @@
 				</div>
 				
 				<div style="margin-top:15px; display:flex; justify-content:space-between; flex-grow:1">
-					<input placeHolder="Next post (link)..." id="set-next" autocomplete="off"
+					<input placeHolder="Next post link (URL)..." id="set-next" autocomplete="off"
 						   style="padding-right:30px; flex-grow:1; width:1px" type="text" autocapitalize="off" onkeyup="if (event.keyCode == 27) this.value = ''; checkTitle(this);"oninput="checkTitle(this);">
 					<button tabindex="-1" class="close-icon" onclick="closeCopy(this.previousElementSibling)"></button>
 				</div>
@@ -990,9 +990,9 @@ function publish() {
 	for (let i = 0; i < D('editTags').children.length; i++) {	
 		tags.push(D('editTags').children[i].textContent);
 	}
-	console.log({visibility:"public", wall:parseEditorWall(D('postEditor')), content:parseEditorContent(D('postEditor')), title:D('postTitle').value.trim(), tags,
+	console.log({wall:parseEditorWall(D('postEditor')), content:parseEditorContent(D('postEditor')), title:D('postTitle').value.trim(), tags,
 							prev_: prev, next_: next, recip_prev: active('recip-prev'), recip_next: active('recip-next'), createdts: parseInt(D('creationEdit').title)});
-	ws.emit('updatePost', {visibility:"public", wall:parseEditorWall(D('postEditor')), content:parseEditorContent(D('postEditor')), title:D('postTitle').value.trim(), tags,
+	ws.emit('updatePost', {wall:parseEditorWall(D('postEditor')), content:parseEditorContent(D('postEditor')), title:D('postTitle').value.trim(), tags,
 							prev_: prev, next_: next, recip_prev: active('recip-prev'), recip_next: active('recip-next'), createdts: parseInt(D('creationEdit').title)});
 }
 
@@ -1613,7 +1613,7 @@ function appendBlock(type, previous, parent) {
 	else if (type == "image") {
 		textbox = make('div');		
 		textbox.style = "display:flex; margin-top:20px;";
-		textbox.innerHTML = `<input placeHolder="Image URL..." autocomplete="off" style="padding-right:30px; flex-grow:1; width:1px" type="text" autocapitalize="off" onkeyup="if (event.keyCode == 27) this.value = '';"><button  tabindex="-1" class="close-icon" onclick="closeCopy(this.previousElementSibling)">`;
+		textbox.innerHTML = `<input placeHolder="Image link (URL)..." autocomplete="off" style="padding-right:30px; flex-grow:1; width:1px" type="text" autocapitalize="off" onkeyup="if (event.keyCode == 27) this.value = '';"><button  tabindex="-1" class="close-icon" onclick="closeCopy(this.previousElementSibling)">`;
 		textbox.innerHTML += "</button>";
 	}
 	textbox.title = type;
