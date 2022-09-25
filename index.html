@@ -752,15 +752,12 @@ function setupWebsocket(restart) {
 			}
 		}		
 		receiveDOMdisplayName(data.userid, data.displayname, data.color);
-		ws.emit('queryLibrary');
-	});
-	
-	ws.on('queryLibraryResponse', function(data) {
+		
 		clearDOM(D('library'));
-		data.sort(function(x, y) { return Math.round(x.pushedts - y.pushedts); });
-		for (let i = 0; i < data.length; i++) {
-			cachePost(data[i], true);
-			makeLibLi(data[i].postid, data[i].lastaccessedts);
+		data.library.sort(function(x, y) { return Math.round(x.pushedts - y.pushedts); });
+		for (let i = 0; i < data.library.length; i++) {
+			cachePost(data.library[i], true);
+			makeLibLi(data.library[i].postid, data.library[i].lastaccessedts);
 		}
 		requestNames();
 	});
