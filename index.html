@@ -990,7 +990,9 @@ function publish() {
 	for (let i = 0; i < D('editTags').children.length; i++) {	
 		tags.push(D('editTags').children[i].textContent);
 	}
-	ws.emit('updatePost', {wall:parseEditorWall(D('bioBlocks')), content:parseEditorContent(D('bioBlocks')), title:D('postTitle').value.trim(), tags,
+	console.log({visibility:"public", wall:parseEditorWall(D('postEditor')), content:parseEditorContent(D('postEditor')), title:D('postTitle').value.trim(), tags,
+							prev_: prev, next_: next, recip_prev: active('recip-prev'), recip_next: active('recip-next'), createdts: parseInt(D('creationEdit').title)});
+	ws.emit('updatePost', {visibility:"public", wall:parseEditorWall(D('postEditor')), content:parseEditorContent(D('postEditor')), title:D('postTitle').value.trim(), tags,
 							prev_: prev, next_: next, recip_prev: active('recip-prev'), recip_next: active('recip-next'), createdts: parseInt(D('creationEdit').title)});
 }
 
@@ -2104,7 +2106,7 @@ function loadURL() {
 	let tag = new URLSearchParams(window.location.search).get('tag');
 	let userid = new URLSearchParams(window.location.search).get('userid');
 	if (postid) {
-		if (!D('browseHeading').textContent) queryBrowse();
+		if (ws && ws.readyState == 1 && !D('browseHeading').textContent) queryBrowse();
 		if (postCache[postid]) fillPost(postid);
 		else readPostid = postid;
 		if (!postCache[postid] || !postCache[postid].comments) queryPost(postid);
