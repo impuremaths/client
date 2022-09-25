@@ -126,7 +126,7 @@
 			<div style="flex-basis:1px; flex-grow:2; margin-right:50px; position:relative">
 			
 				<div style="display:flex; justify-content:center; position:absolute; right:0px; top:-15px;">
-					<button id="editButton" class="left active" onclick="showEditor()">Editor</button><button id="previewButton" class="right" style="margin-left:5px" onclick="showPreview()">Preview</button>
+					<button id="editButton" class="left active" onclick="showEditor()">Editor</button><button id="previewButton" class="right" style="margin-left:4px" onclick="showPreview()">Preview</button>
 				</div>
 				
 				<div id="postEditor" style="margin-bottom:40px; margin-top:30px"></div>
@@ -1019,7 +1019,7 @@ function checkTitle(elt) {
 }
 
 function commentKeypress() {
-	if (event.keyCode == 27 && !D('commentContent').value.length) {
+	if (event.keyCode == 27 && (!D('commentContent').value.length || confirm("Delete comment?"))) {
 		D('commentContent').value = "";
 		D('commentContent').style.display = "none";
 		D("comment").textContent = "Comment";
@@ -1051,8 +1051,7 @@ function showEditor() {
 
 function hasDraft() {
 	for (let i = 0; i < D('postEditor').children.length; i++) {
-		if (D('postEditor').children[i].firstChild.title == "image") return true;
-		else if (D('postEditor').children[i].firstChild.value) return true;
+		if (D('postEditor').children[i].firstChild.value) return true;
 	}
 	return false;
 }
@@ -1062,8 +1061,7 @@ function parseEditorWall(elt) {
 	let wall = [];
 	let k = 0;
 	for (let i = 0; i < elt.children.length; i++) {
-		if (elt.children[i].firstChild.title != "image" && elt.children[i].firstChild.value ||
-			elt.children[i].firstChild.title == "image" && elt.children[i].firstChild.firstChild.value) {
+		if (elt.children[i].firstChild.value) {
 			if (active(elt.children[i].children[1].firstChild)) wall.push(k);
 			k++;
 		}
@@ -1074,9 +1072,7 @@ function parseEditorWall(elt) {
 function parseEditorContent(elt) {
 	let content = [];
 	for (let i = 0; i < elt.children.length; i++) {
-			if (elt.children[i].firstChild.title == "image") {
-				if (elt.children[i].firstChild.firstChild.value) content.push({content:elt.children[i].firstChild.firstChild.value, type:elt.children[i].firstChild.title});
-			} else if (elt.children[i].firstChild.value) content.push({content:elt.children[i].firstChild.value, type:elt.children[i].firstChild.title});
+		if (elt.children[i].firstChild.value) content.push({content:elt.children[i].firstChild.value, type:elt.children[i].firstChild.title});
 	}	
 	return content;
 }
@@ -1174,8 +1170,7 @@ function fillEditorContent(data, elt) {
 	if (data && data.length) {
 		for (let i = 0; i < data.length; i++) {
 			let block = appendBlock(data[i].type, null, elt);
-			if (data[i].type == "image") block.firstChild.firstChild.value = data[i].content;
-			else block.firstChild.value = data[i].content;
+			block.firstChild.value = data[i].content;
 		}
 	} else appendBlock("text", null, elt);
 }
@@ -1596,24 +1591,7 @@ function appendBlock(type, previous, parent) {
 	let block = make('div');
 	block.tabIndex = "-1";
 	let textbox = make('textarea');
-	textbox.style = "height:150px; width:100%";
-	
-	if (!type) type = "text";
-	if (type == "text") {
-		textbox.style.fontFamily = "Segoe UI, Source Sans Pro, Roboto, Helvetica, sans-serif";
-		textbox.placeholder = "Simple text...";
-	} else if (type == "js") {
-		textbox.placeholder = "HTML (JS scripts enabled)...";
-		addTabbing(textbox);
-		textbox.value = "<div></div>\n\n" + "<script>\n\n</" + "script>";
-	} else if (type == "md") textbox.placeholder = "Markdown...";
-	else if (type == "image") {
-		textbox = make('div');		
-		textbox.style = "display:flex; margin-top:20px;";
-		textbox.innerHTML = `<input placeHolder="Image link (URL)..." autocomplete="off" style="padding-right:30px; flex-grow:1; width:1px" type="text" autocapitalize="off" onkeyup="if (event.keyCode == 27) this.value = '';"><button  tabindex="-1" class="close-icon" onclick="closeCopy(this.previousElementSibling)">`;
-		textbox.innerHTML += "</button>";
-	}
-	textbox.title = type;
+	textbox.style = "height:150px; width:100%; tab-size:4";	
 	block.appendChild(textbox);	
 	
 	let sponsBut = make('button', "Sponsors Only");
@@ -1622,38 +1600,101 @@ function appendBlock(type, previous, parent) {
 	sponsBut.tabIndex = "-1";
 	sponsBut.onclick = function() { toggle(this); }
 	
-	let textBut = make('button', "Add Text");
+	let buttonPanel = make('div');
+	buttonPanel.style = "display:flex; justify-content:right";
+	
+	let textBut = make('button', "Text");
 	textBut.classList.add("left");
-	textBut.onclick = function() { appendBlock("text", block, parent); }
+	textBut.onclick = function() {	
+		textbox.title = "text";
+		textbox.placeholder = "Simple text...";
+		textbox.spellcheck = true;
+		textbox.style.fontFamily = "Segoe UI, Source Sans Pro, Roboto, Helvetica, sans-serif";
+		if (textbox.value == "<div></div>\n\n" + "<script>\n\n</" + "script>") textbox.value = "";
+		delete textbox.onkeydown;
+		for (let i = 0; i < buttonPanel.children.length; i++) {
+			buttonPanel.children[i].classList.remove("active");
+		}
+		textBut.classList.add("active");
+		textbox.focus();		
+	}
 	
 	let mdBut = make('button', "Markdown");
 	mdBut.classList.add("center");
 	mdBut.style.marginRight = "0px";
-	mdBut.onclick = function() { appendBlock("md", block, parent); }
+	mdBut.onclick = function() { 
+		textbox.title = "md";
+		textbox.placeholder = "Markdown...";
+		textbox.spellcheck = true;
+		textbox.style.fontFamily = "Segoe UI, Source Sans Pro, Roboto, Helvetica, sans-serif";
+		if (textbox.value == "<div></div>\n\n" + "<script>\n\n</" + "script>") textbox.value = "";
+		delete textbox.onkeydown;
+		for (let i = 0; i < buttonPanel.children.length; i++) {
+			buttonPanel.children[i].classList.remove("active");
+		}
+		mdBut.classList.add("active");
+		textbox.focus();
+	}
 	
 	let jsBut = make('button', "HTML/JS");
 	jsBut.classList.add("center");
-	jsBut.style.marginRight = "0px";
-	jsBut.onclick = function() { appendBlock("js", block, parent) };
+	jsBut.onclick = function() { 	
+		textbox.title = "js";
+		textbox.placeholder = "HTML (JS scripts enabled)...";
+		textbox.spellcheck = false;
+		textbox.style.fontFamily = "";
+		if (!textbox.value) textbox.value = "<div></div>\n\n" + "<script>\n\n</" + "script>";
+		addTabbing(textbox);
+		for (let i = 0; i < buttonPanel.children.length; i++) {
+			buttonPanel.children[i].classList.remove("active");
+		}
+		jsBut.classList.add("active");
+		textbox.focus();
+	};
 	
 	let imageBut = make('button', "Image");
-	imageBut.classList.add("center");
-	imageBut.onclick = function() { appendBlock("image", block, parent) };
+	imageBut.classList.add("right");
+	imageBut.onclick = function() {
+		textbox.title = "image";
+		textbox.placeholder = "Image link (URL)...";
+		textbox.spellcheck = false;
+		textbox.style.fontFamily = "";
+		if (textbox.value == "<div></div>\n\n" + "<script>\n\n</" + "script>") textbox.value = "";
+		delete textbox.onkeydown;
+		for (let i = 0; i < buttonPanel.children.length; i++) {
+			buttonPanel.children[i].classList.remove("active");
+		}
+		imageBut.classList.add("active");
+		textbox.focus();
+	};
 	
 	let delBut = make('button', "✕");
-	delBut.classList.add("right");
-	delBut.onclick = function() {
-		if (parent.children.length > 1) parent.removeChild(block);
-		else alert("At least one element required. Add a replacement first.");
+	delBut.style.marginLeft = "15px";
+	delBut.classList.add("left");
+	delBut.onclick = function() { 
+		if (!textbox.value || confirm("Delete element?")) {
+			parent.removeChild(block); 		
+			if (parent.children.length == 1) parent.children[0].lastElementChild.lastElementChild.lastElementChild.previousElementSibling.disabled = true;
+		}
 	};
+	
+	let addBut = make('button', "＋");
+	addBut.style.marginLeft = "4px";
+	addBut.classList.add("right");
+	addBut.onclick = function() { appendBlock("text", block, parent) };
 
-	let buttonPanel = make('div');
-	buttonPanel.style = "display:flex; justify-content:right";
 	buttonPanel.appendChild(textBut);
 	buttonPanel.appendChild(mdBut);
 	buttonPanel.appendChild(jsBut);
 	buttonPanel.appendChild(imageBut);
 	buttonPanel.appendChild(delBut);
+	buttonPanel.appendChild(addBut);
+	
+	if (!type) type = "text";
+	if (type == "text") textBut.click();
+	else if (type == "js") jsBut.click();
+	else if (type == "md") mdBut.click();
+	else if (type == "image") imageBut.click();
 	
 	let buttonParent = make('div');
 	buttonParent.style = "margin-top:10px; margin-bottom:20px; display:flex; justify-content:space-between";
@@ -1667,6 +1708,10 @@ function appendBlock(type, previous, parent) {
 		else previous.parentNode.appendChild(block);
 	} else parent.appendChild(block);	
 	
+	if (parent.children.length == 1) delBut.disabled = true;
+	else for (let i = 0; i < parent.children.length; i++) {
+		parent.children[i].lastElementChild.lastElementChild.lastElementChild.previousElementSibling.disabled = false;
+	}
 	for (let i = 0; i < buttonPanel.children.length; i++) {
 		buttonPanel.children[i].tabIndex = -1;
 	}
@@ -1754,7 +1799,7 @@ function addComment(commentData) {
 		editPanel.style = "margin-bottom:5px; margin-top:10px; width:100%; display:none; font-size:0.9em";	
 		editPanel.style.fontFamily = "Segoe UI, Source Sans Pro, Roboto, Helvetica, sans-serif";
 		editPanel.oninput = function() {
-			if (editPanel.value) editBut.textContent = " • Send Edit";
+			if (editPanel.value) editBut.textContent = " • Publish Edit";
 			else editBut.textContent = " • Cancel";
 		};
 		editPanel.onkeyup = function() {
@@ -1810,7 +1855,7 @@ function addComment(commentData) {
 			else repBut.textContent = "Cancel";
 		};
 		repPanel.onkeyup = function() {
-			if (event.keyCode == 27 && !repPanel.value.length) {
+			if (event.keyCode == 27 && (!repPanel.value.length || confirm("Delete reply?"))) {
 				repPanel.value = "";
 				repPanel.style.display = "none";
 				repBut.textContent = "Reply";
@@ -2384,8 +2429,6 @@ function timeSince(date) {
 }
 
 function addTabbing(elt) {
-	elt.style.tabSize = "4";
-	elt.spellcheck = false;
     elt.onkeydown = function(evt) {
         let text = elt.value;
         let sel = elt.selectionStart;
