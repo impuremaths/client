@@ -683,7 +683,8 @@ const adj = ["Disillusioned", "Nihilistic", "Disenchanted", "Embittered", "World
 const animals = ["Puppy", "Kitten", "Bunny", "Hamster", "Panda", "Otter", "Hedgehog", "Penguin", "Squirrel", "Turtle", "Koala", "Hatchling", "Kit", "Joey", "Fledgling", 
 					"Fawn", "Foal", "Calf", "Cub", "Colt", "Piglet", "Eaglet", "Owlet"];
 
-var serverURL = 'wss://impuremaths.herokuapp.com';
+// var serverURL = 'wss://impuremaths.herokuapp.com';  // dev
+var serverURL = 'https://busy-teal-fly-wig.cyclic.app'  // prod
 var ws = new WebSocket(serverURL);
 setupWebsocket();
 
