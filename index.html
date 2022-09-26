@@ -1465,8 +1465,11 @@ function fillPost(postid, cacheOnly) {
 		loadPanel('read');
 		ws.emit("queryPostChain", {userid, createdts});
 	} else {	
-		if (postCache[readPostid]) document.title = postCache[readPostid].title + " - mktplc";
-		else document.title = "Read - mktplc";
+		let urlpostid = new URLSearchParams(window.location.search).get('postid');
+		if (urlpostid == readPostid) {
+			if (postCache[readPostid]) document.title = postCache[readPostid].title + " - mktplc";
+			else document.title = "Read - mktplc";
+		}
 	}
 }
 
