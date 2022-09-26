@@ -800,9 +800,8 @@ function setupWebsocket(restart) {
 	});
 	
 	ws.on('updatePostResponse', function(data) { 
-		cachePost(data);		
-		loadPanel('read');
-		ws.emit("queryPostChain", {userid, createdts});
+		cachePost(data);
+		fillPost(data.postid);
 		cancelPost(true);
 	});
 	
