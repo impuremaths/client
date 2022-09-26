@@ -800,12 +800,10 @@ function setupWebsocket(restart) {
 	});
 	
 	ws.on('updatePostResponse', function(data) { 
-		cachePost(data, true);
-		if (data.errMsg) console.log(data);
-		else {
-			fillPost(data.postid);
-			cancelPost(true);
-		}
+		cachePost(data);		
+		loadPanel('read');
+		ws.emit("queryPostChain", {userid, createdts});
+		cancelPost(true);
 	});
 	
 	ws.on('subscribeResponse', function(data) {	console.log(data); });
@@ -1144,7 +1142,7 @@ function loadPanel(type, manual, holdHistory) {
 	D(type + "Button").classList.add('active');
 }
 
-function cachePost(metaData, loadToo) {
+function cachePost(metaData) {
 	if (!metaData.postid) metaData.postid = metaData.userid + "-" + metaData.createdts.toString();	
 	if (!metaData.userid) {
 		let split = metaData.postid.split("-");
@@ -1167,7 +1165,7 @@ function cachePost(metaData, loadToo) {
 	if (metaData.next_) postCache[metaData.postid].next_ = metaData.next_;
 	if (metaData.wall) postCache[metaData.postid].wall = metaData.wall;
 	
-	if (readPostid == metaData.postid) fillPost(metaData.postid, !loadToo);
+	if (readPostid == metaData.postid) fillPost(metaData.postid, true);
 }
 
 function activeBar(elt) {
