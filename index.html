@@ -816,13 +816,12 @@ function setupWebsocket(restart) {
 	
 	ws.on('queryPostChainResponse', function(data) { 
 		clearDOM(D('mapul'));
-		for (let x in data) {	
-			cachePost(data[x]);		
-			let postli = make('li');
-			postli.style.whiteSpace = "nowrap";
-			postli.appendChild(fullLabel(data[x].postid));
-			if (readPostid == data[x].postid) activeBar(postli);
-			D('mapul').appendChild(postli);	
+		let chain = [];
+		for (let x in data) {
+			chain.push(data[x].userid + "-" + data[x].createdts.toString());
+		}
+		for (let x in data) {
+			cachePost(data[x], chain);
 		}
 		requestNames();
 	});
@@ -1141,7 +1140,7 @@ function loadPanel(type, manual, holdHistory) {
 	D(type + "Button").classList.add('active');
 }
 
-function cachePost(metaData) {
+function cachePost(metaData, chain) {
 	if (!metaData.postid) metaData.postid = metaData.userid + "-" + metaData.createdts.toString();	
 	if (!metaData.userid) {
 		let split = metaData.postid.split("-");
@@ -1150,19 +1149,21 @@ function cachePost(metaData) {
 	}
 	
 	if (!postCache[metaData.postid]) postCache[metaData.postid] = {};
+	let cacheData = postCache[metaData.postid];
 
-	postCache[metaData.postid].title = metaData.title;
-	postCache[metaData.postid].userid = metaData.userid;
-	postCache[metaData.postid].createdts = metaData.createdts;
-	postCache[metaData.postid].postid = metaData.postid;
+	cacheData.title = metaData.title;
+	cacheData.userid = metaData.userid;
+	cacheData.createdts = metaData.createdts;
+	cacheData.postid = metaData.postid;
 
-	if (metaData.modifiedts) postCache[metaData.postid].modifiedts = metaData.modifiedts;
-	if (metaData.content) postCache[metaData.postid].content = metaData.content;
-	if (metaData.tags) postCache[metaData.postid].tags = metaData.tags;
-	if (metaData.comments) postCache[metaData.postid].comments = metaData.comments;
-	if (metaData.prev_) postCache[metaData.postid].prev_ = metaData.prev_;
-	if (metaData.next_) postCache[metaData.postid].next_ = metaData.next_;
-	if (metaData.wall) postCache[metaData.postid].wall = metaData.wall;
+	if (metaData.modifiedts) cacheData.modifiedts = metaData.modifiedts;
+	if (metaData.content) cacheData.content = metaData.content;
+	if (metaData.tags) cacheData.tags = metaData.tags;
+	if (metaData.comments) cacheData.comments = metaData.comments;
+	if (metaData.prev_) cacheData.prev_ = metaData.prev_;
+	if (metaData.next_) cacheData.next_ = metaData.next_;
+	if (metaData.wall) cacheData.wall = metaData.wall;	
+	if (chain) cacheData.chain = chain;
 	
 	if (readPostid == metaData.postid) fillPost(metaData.postid, true);
 }
@@ -1414,6 +1415,7 @@ function fillPost(postid, cacheOnly) {
 	}	
 	if (XNO.address) D("comment").disabled = false;
 	clearDOM(D('readComments'));
+	clearDOM(D('mapul'));
 	
 	let metaData = postCache[postid];
 	if (metaData) {
@@ -1458,6 +1460,16 @@ function fillPost(postid, cacheOnly) {
 			for (let i = 0; i < metaData.comments.length; i++) {
 				addComment(metaData.comments[i]);
 			}	
+		}
+		
+		if (metaData.chain) {
+			for (let i = 0; i < metaData.chain.length; i++) {				
+				let postli = make('li');
+				postli.style.whiteSpace = "nowrap";
+				postli.appendChild(fullLabel(metaData.chain[i]));
+				if (readPostid == metaData.chain[i]) activeBar(postli);
+				D('mapul').appendChild(postli);
+			}
 		}
 	}
 	
