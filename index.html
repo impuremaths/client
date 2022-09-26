@@ -64,7 +64,7 @@
 	<div id="secondDiv" class="secondDiv">
 	
 		<div style="margin-top:25px; padding-top:15px; padding-bottom:10px; margin-bottom:40px; display:flex; position:sticky; top:-1px; background-color:white; opacity:0.93; z-index:2" >
-			<button id="browseButton" style="min-width:fit-content" class="left active" onclick="loadPanel('browse')">Browse</button><button id="readButton" style="min-width:fit-content" class="center" onclick="loadPanel('read')" autocomplete="off">Read</button><button id="postButton" style="min-width:fit-content" class="right" onclick="loadPanel('post')" autocomplete="off">Write</button>
+			<button id="browseButton" style="min-width:fit-content" class="left active" onclick="loadPanel('browse', true)">Browse</button><button id="readButton" style="min-width:fit-content" class="center" onclick="loadPanel('read', true)" autocomplete="off">Read</button><button id="postButton" style="min-width:fit-content" class="right" onclick="loadPanel('post', true)" autocomplete="off">Write</button>
 		
 			<div id="popularTags" class="hideScroll" style="margin-left:40px; overflow:auto; display:flex; align-items:center; font-size:0.85em"></div>
 		</div>
@@ -663,6 +663,9 @@ var readPostContent = "";
 var editPostid = "";
 var editPostContent = "";
 var editPostPending = false;
+var floatState = false;
+var backList = [];
+var browseURL;
 
 var DOMdisplayNames = {};
 
@@ -756,7 +759,7 @@ function setupWebsocket(restart) {
 		clearDOM(D('library'));
 		data.library.sort(function(x, y) { return Math.round(x.pushedts - y.pushedts); });
 		for (let i = 0; i < data.library.length; i++) {
-			cachePost(data.library[i], true);
+			cachePost(data.library[i]);
 			makeLibLi(data.library[i].postid, data.library[i].lastaccessedts);
 		}
 		requestNames();
@@ -769,16 +772,16 @@ function setupWebsocket(restart) {
 	});
 	
 	ws.on('queryPostsRecentResponse', function(data) {
-		fillBrowse(data);
+		fillBrowseList(data);
 	});
 	
 	ws.on('queryTagResponse', function (data) { 
-		fillBrowse(data); 		
+		fillBrowseList(data); 		
 	});	
 	
 	ws.on('queryPostsFromUser', function (data) {
 		let update = (!userCache[data.user.userid] || JSON.stringify(userCache[data.user.userid].content) != JSON.stringify(data.user.content));
-		fillBrowse(data.posts);
+		fillBrowseList(data.posts);
 		if (data.user.userid) {
 			userCache[data.user.userid] = data.user;
 			fillBio(data.user.userid, !update);
@@ -797,11 +800,10 @@ function setupWebsocket(restart) {
 	});
 	
 	ws.on('updatePostResponse', function(data) { 
-		cachePost(data);
+		cachePost(data, true);
 		if (data.errMsg) console.log(data);
 		else {
 			fillPost(data.postid);
-			loadPanel('read');
 			cancelPost(true);
 		}
 	});
@@ -818,7 +820,7 @@ function setupWebsocket(restart) {
 	ws.on('queryPostChainResponse', function(data) { 
 		clearDOM(D('mapul'));
 		for (let x in data) {	
-			cachePost(data[x], true);		
+			cachePost(data[x]);		
 			let postli = make('li');
 			postli.style.whiteSpace = "nowrap";
 			postli.appendChild(fullLabel(data[x].postid));
@@ -851,30 +853,7 @@ function setupWebsocket(restart) {
 
 // Main panel UI interaction handlers ///////////////////////////////////////////////////////////////////////
 
-function queryBrowse(userid, tag) {
-	let urltag = new URLSearchParams(window.location.search).get('tag');
-	let urluserid = new URLSearchParams(window.location.search).get('userid');
-	let url = new URL(window.location);
-	if (userid) {	
-		if (urluserid != userid) {		
-			url.search = new URLSearchParams({userid});
-			window.history.pushState(null, "", url);
-		}
-		document.title = funName(userid) + " - mktplc";
-	} else if (tag) {
-		if (urltag != tag) {
-			url.search = new URLSearchParams({tag});
-			window.history.pushState(null, "", url);	
-		}
-		document.title = tag + " - mktplc";
-	} else {
-		if (urltag || urluserid || (new URLSearchParams(window.location.search).get('postid') && D('browseHeading').textContent)) {
-			url.search = new URLSearchParams();
-			window.history.pushState(null, "", url);
-			document.title = "mktplc";
-		}
-	}
-	
+function queryBrowse(userid, tag, cacheOnly) {
 	closeBio();
 	D('info').style.display = "none";
 		
@@ -889,8 +868,8 @@ function queryBrowse(userid, tag) {
 	
 	if (userid) {		
 		if (XNO.address) {
-			D('subscribe').disabled = false;
 			D('sponsor').disabled = false;
+			D('subscribe').disabled = false;
 			if (userid != XNO.address) D('sendButton').disabled = false;
 		}		
 		if (userid == XNO.address) D('info').style.display = "";
@@ -901,18 +880,22 @@ function queryBrowse(userid, tag) {
 		identify(D('browseHeading'), userid);
 		D('browseHeading').style.color = "";
 		fillBio(userid);
+		browseURL = {userid};
 	} else if (tag) {	
 		if (XNO.address) D('subscribe').disabled = false;
 		D('browseHeading').title = tag;
 		D('browseHeading').textContent = tag;
 		D('bio').textContent = "An unmoderated tag."
+		browseURL = {tag};
 	} else {	
 		D('browseHeading').title = "";
 		D('browseHeading').textContent = "Recent";
 		D('bio').textContent = "The trickle of recent posts."
+		browseURL = {};
 	}
 	
 	D('browseHeading').onclick = function() { queryBrowse(userid, tag); };
+	if (active('sponsor')) sponsorHandler(D('sponsor'));
 	
 	if (ws && ws.readyState == 1) {
 		D('loadingMsg').style.display = "";
@@ -926,8 +909,8 @@ function queryBrowse(userid, tag) {
 		
 		if ((!userid && !tag) || !D('popularTags').children.length) ws.emit('queryTagCounts');
 	}
-	if (active('sponsor')) sponsorHandler(D('sponsor'));
-	loadPanel('browse');
+	
+	if (!cacheOnly) loadPanel('browse');
 }
 
 function sponsorHandler(elt) {
@@ -1056,7 +1039,6 @@ function hasDraft() {
 	return false;
 }
 
-
 function parseEditorWall(elt) {
 	let wall = [];
 	let k = 0;
@@ -1088,17 +1070,62 @@ function showPreview(elt) {
 	D('postPreview').style.display = "";
 }
 
-function loadPanel(type) {
-	if (type != "browse" && active('sponsor')) sponsorHandler(D('sponsor'));
+function loadPanel(type, manual, holdHistory) {
+	let prevType = "browse";
 	if (D('browse').style.display != 'none') browseHeight = Math.ceil(D('secondDiv').scrollTop);
-	if (D('read').style.display != 'none') readHeight = Math.ceil(D('secondDiv').scrollTop);
-	if (D('post').style.display != 'none') postHeight = Math.ceil(D('secondDiv').scrollTop);
+	if (D('read').style.display != 'none') {
+		readHeight = Math.ceil(D('secondDiv').scrollTop);
+		prevType = "read";
+	}
+	if (D('post').style.display != 'none') {
+		postHeight = Math.ceil(D('secondDiv').scrollTop);
+		prevType = "post";
+	}
 	
-	D('postButton').classList.remove('active');
-	D('readButton').classList.remove('active');
-	D('browseButton').classList.remove('active');	
-	D(type + "Button").classList.add('active');
-	
+	if (manual && type != prevType) backList.push(prevType);
+	let url = new URL(window.location);
+	let postid = new URLSearchParams(window.location.search).get('postid');
+	let userid = new URLSearchParams(window.location.search).get('userid');
+	let tag = new URLSearchParams(window.location.search).get('tag');
+	if (type == "read") {
+		url.search = new URLSearchParams({postid:readPostid});
+		if (!holdHistory && readPostid && postid != readPostid) {
+			if (manual && type != prevType && floatState) window.history.replaceState(null, "", url);
+			else {
+				window.history.pushState(null, "", url);
+				backList = [];
+				if (manual && type != prevType) floatState = true;
+				else floatState = false;
+			}
+		}			
+		if (postCache[readPostid]) document.title = postCache[readPostid].title + " - mktplc";
+		else document.title = "Read - mktplc";
+	} else if (type == "browse") {
+		let newTitle = "";
+		if (browseURL.userid) {		
+			url.search = new URLSearchParams({userid:browseURL.userid});
+			newTitle = funName(browseURL.userid) + " - mktplc";
+		} else if (browseURL.tag) {
+			url.search = new URLSearchParams({tag:browseURL.tag});
+			newTitle = browseURL.tag + " - mktplc";
+		} else {
+			url.search = new URLSearchParams();
+			newTitle = "mktplc";
+		}		
+		if (!holdHistory && browseURL && (userid != browseURL.userid || tag != browseURL.tag || postid)) {
+			if (manual && type != prevType && floatState) window.history.replaceState(null, "", url);
+			else {
+				window.history.pushState(null, "", url);
+				backList = [];
+				if (manual && type != prevType) floatState = true;
+				else floatState = false;
+			}
+		}
+		document.title = newTitle;
+	}
+
+	if (type != "browse" && active('sponsor')) sponsorHandler(D('sponsor'));
+		
 	D('post').style.display = 'none';
 	D('read').style.display = 'none';
 	D('browse').style.display = 'none';
@@ -1110,9 +1137,14 @@ function loadPanel(type) {
 		D(type).style.display = "";
 		D('secondDiv').scrollTo(0, browseHeight);	
 	}
+	
+	D('postButton').classList.remove('active');
+	D('readButton').classList.remove('active');
+	D('browseButton').classList.remove('active');	
+	D(type + "Button").classList.add('active');
 }
 
-function cachePost(metaData, cacheOnly) {
+function cachePost(metaData, loadToo) {
 	if (!metaData.postid) metaData.postid = metaData.userid + "-" + metaData.createdts.toString();	
 	if (!metaData.userid) {
 		let split = metaData.postid.split("-");
@@ -1135,7 +1167,7 @@ function cachePost(metaData, cacheOnly) {
 	if (metaData.next_) postCache[metaData.postid].next_ = metaData.next_;
 	if (metaData.wall) postCache[metaData.postid].wall = metaData.wall;
 	
-	if (readPostid == metaData.postid) fillPost(metaData.postid, cacheOnly);
+	if (readPostid == metaData.postid) fillPost(metaData.postid, !loadToo);
 }
 
 function activeBar(elt) {
@@ -1163,7 +1195,6 @@ function fillBio(userid, block) {
 	receiveDOMdisplayName(data.userid, data.displayname, data.color);
 	console.log(data);
 }
-
 
 function fillEditorContent(data, elt) {
 	clearDOM(elt);	
@@ -1221,13 +1252,13 @@ function receiveDOMdisplayName(userid, displayname, color) {
 	if (urluserid == userid) document.title = funName(userid) + " - mktplc";
 }
 
-function fillBrowse(data) {	
+function fillBrowseList(data) {	
 	data.sort(function(x, y) { return y.createdts - x.createdts; });
 	D('loadingMsg').style.display = "none";
 	clearDOM(D('discovery'));
 	
 	for (let i = 0; i < data.length; i++) {	
-		cachePost(data[i], true);			
+		cachePost(data[i]);			
 		let postli = make('li');
 		postli.id = data[i].postid + "-disc";
 		postli.appendChild(fullLabel(data[i].postid));
@@ -1339,7 +1370,6 @@ function fullLabel(postid, library) {
 	label.onmouseleave = function() { actions.style.display = "none"; };
 	label.onclick = function() {
 		fillPost(postid);
-		loadPanel('read');
 		queryPost(postid);
 		if (!D(postid)) addToLib(postid);
 		else D(postid).style.fontWeight = "";
@@ -1349,13 +1379,6 @@ function fullLabel(postid, library) {
 }
 
 function fillPost(postid, cacheOnly) {
-	if (!cacheOnly && new URLSearchParams(window.location.search).get('postid') != postid) {		
-		let url = new URL(window.location);
-		url.search = new URLSearchParams({postid});
-		window.history.pushState(null, "", url);
-		document.title = postCache[postid].title + " - mktplc";
-	}
-	
 	D('commentContent').style.display = 'none';
 	D('commentContent').value = "";
 	D('comment').textContent = "Comment";
@@ -1363,73 +1386,88 @@ function fillPost(postid, cacheOnly) {
 	// handle left bars
 	if (readPostid && D(readPostid)) removeActiveBar(D(readPostid));
 	if (readPostid && D(readPostid + "-disc")) removeActiveBar(D(readPostid + "-disc"));
-	readPostid = postid;
 	if (D(postid)) activeBar(D(postid));
 	if (D(postid + "-disc")) activeBar(D(postid + "-disc"));
 	
-	let metaData = postCache[postid];
-	queueDOMdisplayName(metaData.userid, D('author'));
+	let split = postid.split("-");
+	userid = split[0];
+	createdts = parseInt(split[1]);
 	
-	// Title and label
-	D('readTitle').textContent = metaData.title;
 	D('readTitle').style.cursor = "pointer";
 	D('readTitle').onclick = function() {
 		queryPost(postid);
 	}
-	identify(D('author'), metaData.userid);
-	D('author').title = metaData.userid;
-	
+	D('author').title = userid;
+	identify(D('author'), userid);
+	queueDOMdisplayName(userid, D('author'));	
 	while (D('tags').children.length > 1) D('tags').removeChild(D('tags').lastElementChild);
-	if (metaData.tags) {
-		for (let i = 0; i < metaData.tags.length; i++) {		
-			let displayStr = metaData.tags[i];
-			if (displayStr.length > 32) displayStr = displayStr.substring(0, 32) + "...";
-			let tag = make('a', " • " + displayStr);
-			tag.style = "cursor:pointer";
-			D('tags').appendChild(tag);
-			tag.onclick = function() {
-				event.stopPropagation();
-				queryBrowse(null, metaData.tags[i]);
-			};
-		}
-	}
 	
-	D('creation').textContent = unixToDate(metaData.createdts);
-	D('creation').title = metaData.createdts;
-	if (metaData.modifiedts && unixToDate(metaData.modifiedts) != unixToDate(metaData.createdts)) {
-		D('modification').textContent = " (" + unixToDate(metaData.modifiedts) + ")";
-		D('modification').title = metaData.modifiedts;
-		D('modification').style.display = "";
-	} else {
-		D('modification').textContent = "";
-		D('modification').title = "";
-		D('modification').style.display = "none";
-	}	
-	if (metaData.userid == XNO.address) D('edit').style.display = "";
+	D('creation').textContent = unixToDate(createdts);
+	D('creation').title = createdts;	
+	D('modification').textContent = "";
+	D('modification').title = "";
+	D('modification').style.display = "none";	
+	if (userid == XNO.address) D('edit').style.display = "";
 	else D('edit').style.display = "none";
 	
-	// content
-	if (metaData.content) {
-		let theNewContent = JSON.stringify(metaData.content);
-		if (theNewContent != readPostContent) {
-			readPostContent = theNewContent;
-			if (typeof metaData.content === "string") D('readContent').textContent = metaData.content;
-			else fillContent(D('readContent'), metaData.content, metaData.wall, metaData.userid);
-		}
-	} else D('readContent').innerHTML = "<i>Loading...</i>";
-	
-	// comments
+	if (readPostid != postid) {
+		D('readTitle').textContent = "Loading...";
+		D('readContent').innerHTML = "<i>Loading...</i>";	
+		readPostid = postid;
+	}	
 	if (XNO.address) D("comment").disabled = false;
-	clearDOM(D('readComments'));	
-	if (metaData.comments) {
-		metaData.comments.sort(function(x, y) {
-			return parseInt(x.commentid.split("-")[1]) - parseInt(y.commentid.split("-")[1]);
-		});		
-		for (let i = 0; i < metaData.comments.length; i++) {
-			addComment(metaData.comments[i]);
-		}	
+	clearDOM(D('readComments'));
+	
+	let metaData = postCache[postid];
+	if (metaData) {
+		// Title and label
+		D('readTitle').textContent = metaData.title;
+		
+		if (metaData.tags) {
+			for (let i = 0; i < metaData.tags.length; i++) {		
+				let displayStr = metaData.tags[i];
+				if (displayStr.length > 32) displayStr = displayStr.substring(0, 32) + "...";
+				let tag = make('a', " • " + displayStr);
+				tag.style = "cursor:pointer";
+				D('tags').appendChild(tag);
+				tag.onclick = function() {
+					event.stopPropagation();
+					queryBrowse(null, metaData.tags[i]);
+				};
+			}
+		}
+		
+		if (metaData.modifiedts && unixToDate(metaData.modifiedts) != unixToDate(createdts)) {
+			D('modification').textContent = " (" + unixToDate(metaData.modifiedts) + ")";
+			D('modification').title = metaData.modifiedts;
+			D('modification').style.display = "";
+		}
+		
+		// content
+		if (metaData.content) {
+			let theNewContent = JSON.stringify(metaData.content);
+			if (theNewContent != readPostContent) {
+				readPostContent = theNewContent;
+				if (typeof metaData.content === "string") D('readContent').textContent = metaData.content;
+				else fillContent(D('readContent'), metaData.content, metaData.wall, userid);
+			}
+		}
+		
+		// comments
+		if (metaData.comments) {
+			metaData.comments.sort(function(x, y) {
+				return parseInt(x.commentid.split("-")[1]) - parseInt(y.commentid.split("-")[1]);
+			});		
+			for (let i = 0; i < metaData.comments.length; i++) {
+				addComment(metaData.comments[i]);
+			}	
+		}
 	}
-	if (!cacheOnly) ws.emit("queryPostChain", {userid:metaData.userid, createdts:metaData.createdts });
+	
+	if (!cacheOnly) {
+		loadPanel('read');
+		ws.emit("queryPostChain", {userid, createdts});
+	}
 }
 
 function fillContent(elt, content, wall, userid) {
@@ -2005,10 +2043,7 @@ function requestNames() {
 function queryPost(postid) {
 	if (!postid) postid = readPostid;
 	let split = postid.split("-");
-	let userid = split[0];
-	let createdts = parseInt(split[1]);	
-	console.log({ userid: userid, createdts: createdts });
-	ws.emit('queryPost', { userid: userid, createdts: createdts });	
+	ws.emit('queryPost', { userid: split[0], createdts: parseInt(split[1]) });	
 }
 
 function makeSubLi(userid, lastaccessedts, lastpublishedts) {
@@ -2145,14 +2180,12 @@ window.addEventListener('popstate', loadURL);
 
 function loadURL() {
 	let postid = new URLSearchParams(window.location.search).get('postid');
-	let tag = new URLSearchParams(window.location.search).get('tag');
 	let userid = new URLSearchParams(window.location.search).get('userid');
+	let tag = new URLSearchParams(window.location.search).get('tag');
 	if (postid) {
-		if (ws && ws.readyState == 1 && !D('browseHeading').textContent) queryBrowse();
-		if (postCache[postid]) fillPost(postid);
-		else readPostid = postid;
+		if (ws && ws.readyState == 1 && !D('browseHeading').textContent) queryBrowse(null, null, true);
+		fillPost(postid);
 		if (!postCache[postid] || !postCache[postid].comments) queryPost(postid);
-		loadPanel('read');
 	} else if (tag) queryBrowse(null, tag);
 	else if (userid) queryBrowse(userid);
 	else queryBrowse();
@@ -2185,29 +2218,23 @@ window.addEventListener('copy', function(e) {
 
 window.addEventListener('keydown', function(evt) {
 	if (document.activeElement.tagName.toLowerCase() != 'input' && document.activeElement.tagName.toLowerCase() != 'textarea') {
-		if (evt.keyCode == 8) {			
-			let postid = new URLSearchParams(window.location.search).get('postid');
-			let tag = new URLSearchParams(window.location.search).get('tag');
-			let userid = new URLSearchParams(window.location.search).get('userid');
-			
-			if (postid) {
-				if (D('read').style.display == "none") {
-					evt.preventDefault();
-					loadPanel('read');
-				}
-			} else if (D('browse').style.display == "none") {
+		if (evt.keyCode == 8) {
+			if (backList.length) {
 				evt.preventDefault();
-				loadPanel('browse');
-			}	
-		} else if (evt.keyCode == 27) {
+				loadPanel(backList.pop(), false, true);
+			}
+		} 
+		
+		if (evt.keyCode == 27) {
 			evt.preventDefault();
-			loadPanel('browse');	
+			loadPanel('browse', false, true);
+			backList = [];
 		}
 	}
 	if (evt.altKey) {
-		if (evt.keyCode == 49) loadPanel('browse');
-		else if (evt.keyCode == 50) loadPanel('read');
-		else if (evt.keyCode == 51) loadPanel('post');		
+		if (evt.keyCode == 49) loadPanel('browse', true);
+		else if (evt.keyCode == 50) loadPanel('read', true);
+		else if (evt.keyCode == 51) loadPanel('post', true);		
 		else if (evt.keyCode == 81) {
 			if (active('readButton') && readPostid && postCache[readPostid].userid == XNO.address) fillEdit();
 			else if (active('postButton') && D('postEditor').style.display == "none") showEditor();
