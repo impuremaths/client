@@ -1465,6 +1465,9 @@ function fillPost(postid, cacheOnly) {
 	if (!cacheOnly) {
 		loadPanel('read');
 		ws.emit("queryPostChain", {userid, createdts});
+	} else {	
+		if (postCache[readPostid]) document.title = postCache[readPostid].title + " - mktplc";
+		else document.title = "Read - mktplc";
 	}
 }
 
