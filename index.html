@@ -1530,25 +1530,40 @@ function fillContent(elt, content, wall, userid) {
 			jsbox.innerHTML = DOMPurify.sanitize(marked.parse(content[i].content));
 			jsbox.style.whiteSpace = "initial";
 		} else if (content[i].type == "image" || content[i].type == "media") {
-			let ext = content[i].content.trim().slice(-4).toLowerCase();
-			if (ext == ".mp4" || ext == ".ogg" || ext == "webm") {
-				jsbox = make("video");
-				jsbox.controls = true;
-				jsbox.src = content[i].content.trim();
-				jsbox.style = "width:100%";
-			} else if (ext == ".mp3" || ext == ".wav") {
-				jsbox = make("audio");
-				jsbox.controls = true;
-				jsbox.src = content[i].content.trim();
-				jsbox.style = "width:100%";
+			let match = content[i].content.trim().match(/^.*(youtu\.be\/|vi?\/|u\/\w\/|embed\/|\?vi?=|\&vi?=)([^#\&\?]*).*/);
+			if (match && match[2].length == 11) {
+				jsbox = make('div');		
+				jsbox.style = "position:relative";
+				
+				frame = make('div');
+				frame.style = "padding-bottom:56%";				
+				youtube = make("iframe");
+				youtube.style = "border:0px; background-color:black; position:absolute; height:100%; width:100%; top:0px";
+				youtube.src = "https://www.youtube.com/embed/" + match[2] + "?modestbranding=1"
+				
+				jsbox.appendChild(frame);
+				jsbox.appendChild(youtube);
 			} else {
-				jsbox = make('picture');
-					let imagediv = make("img");
-					imagediv.src = content[i].content;
-					imagediv.alt = "[Broken media link]";
-					imagediv.style.maxWidth = "100%";
-				jsbox.style = "width:100%; display:flex; justify-content:center";
-				jsbox.appendChild(imagediv);
+				let ext = content[i].content.trim().slice(-4).toLowerCase();
+				if (ext == ".mp4" || ext == ".ogg" || ext == "webm") {
+					jsbox = make("video");
+					jsbox.controls = true;
+					jsbox.src = content[i].content.trim();
+					jsbox.style = "width:100%";
+				} else if (ext == ".mp3" || ext == ".wav") {
+					jsbox = make("audio");
+					jsbox.controls = true;
+					jsbox.src = content[i].content.trim();
+					jsbox.style = "width:100%";
+				} else {
+					jsbox = make('picture');
+						let imagediv = make("img");
+						imagediv.src = content[i].content;
+						imagediv.alt = "[Broken media link]";
+						imagediv.style.maxWidth = "100%";
+					jsbox.style = "width:100%; display:flex; justify-content:center";
+					jsbox.appendChild(imagediv);
+				}
 			}
 		} else {
 			jsbox = make("div", content[i].content);
