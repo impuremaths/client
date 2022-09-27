@@ -1733,7 +1733,7 @@ function appendBlock(type, previous, parent) {
 	mediaBut.classList.add("right");
 	mediaBut.onclick = function() {
 		textbox.title = "media";
-		textbox.placeholder = "Image, audio (mp3, ogg, wav), video (mp4, ogg, webm), or Youtube link (URL)...";
+		textbox.placeholder = "Image link, audio link (mp3, ogg, wav), or video link (mp4, ogg, webm, Youtube)...";
 		textbox.spellcheck = false;
 		textbox.style.fontFamily = "";
 		if (textbox.value == "<div></div>\n\n" + "<script>\n\n</" + "script>") textbox.value = "";
