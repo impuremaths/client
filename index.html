@@ -81,7 +81,7 @@
 				
 				<div style="flex-basis:1px; flex-grow:2; margin-right:20px; overflow:hidden">					
 					<div id="bioPreview" style="overflow:hidden">
-						<div id="bio" style="margin-top:30px; margin-bottom:40px"></div>
+						<div id="bio" style="font-size:0.9em; margin-top:30px; margin-bottom:40px"></div>
 						
 						<div style="display:flex; justify-content:right;">
 							<button id="info" onclick="openBio()" style="font-size:0.85em">Edit Profile</button>
@@ -673,6 +673,7 @@ var displayNameCache = {};
 var colorCache = {};
 var postCache = {};
 var userCache = {};
+var browseCache = {};
 const enc = new TextEncoder();
 const dec = new TextDecoder();
 function D(string) { return document.getElementById(string); }
@@ -884,7 +885,7 @@ function queryBrowse(userid, tag, cacheOnly) {
 		D('bio').textContent = "An unmoderated tag."
 		browseURL = {tag};
 	} else {	
-		D('browseHeading').title = "";
+		D('browseHeading').title = "Recent";
 		D('browseHeading').textContent = "Recent";
 		D('bio').textContent = "The trickle of recent posts."
 		browseURL = {};
@@ -893,6 +894,8 @@ function queryBrowse(userid, tag, cacheOnly) {
 	D('browseHeading').onclick = function() { queryBrowse(userid, tag); };
 	if (active('sponsor')) sponsorHandler(D('sponsor'));
 	
+	if (browseCache[D('browseHeading').title]) fillBrowseList(browseCache[D('browseHeading').title]);
+	else D('discovery').style.opacity = "0.5";
 	if (ws && ws.readyState == 1) {
 		D('loadingMsg').style.display = "";
 		if (userid) {
@@ -1250,10 +1253,12 @@ function receiveDOMdisplayName(userid, displayname, color) {
 	if (urluserid == userid) document.title = funName(userid) + " - mktplc";
 }
 
-function fillBrowseList(data) {	
+function fillBrowseList(data) {
+	if (D('browseHeading').title) browseCache[D('browseHeading').title] = data;
 	data.sort(function(x, y) { return y.createdts - x.createdts; });
 	D('loadingMsg').style.display = "none";
 	clearDOM(D('discovery'));
+	D('discovery').style.opacity = "";
 	
 	for (let i = 0; i < data.length; i++) {	
 		cachePost(data[i]);			
@@ -1370,7 +1375,7 @@ function fullLabel(postid, library) {
 		fillPost(postid);
 		queryPost(postid);
 		if (!D(postid)) addToLib(postid);
-		else D(postid).style.fontWeight = "";
+		else D(postid).firstElementChild.firstElementChild.style.fontWeight = "";
 		flash(this);
 	}
 	return label;
@@ -2146,8 +2151,8 @@ function makeLibLi(postid, accessts) {
 	let libli = make('li');
 	libli.id = postid;
 	libli.style.whiteSpace = "nowrap";
-	if (!accessts) libli.style.fontWeight = "bold";	
 	libli.appendChild(fullLabel(postid, true));	
+	if (!accessts) libli.firstElementChild.firstElementChild.style.fontWeight = "bold";	
 	if (postid == readPostid) activeBar(libli);
 	if (D('library').children[0]) D('library').insertBefore(libli, D('library').children[0]);
 	else {
