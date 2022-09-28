@@ -137,36 +137,35 @@
 			<div style="flex-basis:1px; flex-grow:1; max-width:360px; overflow:hidden">
 				<input id="postTitle" style="font-weight:bold; font-size:1.1em; width:100%; margin-bottom:10px;" autocomplete="off" placeholder="Title (required)..." type="text" onkeyup="if (event.keyCode == 27) this.value = '';">
 				<div id="editid" style="font-size:0.85em; margin-left:10px; display:none">
-				<span id="creationEdit"></span><span id="modificationEdit"></span>
+					<span id="creationEdit"></span><span id="modificationEdit"></span>
 				</div>
 				
-				<div style="display:flex; margin-left:20px; margin-top:15px">
+				<div id="editTags" style="font-size:0.85em; margin-top:15px"></div>
+				<div style="display:flex; margin-top:10px">
 					<input id="set-tag" style="padding-right:30px; flex-grow:1; margin-right:10px" autocomplete="off" placeHolder="tag (lowercase)..." type="text" onkeyup="if (event.keyCode == 27) this.value = ''; if (event.keyCode == 13) addTag()" autocapitalize="off">
 					<button tabindex="-1" style="font-size:0.85em; min-width:fit-content" onclick="addTag()">Add</button>
 				</div>
-				<div id="editTags" style="font-size:0.85em; margin-left:20px; margin-top:10px"></div>
 						
-						
-				<div style="margin-top:40px; display:flex; justify-content:space-between; flex-grow:1">
+				<div style="display:flex; margin-top:30px; justify-content:space-between;">
+					<span style="text-overflow:ellipsis; overflow:hidden; white-space:nowrap; font-size:0.9em; font-weight:bold">(none)</span>
+					<button id="recip-prev" onclick="toggle(this)" tabindex="-1" style="font-size:0.85em; min-width:fit-content" disabled>Reciprocate Link</button>
+				</div>
+				
+				<div style="margin-top:5px; display:flex; justify-content:space-between; flex-grow:1">
 					<input placeHolder="Previous post link (URL)..." id="set-prev" autocomplete="off"
 						   style="padding-right:30px; flex-grow:1; width:1px" type="text" autocapitalize="off" onkeyup="if (event.keyCode == 27) this.value = ''; checkTitle(this);" oninput="checkTitle(this);">
 					<button tabindex="-1" class="close-icon" onclick="closeCopy(this.previousElementSibling)"></button>
 				</div>
 				
-				<div style="display:flex; margin-top:10px; justify-content:space-between;">
-					<span style="text-overflow:ellipsis; overflow:hidden; white-space:nowrap; font-size:0.9em">(none)</span>
-					<button id="recip-prev" onclick="toggle(this)" tabindex="-1" style="font-size:0.85em; min-width:fit-content" disabled>Reciprocate Link</button>
+				<div style="display:flex; margin-top:30px; justify-content:space-between;">
+					<span style="text-overflow:ellipsis; overflow:hidden; white-space:nowrap; font-size:0.9em; font-weight:bold">(none)</span>
+					<button id="recip-next" onclick="toggle(this)" tabindex="-1" style="font-size:0.85em; min-width:fit-content" disabled>Reciprocate Link</button>
 				</div>
 				
-				<div style="margin-top:15px; display:flex; justify-content:space-between; flex-grow:1">
+				<div style="margin-top:5px; display:flex; justify-content:space-between; flex-grow:1">
 					<input placeHolder="Next post link (URL)..." id="set-next" autocomplete="off"
 						   style="padding-right:30px; flex-grow:1; width:1px" type="text" autocapitalize="off" onkeyup="if (event.keyCode == 27) this.value = ''; checkTitle(this);"oninput="checkTitle(this);">
 					<button tabindex="-1" class="close-icon" onclick="closeCopy(this.previousElementSibling)"></button>
-				</div>
-				
-				<div style="display:flex; margin-top:10px; justify-content:space-between;">
-					<span style="text-overflow:ellipsis; overflow:hidden; white-space:nowrap; font-size:0.9em">(none)</span>
-					<button id="recip-next" onclick="toggle(this)" tabindex="-1" style="font-size:0.85em; min-width:fit-content" disabled>Reciprocate Link</button>
 				</div>
 					
 				
@@ -200,7 +199,7 @@
 				<div style="font-size:0.85em">
 					<div id="tags">
 						<a id="author" onclick="queryBrowse(this.title)" style="cursor:pointer; font-weight:600">Author</a>
-						<a onclick="queryBrowse(this.title)" style="cursor:pointer"> • tag</a>
+						<a onclick="queryBrowse(this.title)" style="cursor:pointer"> • tags</a>
 					</div>
 				
 					<div style="margin-top:3px">
@@ -688,8 +687,8 @@ const animals = ["Puppy", "Kitten", "Bunny", "Hamster", "Panda", "Otter", "Hedge
 					"Fawn", "Foal", "Calf", "Cub", "Colt", "Piglet", "Eaglet", "Owlet"];
 
 var serverURL = 'wss://impuremaths.herokuapp.com';
-var ws = new WebSocket(serverURL);
-setupWebsocket();
+var ws;
+setupWebsocket(true);
 
 let localSeed = localStorage.getItem("localSeed");
 if (localSeed) {
@@ -702,7 +701,8 @@ loadURL();
 
 // Websocket code ///////////////////////////////////////////////////////////////////////
 
-function setupWebsocket(restart) {
+function setupWebsocket(fresh) {
+	ws = new WebSocket(serverURL);
 	ws.customEvents = {};
 	ws.on = function(cueName, eventAction) { ws.customEvents[cueName] = eventAction; };
 	ws.emit = function(cueName, payload) { 
@@ -711,19 +711,16 @@ function setupWebsocket(restart) {
 	};
 	
 	// Standard commands
+	ws.onclose = function() { setupWebsocket(); }
 	ws.onopen = function() { 
 		console.log("Connected to server!"); 
-		if (!restart) loadURL();
+		if (fresh) loadURL();
 		if (XNO.address) {
 			let ts = Date.now();
 			queueDOMdisplayName(XNO.address, D('displayName'));
 			ws.emit('authenticateUser', {userid: XNO.address, ts, signature:XNO.sign(ts, XNO.address)});
 		}
 	};
-	ws.onclose = function() { 
-		ws = new WebSocket(serverURL);
-		setupWebsocket(true);
-	}
 	ws.onmessage = function(event) {
 		let data;
 		try { data = JSON.parse(event.data); }
@@ -850,7 +847,7 @@ function setupWebsocket(restart) {
 
 // Main panel UI interaction handlers ///////////////////////////////////////////////////////////////////////
 
-function queryBrowse(userid, tag, cacheOnly) {
+function queryBrowse(userid, tag, suppressPanel) {
 	closeBio();
 	D('info').style.display = "none";
 		
@@ -909,7 +906,7 @@ function queryBrowse(userid, tag, cacheOnly) {
 		if ((!userid && !tag) || !D('popularTags').children.length) ws.emit('queryTagCounts');
 	}
 	
-	if (!cacheOnly) loadPanel('browse');
+	if (!suppressPanel) loadPanel('browse');
 }
 
 function sponsorHandler(elt) {
@@ -979,24 +976,23 @@ function checkTitle(elt) {
 	let prev = "";
 	try { prev = new URLSearchParams((new URL(elt.value)).search).get('postid');} 
 	catch { prev = "" };
+	titleElt = elt.parentNode.previousElementSibling;
 	
 	if (prev) {
-		if (postCache[prev]) elt.parentNode.nextElementSibling.firstElementChild.textContent = postCache[prev].title;
-		else elt.parentNode.nextElementSibling.firstElementChild.textContent = "(unknown post)";
+		if (postCache[prev]) titleElt.firstElementChild.textContent = postCache[prev].title;
+		else titleElt.firstElementChild.textContent = "(unknown post)";
 		
-		let split = prev.split("-");
-		let userid = split[0];		
-		if (userid == XNO.address) {
-			elt.parentNode.nextElementSibling.children[1].classList.add('active');
-			elt.parentNode.nextElementSibling.children[1].disabled = false;
+		if (prev.split("-")[0] == XNO.address) {
+			titleElt.children[1].classList.add('active');
+			titleElt.children[1].disabled = false;
 		} else {
-			elt.parentNode.nextElementSibling.children[1].classList.remove('active');
-			elt.parentNode.nextElementSibling.children[1].disabled = true;		
+			titleElt.children[1].classList.remove('active');
+			titleElt.children[1].disabled = true;		
 		}		
 	} else {
-		elt.parentNode.nextElementSibling.firstElementChild.textContent = "(none)"; 
-		elt.parentNode.nextElementSibling.children[1].classList.remove('active');
-		elt.parentNode.nextElementSibling.children[1].disabled = true;
+		titleElt.firstElementChild.textContent = "(none)"; 
+		titleElt.children[1].classList.remove('active');
+		titleElt.children[1].disabled = true;
 	}
 }
 
@@ -1174,11 +1170,6 @@ function cachePost(metaData, chain) {
 function activeBar(elt) {
 	elt.firstElementChild.style.borderLeft = "solid 2px #e4e7e7";		
 	elt.firstElementChild.style.paddingLeft = "10px";
-}
-
-function removeActiveBar(elt) {
-	elt.firstElementChild.style.borderLeft = "";	
-	elt.firstElementChild.style.paddingLeft = "";
 }
 
 function fillBio(userid, block) {
@@ -1381,12 +1372,17 @@ function fullLabel(postid, library) {
 	return label;
 }
 
-function fillPost(postid, cacheOnly) {
+function fillPost(postid, suppressPanel) {
 	D('commentContent').style.display = 'none';
 	D('commentContent').value = "";
 	D('comment').textContent = "Comment";
 	
 	// handle left bars
+	function removeActiveBar(elt) {
+		elt.firstElementChild.style.borderLeft = "";	
+		elt.firstElementChild.style.paddingLeft = "5px";
+	}
+
 	if (readPostid && D(readPostid)) removeActiveBar(D(readPostid));
 	if (readPostid && D(readPostid + "-disc")) removeActiveBar(D(readPostid + "-disc"));
 	if (D(postid)) activeBar(D(postid));
@@ -1478,15 +1474,12 @@ function fillPost(postid, cacheOnly) {
 		}
 	}
 	
-	if (!cacheOnly) {
+	if (!suppressPanel) {
 		loadPanel('read');
 		ws.emit("queryPostChain", {userid, createdts});
-	} else {	
-		let urlpostid = new URLSearchParams(window.location.search).get('postid');
-		if (urlpostid == readPostid) {
-			if (postCache[readPostid]) document.title = postCache[readPostid].title + " - mktplc";
-			else document.title = "Read - mktplc";
-		}
+	} else if (new URLSearchParams(window.location.search).get('postid') == readPostid) {
+		if (postCache[readPostid]) document.title = postCache[readPostid].title + " - mktplc";
+		else document.title = "Read - mktplc";
 	}
 }
 
@@ -1515,6 +1508,7 @@ function fillContent(elt, content, wall, userid) {
 			jsbox.style.textAlign = "center";
 			jsbox.style.margin = "20px 0px";
 			jsbox.style.padding = "30px 10px";
+			jsbox.style.fontStyle = "italic";
 			
 			jsbox.appendChild(make('span', wording + " available to "));
 			jsbox.appendChild(author);
@@ -1692,8 +1686,10 @@ function appendBlock(type, previous, parent) {
 		textbox.placeholder = "Simple text...";
 		textbox.spellcheck = true;
 		textbox.style.fontFamily = "Segoe UI, Source Sans Pro, Roboto, Helvetica, sans-serif";
+		textbox.style.color = "";
 		if (textbox.value == "<div></div>\n\n" + "<script>\n\n</" + "script>") textbox.value = "";
-		delete textbox.onkeydown;
+		textbox.onkeydown = "";
+		textbox.onkeyup = "";
 		for (let i = 0; i < buttonPanel.children.length; i++) {
 			buttonPanel.children[i].classList.remove("active");
 		}
@@ -1709,8 +1705,10 @@ function appendBlock(type, previous, parent) {
 		textbox.placeholder = "Markdown...";
 		textbox.spellcheck = true;
 		textbox.style.fontFamily = "Segoe UI, Source Sans Pro, Roboto, Helvetica, sans-serif";
+		textbox.style.color = "";
 		if (textbox.value == "<div></div>\n\n" + "<script>\n\n</" + "script>") textbox.value = "";
-		delete textbox.onkeydown;
+		textbox.onkeydown = "";
+		textbox.onkeyup = "";
 		for (let i = 0; i < buttonPanel.children.length; i++) {
 			buttonPanel.children[i].classList.remove("active");
 		}
@@ -1725,8 +1723,10 @@ function appendBlock(type, previous, parent) {
 		textbox.placeholder = "HTML (JS scripts enabled)...";
 		textbox.spellcheck = false;
 		textbox.style.fontFamily = "";
+		textbox.style.color = "";
 		if (!textbox.value) textbox.value = "<div></div>\n\n" + "<script>\n\n</" + "script>";
 		addTabbing(textbox);
+		textbox.onkeyup = "";
 		for (let i = 0; i < buttonPanel.children.length; i++) {
 			buttonPanel.children[i].classList.remove("active");
 		}
@@ -1740,9 +1740,15 @@ function appendBlock(type, previous, parent) {
 		textbox.title = "media";
 		textbox.placeholder = "Image link, audio link (mp3, ogg, wav), or video link (mp4, ogg, webm, Youtube)...";
 		textbox.spellcheck = false;
-		textbox.style.fontFamily = "";
-		if (textbox.value == "<div></div>\n\n" + "<script>\n\n</" + "script>") textbox.value = "";
-		delete textbox.onkeydown;
+		textbox.style.fontFamily = "Segoe UI, Source Sans Pro, Roboto, Helvetica, sans-serif";
+		if (textbox.value == "<div></div>\n\n" + "<script>\n\n</" + "script>") textbox.value = "";		
+		if (textbox.value) textbox.style.color = "#888";
+		else textbox.style.color = "";
+		textbox.onkeydown = "";
+		textbox.onkeyup = function() {
+			if (textbox.value) textbox.style.color = "#888";
+			else textbox.style.color = "";
+		}
 		for (let i = 0; i < buttonPanel.children.length; i++) {
 			buttonPanel.children[i].classList.remove("active");
 		}
@@ -2008,9 +2014,10 @@ function importSeed() {
 		D("submitButton").disabled = false;
 		D("libraryPlaceholder").textContent = "Read something!";
 		D("subPanel").style.display = "flex";
+		localStorage.setItem("localSeed", XNO.seed);
 		
 		makeSubLi(XNO.address);
-		if (D('browseHeading').title) {
+		if (D('browseHeading').title != "Recent") {
 			D('subscribe').disabled = false;
 			if (D('browseHeading').title != XNO.address) {
 				if (D('browseHeading').title.substring(0, 5) == "nano_") {
@@ -2020,17 +2027,37 @@ function importSeed() {
 			} else D('info').style.display = "";
 		}
 		
-		localStorage.setItem("localSeed", XNO.seed);
 		if (ws && ws.readyState == 1) {
 			let ts = Date.now();
 			console.log({userid: XNO.address, ts, signature:XNO.sign(ts, XNO.address)});
 			queueDOMdisplayName(XNO.address, D('displayName'));
-			ws.emit('authenticateUser', {userid: XNO.address, ts, signature:XNO.sign(ts, XNO.address)});
+			ws.emit('authenticateUser', {userid: XNO.address, ts, signature:XNO.sign(ts, XNO.address)});			
 		}
+		if (D('browseHeading').title && browseCache[D('browseHeading').title]) fillBrowseList(browseCache[D('browseHeading').title]);
+		if (readPostid) fillPost(readPostid, true);
 		refreshData("XNO");
 	}
 }
 
+function clickClearSeed() {
+	clearSeed();	
+	XNO.privateKey = "";
+	XNO.publicKey = "";
+	XNO.address = "";
+	XNO.seed = "";
+	XNO.encryptKey = "";	
+	D('displayName').textContent = "Guest";	
+	
+	D("current").disabled = true;	
+	D("clear").disabled = true;
+	D("submitButton").disabled = true;
+	D("libraryPlaceholder").textContent = "Read something! (Log in to persist this list.)";
+	D("subPanel").style.display = "none";	
+	localStorage.removeItem("localSeed");
+	
+	D("comment").disabled = true;
+	inputEvent(D('seed'), "");
+}
 
 function clearSeed() {
 	// clearing actions that are needed even if switching accounts
@@ -2049,27 +2076,6 @@ function clearSeed() {
 	closeBio();
 	D('info').style.display = "none";
 }
-
-function clickClearSeed() {
-	clearSeed();	
-	XNO.privateKey = "";
-	XNO.publicKey = "";
-	XNO.address = "";
-	XNO.seed = "";
-	XNO.encryptKey = "";	
-	inputEvent(D('seed'), "");
-	D('displayName').textContent = "Guest";	
-	
-	D("current").disabled = true;	
-	D("clear").disabled = true;
-	D("submitButton").disabled = true;
-	D("libraryPlaceholder").textContent = "Read something! (Log in to persist this list.)";
-	D("subPanel").style.display = "none";
-	D("comment").disabled = true;
-	
-	localStorage.removeItem("localSeed");
-}
-
 
 function queueDOMdisplayName(userid, elt) {
 	if (!DOMdisplayNames[userid]) DOMdisplayNames[userid] = [elt];
@@ -2200,7 +2206,6 @@ function setData(type) {
 			queueDOMdisplayName(XNO.address, D('displayName'));
 			queueDOMdisplayName(XNO.address, D(XNO.address).lastElementChild);
 			queueDOMdisplayName(XNO.address, D('browseHeading'));
-			// ws.emit('updateDisplayName', { displayname: D('bio-name').value} );
 			
 			let content = parseEditorContent(D('bioBlocks'));
 			ws.emit('updateUser', {displayname:D('bio-name').value, color:parseInt(D('colorslider').value), bio:content, sponsor_price: D('inputPrice').value });
@@ -2234,10 +2239,7 @@ function loadURL() {
 	else if (userid) queryBrowse(userid);
 	else queryBrowse();
 	
-	if (ws && ws.readyState == 3) {
-		ws = new WebSocket(serverURL);
-		setupWebsocket();
-	}
+	if (ws && ws.readyState == 3) {	setupWebsocket(); }
 }
 
 window.addEventListener('message', function (e) {
