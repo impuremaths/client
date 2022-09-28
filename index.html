@@ -1193,7 +1193,7 @@ function fillEditorContent(data, elt) {
 	if (data && data.length) {
 		for (let i = 0; i < data.length; i++) {
 			let block = appendBlock(data[i].type, null, elt);
-			block.firstChild.value = data[i].content;
+			inputEvent(block.firstChild, data[i].content);
 		}
 	} else appendBlock("text", null, elt);
 }
@@ -1689,7 +1689,7 @@ function appendBlock(type, previous, parent) {
 		textbox.style.color = "";
 		if (textbox.value == "<div></div>\n\n" + "<script>\n\n</" + "script>") textbox.value = "";
 		textbox.onkeydown = "";
-		textbox.onkeyup = "";
+		textbox.oninput = "";
 		for (let i = 0; i < buttonPanel.children.length; i++) {
 			buttonPanel.children[i].classList.remove("active");
 		}
@@ -1708,7 +1708,7 @@ function appendBlock(type, previous, parent) {
 		textbox.style.color = "";
 		if (textbox.value == "<div></div>\n\n" + "<script>\n\n</" + "script>") textbox.value = "";
 		textbox.onkeydown = "";
-		textbox.onkeyup = "";
+		textbox.oninput = "";
 		for (let i = 0; i < buttonPanel.children.length; i++) {
 			buttonPanel.children[i].classList.remove("active");
 		}
@@ -1726,7 +1726,7 @@ function appendBlock(type, previous, parent) {
 		textbox.style.color = "";
 		if (!textbox.value) textbox.value = "<div></div>\n\n" + "<script>\n\n</" + "script>";
 		addTabbing(textbox);
-		textbox.onkeyup = "";
+		textbox.oninput = "";
 		for (let i = 0; i < buttonPanel.children.length; i++) {
 			buttonPanel.children[i].classList.remove("active");
 		}
@@ -1745,7 +1745,7 @@ function appendBlock(type, previous, parent) {
 		if (textbox.value) textbox.style.color = "#888";
 		else textbox.style.color = "";
 		textbox.onkeydown = "";
-		textbox.onkeyup = function() {
+		textbox.oninput = function() {
 			if (textbox.value) textbox.style.color = "#888";
 			else textbox.style.color = "";
 		}
