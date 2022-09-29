@@ -1156,7 +1156,15 @@ function cachePost(metaData, chain) {
 	cacheData.postid = metaData.postid;
 
 	if (metaData.modifiedts) cacheData.modifiedts = metaData.modifiedts;
-	if (metaData.content) cacheData.content = metaData.content;
+	if (metaData.content) {	
+		if (!cacheData.content || typeof metaData.content === "string" || typeof metaData.content === "string") cacheData.content = metaData.content;
+		else if (cacheData.content.length != cacheData.content.length) cacheData.content = metaData.content;
+		else {
+			for (let i = 0; i < metaData.content.length; i++) {
+				if (metaData.content[i].content) cacheData.content[i] = metaData.content[i];
+			}
+		}
+	}
 	if (metaData.tags) cacheData.tags = metaData.tags;
 	if (metaData.comments) cacheData.comments = metaData.comments;
 	if (metaData.prev_) cacheData.prev_ = metaData.prev_;
@@ -1309,8 +1317,24 @@ function fullLabel(postid, library) {
 		let postModified = make('span', " (" + timeSince(data.modifiedts) + ")");
 		postModified.title = data.modifiedts;
 		postMeta.appendChild(postModified);
-	}	
-		
+	}
+	
+	if (data.wall && data.wall.length) {	
+		let premium = make('span', " • Premium");
+		postMeta.appendChild(premium);			
+		postMeta.style.opacity = "0.4";
+		let colorIn = true;
+		for (let i = 0; i < data.wall.length; i++) {
+			if (!data.content[data.wall[i]].content) colorIn = false;
+		}
+		if (colorIn || data.userid == XNO.address) {
+			postMeta.style.transitionProperty = "opacity";
+			postMeta.style.transitionDuration = "2s";
+			postMeta.style.transitionTimingFunction = "";
+			setTimeout(function() {	postMeta.style.opacity = ""; }, 0);
+		}
+	}
+	
 	if (data.userid == XNO.address) {
 		let editBut = make('a', " • Edit");			
 		editBut.onclick = function() {
@@ -1738,7 +1762,7 @@ function appendBlock(type, previous, parent) {
 	mediaBut.classList.add("right");
 	mediaBut.onclick = function() {
 		textbox.title = "media";
-		textbox.placeholder = "Image link, audio link (mp3, ogg, wav), or video link (mp4, ogg, webm, Youtube)...";
+		textbox.placeholder = "Image, audio, or video link (all image formats; mp3, wav; mp4, ogg, webm, Youtube URL)...";
 		textbox.spellcheck = false;
 		textbox.style.fontFamily = "Segoe UI, Source Sans Pro, Roboto, Helvetica, sans-serif";
 		if (textbox.value == "<div></div>\n\n" + "<script>\n\n</" + "script>") textbox.value = "";		
@@ -2057,6 +2081,9 @@ function clickClearSeed() {
 	
 	D("comment").disabled = true;
 	inputEvent(D('seed'), "");
+	
+	if (D('browseHeading').title && browseCache[D('browseHeading').title]) fillBrowseList(browseCache[D('browseHeading').title]);
+	if (readPostid) fillPost(readPostid, true);
 }
 
 function clearSeed() {
