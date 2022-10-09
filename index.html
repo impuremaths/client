@@ -1445,7 +1445,6 @@ function fillPost(postid, suppressPanel) {
 	if (readPostid != postid) {
 		D('readTitle').textContent = "Loading...";
 		D('readContent').innerHTML = "<i>Loading...</i>";	
-		readPostid = postid;
 	}	
 	if (XNO.address) D("comment").disabled = false;
 	clearDOM(D('readComments'));
@@ -1479,7 +1478,7 @@ function fillPost(postid, suppressPanel) {
 		// content
 		if (metaData.content) {
 			let theNewContent = JSON.stringify(metaData.content);
-			if (theNewContent != readPostContent) {
+			if (readPostid != postid || theNewContent != readPostContent) {
 				readPostContent = theNewContent;
 				if (typeof metaData.content === "string") D('readContent').textContent = metaData.content;
 				else fillContent(D('readContent'), metaData.content, metaData.wall, userid);
@@ -1501,12 +1500,13 @@ function fillPost(postid, suppressPanel) {
 				let postli = make('li');
 				postli.style.whiteSpace = "nowrap";
 				postli.appendChild(fullLabel(metaData.chain[i]));
-				if (readPostid == metaData.chain[i]) activeBar(postli);
+				if (postid == metaData.chain[i]) activeBar(postli);
 				D('mapul').appendChild(postli);
 			}
 		}
 	}
 	
+	readPostid = postid;
 	if (!suppressPanel) {
 		loadPanel('read');
 		ws.emit("queryPostChain", {userid, createdts});
