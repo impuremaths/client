@@ -142,7 +142,7 @@
 				
 				<div id="editTags" style="font-size:0.85em; margin-top:15px"></div>
 				<div style="display:flex; margin-top:10px">
-					<input id="set-tag" style="padding-right:30px; flex-grow:1; margin-right:10px" autocomplete="off" placeHolder="tag (lowercase)..." type="text" onkeyup="if (event.keyCode == 27) this.value = ''; if (event.keyCode == 13) addTag()" autocapitalize="off">
+					<input id="set-tag" style="padding-right:30px; flex-grow:1; margin-right:10px" autocomplete="off" placeHolder="tag (lowercase)..." type="text" onkeyup="if (event.keyCode == 27) this.value = ''; if (event.keyCode == 13) addTag()" onblur="addTag()" autocapitalize="off">
 					<button tabindex="-1" style="font-size:0.85em; min-width:fit-content" onclick="addTag()">Add</button>
 				</div>
 						
@@ -2138,6 +2138,7 @@ function makeSubLi(userid, data) {
 	subli.onclick = function() {
 		if (!tag) queryBrowse(userid);
 		else queryBrowse(null, userid);
+		flash(this);
 	};
 	subli.style = "cursor:pointer; width:100%; padding:3px; position:relative";
 	
@@ -2199,6 +2200,7 @@ function makeSubLi(userid, data) {
 				if (!tag) queryBrowse(userid);
 				else queryBrowse(null, userid);
 				if (!active('sponsor')) sponsorHandler(D('sponsor'));
+				flash(subli);
 			}
 			expiryHolder.appendChild(expirySpan);
 			subli.appendChild(expiryHolder);			
