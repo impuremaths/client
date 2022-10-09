@@ -787,7 +787,7 @@ function setupWebsocket(fresh) {
 		if (data.user.userid) {
 			userCache[data.user.userid] = data.user;
 			fillBio(data.user.userid, !update);
-			if (D(data.user.userid)) D(data.user.userid).style.fontWeight = "";
+			if (D(data.user.userid)) D(data.user.userid).children[2].style = "font-size:0.85em; color:#888";
 		}
 	});
 	
@@ -2169,15 +2169,15 @@ function makeSubLi(userid, data) {
 	
 	if (data) {
 		if (data.lastpublishedts) {
-			let publishSpan = make('span', timeSince(data.lastpublishedts));
-			publishSpan.style = "margin-left:10px; font-size:0.85em";
+			let publishSpan = make('span', "\xa0\xa0" + timeSince(data.lastpublishedts));
+			publishSpan.style = "font-size:0.85em; color:#888";
 			subli.appendChild(publishSpan);
 			
 			if (data.lastaccessedts) {
 				//let accessSpan = make('span', timeSince(data.lastaccessedts));
 				//subli.appendChild(accessSpan);
 				if (data.lastaccessedts < data.lastpublishedts) {
-					subli.style.fontWeight = "bold";
+					publishSpan.style = "font-size:0.85em; font-weight:bold";
 					console.log("UNREAD");
 				} else console.log("read");
 			}
@@ -2189,9 +2189,9 @@ function makeSubLi(userid, data) {
 			let expirySpan;
 			if (data.expiryts > Date.now()) {
 				newDate = 2*Date.now() - data.expiryts;
-				expirySpan = make('a', "Sponsorship ends " + timeSince(newDate));
+				expirySpan = make('a', "Sponsorship ends\xa0\xa0" + timeSince(newDate));
 			} else {			
-				expirySpan = make('a', "Sponsorship ended " + timeSince(data.expiryts));
+				expirySpan = make('a', "Sponsorship ended\xa0\xa0" + timeSince(data.expiryts));
 				expirySpan.style = "font-style:italic";
 			}
 			expirySpan.onclick = function() {
