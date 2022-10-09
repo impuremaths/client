@@ -2099,7 +2099,6 @@ function clearSeed() {
 	D('libraryPlaceholder').style.display = "";	
 	if (D('creationEdit').title) cancelPost(true);
 	D('subscribe').disabled = true;
-	D('sponsor').disabled = true;
 	D('sendButton').disabled = true;
 	if (active('sponsor')) sponsorHandler(D('sponsor'));
 	closeAccordion(D('editPanel'));
