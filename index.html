@@ -787,7 +787,7 @@ function setupWebsocket(fresh) {
 		if (data.user.userid) {
 			userCache[data.user.userid] = data.user;
 			fillBio(data.user.userid, !update);
-			if (D(data.user.userid)) D(data.user.userid).children[2].style = "font-size:0.85em; color:#888";
+			if (D(data.user.userid) && D(data.user.userid).children[2]) D(data.user.userid).children[2].style = "font-size:0.85em; color:#888";
 		}
 	});
 	
@@ -1263,18 +1263,20 @@ function receiveDOMdisplayName(userid, displayname, color) {
 
 function fillBrowseList(data) {
 	if (D('browseHeading').title) browseCache[D('browseHeading').title] = data;
-	data.sort(function(x, y) { return y.createdts - x.createdts; });
 	D('loadingMsg').style.display = "none";
 	clearDOM(D('discovery'));
 	D('discovery').style.opacity = "";
 	
-	for (let i = 0; i < data.length; i++) {	
-		cachePost(data[i]);			
-		let postli = make('li');
-		postli.id = data[i].postid + "-disc";
-		postli.appendChild(fullLabel(data[i].postid));
-		if (readPostid == data[i].postid) activeBar(postli);
-		D('discovery').appendChild(postli);
+	if (data) {
+		data.sort(function(x, y) { return y.createdts - x.createdts; });
+		for (let i = 0; i < data.length; i++) {	
+			cachePost(data[i]);			
+			let postli = make('li');
+			postli.id = data[i].postid + "-disc";
+			postli.appendChild(fullLabel(data[i].postid));
+			if (readPostid == data[i].postid) activeBar(postli);
+			D('discovery').appendChild(postli);
+		}
 	}
 	
 	requestNames();
