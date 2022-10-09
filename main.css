@@ -331,7 +331,7 @@ input[type=range].colorslider:hover {
   width: 20px;
   height: 25px;
   border-radius: 20px; 
-  background: hsl(var(--hue), var(--sat), var(--Llight));
+  background: hsl(var(--hue), 100%, 35%);
   cursor: pointer;
   border: 2px solid white;
 }
@@ -340,7 +340,7 @@ input[type=range].colorslider:hover {
   width: 20px;
   height: 25px;
   border-radius: 20px;
-  background: hsl(var(--hue), var(--sat), var(--Llight));
+  background: hsl(var(--hue), 100%, 35%);
   cursor: pointer;
   border: 2px solid white;
 }
