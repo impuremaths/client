@@ -1566,12 +1566,6 @@ function fillContent(elt, content, wall, userid) {
 			let match = mediaURL.match(/^.*(youtu\.be\/|vi?\/|u\/\w\/|embed\/|\?vi?=|\&vi?=)([^#\&\?]*).*/);			
 			let ext = mediaURL.slice(-4).toLowerCase();	
 			
-			let caption = str.match(/\[(.*)\]/);
-			if (!caption && str.indexOf(' ') + 1) {
-				caption = str.substring(str.indexOf(' ') + 1);
-				if (caption) caption = [ "[" + caption + "]", caption];
-			}
-			
 			jsbox = make('div');
 			let mediaBox;
 			if (match && match[2].length == 11) {
@@ -1600,13 +1594,17 @@ function fillContent(elt, content, wall, userid) {
 				mediaBox = make('picture');
 				let imagediv = make("img");
 				imagediv.src = mediaURL;
-				if (caption) imagediv.alt = caption[0];
-				else imagediv.alt = "[Unable to connect to media]";
+				imagediv.alt = "[Unable to connect to media]";
 				imagediv.style.maxWidth = "100%";
 				mediaBox.style = "width:100%; display:flex; justify-content:center";
 				mediaBox.appendChild(imagediv);
 			}
 			jsbox.appendChild(mediaBox);
+			let caption = str.match(/\[(.*)\]/);
+			if (!caption && str.indexOf(' ') + 1) {
+				caption = str.substring(str.indexOf(' ') + 1);
+				if (caption) caption = [ "[" + caption + "]", caption];
+			}
 			if (caption && caption.length > 1) {
 				let capbox = make("div", caption[1]);
 				capbox.style = "text-align:center; font-size:0.9em; margin-top:10px"; 
