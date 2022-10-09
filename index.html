@@ -865,8 +865,8 @@ function queryBrowse(userid, tag, suppressPanel) {
 	D('theirThreshold').textContent = "\xa0-\xa0";
 	
 	if (userid) {		
+		D('sponsor').disabled = false;
 		if (XNO.address) {
-			D('sponsor').disabled = false;
 			D('subscribe').disabled = false;
 			if (userid != XNO.address) D('sendButton').disabled = false;
 		}		
@@ -1601,7 +1601,7 @@ function fillContent(elt, content, wall, userid) {
 				let imagediv = make("img");
 				imagediv.src = mediaURL;
 				if (caption) imagediv.alt = caption[0];
-				else imagediv.alt = "[Faulty media link]";
+				else imagediv.alt = "[Unable to connect to media]";
 				imagediv.style.maxWidth = "100%";
 				mediaBox.style = "width:100%; display:flex; justify-content:center";
 				mediaBox.appendChild(imagediv);
@@ -1609,7 +1609,7 @@ function fillContent(elt, content, wall, userid) {
 			jsbox.appendChild(mediaBox);
 			if (caption && caption.length > 1) {
 				let capbox = make("div", caption[1]);
-				capbox.style = "text-align:center; font-size:0.9em; margin-top:5px"; 
+				capbox.style = "text-align:center; font-size:0.9em; margin-top:10px"; 
 				jsbox.appendChild(capbox);
 			}
 		} else {
@@ -1769,7 +1769,7 @@ function appendBlock(type, previous, parent) {
 	mediaBut.classList.add("right");
 	mediaBut.onclick = function() {
 		textbox.title = "media";
-		textbox.placeholder = "Image, audio, or video link...\n\nSyntax: link [optional caption]\n\nSupported formats: most images; mp3, wav; mp4, ogg, webm, Youtube URL";
+		textbox.placeholder = "Image, audio, or video link [optional caption]...\n\nSupport: most images; mp3, wav; mp4, ogg, webm, Youtube URL";
 		textbox.spellcheck = false;
 		textbox.style.fontFamily = "Segoe UI, Source Sans Pro, Roboto, Helvetica, sans-serif";
 		if (textbox.value == "<div>\n\n</div>\n\n" + "<script>\n\n</" + "script>") textbox.value = "";		
@@ -2184,16 +2184,24 @@ function makeSubLi(userid, data) {
 		}
 		
 		if (data.expiryts) {
+			let expiryHolder = make('div');
+			expiryHolder.style = "margin-left:10px; font-size:0.85em;";
+			let expirySpan;
 			if (data.expiryts > Date.now()) {
 				newDate = 2*Date.now() - data.expiryts;
-				let expirySpan = make('div', "Sponsorship: " + timeSince(newDate));
-				expirySpan.style = "margin-left:10px; font-size:0.85em";
-				subli.appendChild(expirySpan);
+				expirySpan = make('a', "Sponsorship ends " + timeSince(newDate));
 			} else {			
-				let expirySpan = make('div', "Expired: " + timeSince(data.expiryts));
-				expirySpan.style = "margin-left:10px; font-size:0.85em; font-style:italic";
-				subli.appendChild(expirySpan);			
+				expirySpan = make('a', "Sponsorship ended " + timeSince(data.expiryts));
+				expirySpan.style = "font-style:italic";
 			}
+			expirySpan.onclick = function() {
+				event.stopPropagation();
+				if (!tag) queryBrowse(userid);
+				else queryBrowse(null, userid);
+				if (!active('sponsor')) sponsorHandler(D('sponsor'));
+			}
+			expiryHolder.appendChild(expirySpan);
+			subli.appendChild(expiryHolder);			
 		}
 	}
 	
