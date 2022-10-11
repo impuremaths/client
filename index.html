@@ -1336,16 +1336,16 @@ function fullLabel(postid, library) {
 	if (data.wall && data.wall.length) {	
 		let premium = make('span', " • Premium");
 		postMeta.appendChild(premium);			
-		postMeta.style.opacity = "0.4";
+		premium.style.opacity = "0.4";
 		let colorIn = true;
 		for (let i = 0; i < data.wall.length; i++) {
 			if (!data.content[data.wall[i]].content) colorIn = false;
 		}
 		if (colorIn || data.userid == XNO.address) {
-			postMeta.style.transitionProperty = "opacity";
-			postMeta.style.transitionDuration = "1s";
-			postMeta.style.transitionTimingFunction = "";
-			setTimeout(function() {	postMeta.style.opacity = ""; }, 0);
+			premium.style.transitionProperty = "opacity";
+			premium.style.transitionDuration = "1s";
+			premium.style.transitionTimingFunction = "";
+			setTimeout(function() {	premium.style.opacity = ""; }, 0);
 		}
 	}
 	
