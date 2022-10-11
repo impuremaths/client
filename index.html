@@ -28,7 +28,7 @@
 
 			<div id="editPanel" class="accordion" style="max-height:0px; margin:0px 10px">
 				<div style="text-align:center; margin-top:20px">
-					<button tabindex="-1" class="left" onclick="generateSeed()">Generate PIN</button><button id="current" class="center" tabindex="-1" onclick="showCurrent()" autocomplete="off" disabled>Current</button><button id="clear" class="right" onclick="if (confirm('Log out of the current account? (Have you saved your account PIN elsewhere?!)')) clickClearSeed();" autocomplete="off" disabled>Log Out</button>
+					<button tabindex="-1" class="left" onclick="generateSeed()">Generate PIN</button><button id="current" class="center" tabindex="-1" onclick="showCurrent()" autocomplete="off" disabled>Current PIN</button><button id="clear" class="right" onclick="if (confirm('Log out of the current account? (Have you saved your account PIN elsewhere?!)')) clickClearSeed();" autocomplete="off" disabled>Log Out</button>
 				</div>
 				
 				<div style="display:flex; justify-content:space-between; margin-top:15px; margin-bottom:10px">
@@ -53,7 +53,7 @@
 				<span style="font-size:0.9em; color:#888; margin-left:0px">Library</span>
 			</div>
 			<div class="accordion">
-				<div id="libraryPlaceholder" style="font-style:italic; color:#888; text-align:center; margin-top:20px">Read something! (Log in to persist.)</div>
+				<div id="libraryPlaceholder" style="font-style:italic; color:#888; text-align:center; margin-top:20px">Read something! (Log in above to persist.)</div>
 				<ul id="library" style="overflow:auto; max-height:calc(100% - 15px); margin-left:10px; margin-top:10px; margin-bottom:10px"></ul>
 			</div>
 		</div>
@@ -137,7 +137,7 @@
 			<div style="flex-basis:1px; flex-grow:1; max-width:360px; overflow:hidden">
 				<input id="postTitle" style="font-weight:bold; font-size:1.1em; width:100%; margin-bottom:10px;" autocomplete="off" placeholder="Title (required)..." type="text" onkeyup="if (event.keyCode == 27) this.value = '';">
 				<div id="editid" style="font-size:0.85em; margin-left:10px; display:none">
-					<span id="creationEdit"></span><span id="modificationEdit"></span>
+					<span id="creationEdit"></span><span id="modificationEdit" style="font-style:italic"></span>
 				</div>
 				
 				<div id="editTags" style="font-size:0.85em; margin-top:15px"></div>
@@ -148,24 +148,24 @@
 						
 				<div style="display:flex; margin-top:30px; justify-content:space-between; align-items:baseline">
 					<span style="text-overflow:ellipsis; overflow:hidden; white-space:nowrap; font-size:0.9em; font-weight:bold">(none)</span>
-					<button id="recip-prev" onclick="toggle(this)" tabindex="-1" style="font-size:0.85em; min-width:fit-content" disabled>Reciprocate Link</button>
 				</div>
 				
 				<div style="margin-top:5px; display:flex; justify-content:space-between; flex-grow:1">
 					<input placeHolder="Previous post link..." id="set-prev" autocomplete="off"
 						   style="padding-right:30px; flex-grow:1; width:1px" type="text" autocapitalize="off" onkeyup="if (event.keyCode == 27) this.value = ''; checkTitle(this);" oninput="checkTitle(this);">
 					<button tabindex="-1" class="close-icon" onclick="closeCopy(this.previousElementSibling)"></button>
+					<button id="recip-prev" onclick="toggle(this)" tabindex="-1" style="font-size:0.85em; min-width:fit-content; margin-left:10px" disabled>Reciprocate</button>
 				</div>
 				
 				<div style="display:flex; margin-top:30px; justify-content:space-between; align-items:baseline">
 					<span style="text-overflow:ellipsis; overflow:hidden; white-space:nowrap; font-size:0.9em; font-weight:bold">(none)</span>
-					<button id="recip-next" onclick="toggle(this)" tabindex="-1" style="font-size:0.85em; min-width:fit-content" disabled>Reciprocate Link</button>
 				</div>
 				
 				<div style="margin-top:5px; display:flex; justify-content:space-between; flex-grow:1">
 					<input placeHolder="Next post link..." id="set-next" autocomplete="off"
 						   style="padding-right:30px; flex-grow:1; width:1px" type="text" autocapitalize="off" onkeyup="if (event.keyCode == 27) this.value = ''; checkTitle(this);"oninput="checkTitle(this);">
 					<button tabindex="-1" class="close-icon" onclick="closeCopy(this.previousElementSibling)"></button>
+					<button id="recip-next" onclick="toggle(this)" tabindex="-1" style="font-size:0.85em; min-width:fit-content; margin-left:10px" disabled>Reciprocate</button>
 				</div>
 					
 				
@@ -203,7 +203,7 @@
 					</div>
 				
 					<div style="margin-top:3px">
-						<span id="creation">Date published</span><span id="modification"> (date updated)</span>
+						<span id="creation">Date published</span><span id="modification" style="font-style:italic"> (date updated)</span>
 						<a id="edit" onclick="event.preventDefault(); fillEdit(); queryPost();" style="cursor:pointer; display:none"> • Edit</a>
 					</div>
 				</div>
@@ -1328,6 +1328,7 @@ function fullLabel(postid, library) {
 	
 	if (data.modifiedts && timeSince(data.modifiedts) != timeSince(data.createdts)) {
 		let postModified = make('span', " (" + timeSince(data.modifiedts) + ")");
+		postModified.style.fontStyle = "italic";
 		postModified.title = data.modifiedts;
 		postMeta.appendChild(postModified);
 	}
@@ -1598,7 +1599,7 @@ function fillContent(elt, content, wall, userid) {
 				mediaBox = make('picture');
 				let imagediv = make("img");
 				imagediv.src = mediaURL;
-				imagediv.alt = "[Unable to connect to media]";
+				imagediv.alt = "[unable to connect to media]";
 				imagediv.style.maxWidth = "100%";
 				mediaBox.style = "width:100%; display:flex; justify-content:center";
 				mediaBox.appendChild(imagediv);
@@ -1771,7 +1772,7 @@ function appendBlock(type, previous, parent) {
 	mediaBut.classList.add("right");
 	mediaBut.onclick = function() {
 		textbox.title = "media";
-		textbox.placeholder = "Image, audio, or video link [optional caption]...\n\nSupport: most images; mp3, wav; mp4, ogg, webm, Youtube URL";
+		textbox.placeholder = "Image, audio, or video link [optional caption]...\n\nSupports most images; mp3, wav; mp4, ogg, webm, Youtube URL";
 		textbox.spellcheck = false;
 		textbox.style.fontFamily = "Segoe UI, Source Sans Pro, Roboto, Helvetica, sans-serif";
 		if (textbox.value == "<div>\n\n</div>\n\n" + "<script>\n\n</" + "script>") textbox.value = "";		
@@ -1844,7 +1845,7 @@ function cancelPost(override) {
 	editPostid = "";
 	editPostContent = "";
 	D('editid').style.display = "none";
-	D('creationEdit').textContent = " - ";
+	D('creationEdit').textContent = "";
 	D('creationEdit').title = "";
 	D('modificationEdit').textContent = "";
 	D('modificationEdit').title = "";	
@@ -1894,6 +1895,7 @@ function makeMetaLabel(userid, createdts, modifiedts) {
 		let postModified = make('span', " (" + timeSince(modifiedts) + ")");
 		postModified.title = modifiedts;
 		postModified.style.color = "#888";
+		postModified.style.fontStyle = "italic";
 		postMeta.appendChild(postModified);
 	}
 	
@@ -2030,12 +2032,10 @@ function importSeed() {
 	let seed = D("seed").value;
 	let index = 0;
 	if (!XNO.checkSeed(seed)) { if (XNO.checkAddress(seed)) showMsg("Enter a PIN, not an address."); }
-	else if (seed == XNO.seed) return false;
 	else if (index.length > 0 && (!/^[0-9]+$/.test(index) || index < 0 || index > Math.pow(2, 32) - 1)) showMsg("Invalid account index.");
-	else if (XNO.address && !confirm('Log out of the current account? (Have you have saved your account PIN elsewhere?!)')) {
-		D("seed").value = "";
-		return false;
-	} else {
+	else if (seed == XNO.seed) return false;
+	else if (XNO.address && !confirm('Log out of the current account? (Have you have saved your account PIN elsewhere?!)')) D("seed").value = "";
+	else {
 		clearSeed();		
 		XNO.unpackSeed(seed, parseInt(index));		
 		D('displayName').textContent = funName(XNO.address);
@@ -2084,12 +2084,12 @@ function clickClearSeed() {
 	D("current").disabled = true;	
 	D("clear").disabled = true;
 	D("submitButton").disabled = true;
-	D("libraryPlaceholder").textContent = "Read something! (Log in to persist this list.)";
+	D("libraryPlaceholder").textContent = "Read something! (Log in above to persist.)";
 	D("subPanel").style.display = "none";	
 	localStorage.removeItem("localSeed");
 	
 	D("comment").disabled = true;
-	inputEvent(D('seed'), "");
+	inputEvent(D("seed"), "");
 	
 	if (D('browseHeading').title && browseCache[D('browseHeading').title]) fillBrowseList(browseCache[D('browseHeading').title]);
 	if (readPostid) fillPost(readPostid, true);
