@@ -94,8 +94,8 @@
 							<div id="theirFunName" style="margin-bottom:10px; font-weight:600"> - </div>					
 							<div style="font-size:0.85em; color:#888">Unique public address</div>
 							<div class='address' id="theirAddress" style="margin:5px 10px 15px 10px;" onclick="clickCopy(this, this.textContent)"> - </div>
-							<div style="font-size:0.85em; color:#888">Minimum sponsorship for premium content (30 days)</div>
-							<span id="theirThreshold" style="margin:5px 0px 15px 10px;">&nbsp;-&nbsp;</span>&nbsp;XNO
+							<div style="font-size:0.85em; color:#888">Premium sponsorship • 30 days</div>
+							<span id="theirThreshold" style="margin:5px 0px 15px 10px;">&nbsp;-&nbsp;</span>&nbsp;XNO (or more)
 							<div style="display:flex; justify-content:space-between; align-items:baseline; max-width:400px; margin:10px auto">
 							<input id="sponsorInput" onkeyup="" onkeydown="" placeholder="0.00" onblur="prepTwoDigit(this)" style="margin-right:5px; text-align:right; flex-grow:1; flex-basis:1px; overflow:hidden; text-overflow:ellipsis;" type="number" step="0.01" min="0" autocomplete="off"> XNO							
 							<button id="sendButton" onclick="sendMoney(this)" autocomplete="off" style="margin-left:20px; font-size:0.85em" disabled>Send</button>
@@ -109,7 +109,7 @@
 						<input class="colorslider" id="colorslider" type="range" min="0" max="360" step="1" oninput="color(this)" value="0" autocomplete="off"/>														
 														
 						<div id="bioBlocks" style="margin-top:40px; margin-bottom:40px"></div>
-						<div style="font-size:0.85em; margin-top:20px;">Minimum sponsorship for premium content (30 days)</div>
+						<div style="font-size:0.85em; margin-top:20px; color:#888">Premium sponsorship • 30 days</div>
 						<div style="display:flex; justify-content:right; margin-top:5px; align-items:baseline">
 						<input id="inputPrice" onkeyup="" onkeydown="" autocomplete="off" placeholder="0.00" onblur="prepTwoDigit(this)" style="margin-left:20px; margin-right:5px; text-align:right; flex-grow:1; flex-basis:1px; overflow:hidden; text-overflow:ellipsis;" type="number" step="0.01" min="0"><span style="font-size:0.9em">XNO</span>
 						</div>
@@ -762,7 +762,7 @@ function setupWebsocket(fresh) {
 		data.library.sort(function(x, y) { return Math.round(x.pushedts - y.pushedts); });
 		for (let i = 0; i < data.library.length; i++) {
 			cachePost(data.library[i]);
-			makeLibLi(data.library[i].postid, data.library[i].lastaccessedts);
+			makeLibLi(data.library[i].postid, data.library[i].lastaccessedts, data.library[i].pushedts);
 		}
 		requestNames();
 	});
@@ -980,23 +980,24 @@ function checkTitle(elt) {
 	let prev = "";
 	try { prev = new URLSearchParams((new URL(elt.value)).search).get('postid');} 
 	catch { prev = "" };
-	titleElt = elt.parentNode.previousElementSibling;
+	let titleElt = elt.parentNode.previousElementSibling;
+	let buttonElt = elt.parentNode.lastElementChild;
 	
 	if (prev) {
 		if (postCache[prev]) titleElt.firstElementChild.textContent = postCache[prev].title;
 		else titleElt.firstElementChild.textContent = "(unknown post)";
 		
 		if (prev.split("-")[0] == XNO.address) {
-			titleElt.children[1].classList.add('active');
-			titleElt.children[1].disabled = false;
+			buttonElt.classList.add('active');
+			buttonElt.disabled = false;
 		} else {
-			titleElt.children[1].classList.remove('active');
-			titleElt.children[1].disabled = true;		
+			buttonElt.classList.remove('active');
+			buttonElt.disabled = true;		
 		}		
 	} else {
 		titleElt.firstElementChild.textContent = "(none)"; 
-		titleElt.children[1].classList.remove('active');
-		titleElt.children[1].disabled = true;
+		buttonElt.classList.remove('active');
+		buttonElt.disabled = true;
 	}
 }
 
@@ -2193,9 +2194,9 @@ function makeSubLi(userid, data) {
 			let expirySpan;
 			if (data.expiryts > Date.now()) {
 				newDate = 2*Date.now() - data.expiryts;
-				expirySpan = make('a', "Sponsored author • " + timeSince(newDate) + " left");
+				expirySpan = make('a', "Premium sponsorship • " + timeSince(newDate) + " left");
 			} else {			
-				expirySpan = make('a', "Sponsorship ended • " + timeSince(data.expiryts) + " ago");
+				expirySpan = make('a', "Premium sponsorship ended • " + timeSince(data.expiryts) + " ago");
 				expirySpan.style = "font-style:italic";
 			}
 			expirySpan.onclick = function() {
@@ -2213,12 +2214,13 @@ function makeSubLi(userid, data) {
 	D('subscriptions').appendChild(subli);
 }
 
-function makeLibLi(postid, accessts) {
+function makeLibLi(postid, accessts, pushedts) {
 	let libli = make('li');
 	libli.id = postid;
 	libli.style.whiteSpace = "nowrap";
 	libli.appendChild(fullLabel(postid, true));	
 	if (!accessts) libli.firstElementChild.firstElementChild.style.fontWeight = "bold";	
+	//if (pushedts) libli.appendChild(make('span', timeSince(pushedts)));
 	if (postid == readPostid) activeBar(libli);
 	if (D('library').children[0]) D('library').insertBefore(libli, D('library').children[0]);
 	else {
