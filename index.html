@@ -2193,9 +2193,9 @@ function makeSubLi(userid, data) {
 			let expirySpan;
 			if (data.expiryts > Date.now()) {
 				newDate = 2*Date.now() - data.expiryts;
-				expirySpan = make('a', "Sponsorship ends\xa0\xa0" + timeSince(newDate));
+				expirySpan = make('a', "Sponsored author • " + timeSince(newDate) + " left");
 			} else {			
-				expirySpan = make('a', "Sponsorship ended\xa0\xa0" + timeSince(data.expiryts));
+				expirySpan = make('a', "Sponsorship ended • " + timeSince(data.expiryts) + " ago");
 				expirySpan.style = "font-style:italic";
 			}
 			expirySpan.onclick = function() {
