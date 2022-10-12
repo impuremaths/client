@@ -933,13 +933,18 @@ function sponsorHandler(elt) {
 }
 
 function subscribeHandler() {
-	if (D(D('browseHeading').title)) flash(D(D('browseHeading').title));
-	else if (D("tag-" + D('browseHeading').title)) flash(D("tag-" + D('browseHeading').title));
-	else {
+	if (D("tag-" + D('browseHeading').title)) {
+		flash(D("tag-" + D('browseHeading').title));		
+		D("tag-" + D('browseHeading').title).scrollIntoView({behavior: "smooth", block:"nearest"});
+	} else if (D(D('browseHeading').title)) {
+		flash(D(D('browseHeading').title));
+		D(D('browseHeading').title).scrollIntoView({behavior: "smooth", block:"nearest"});
+	} else {
 		makeSubLi(D('browseHeading').title);
 		if (ws && ws.readyState == 1) ws.emit("subscribe", {userid: D('browseHeading').title});
+		if (D(D('browseHeading').title)) D(D('browseHeading').title).scrollIntoView({behavior: "smooth", block:"nearest"});
+		else D("tag-" + D('browseHeading').title).scrollIntoView({behavior: "smooth", block:"nearest"});
 	}
-	D(D('browseHeading').title).scrollIntoView({behavior: "smooth", block:"nearest"});
 }
 
 function addTag() {
