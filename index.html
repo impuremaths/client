@@ -1307,6 +1307,7 @@ function fillBrowseList(data) {
 }
 
 function fullLabel(postid, library) {
+	let url = new URL(window.location);
 	let data = postCache[postid];
 	let postTitle = make('div', data.title);
 	postTitle.title = data.title;
@@ -1318,9 +1319,12 @@ function fullLabel(postid, library) {
 	
 	let postAuthor = make('a');
 	postAuthor.style = "cursor:pointer; font-weight:600";
-	identify(postAuthor, data.userid);
+	identify(postAuthor, data.userid);	
+	url.search = new URLSearchParams({userid:data.userid});
+	postAuthor.href = url;
 	postAuthor.title = data.userid;
-	postAuthor.onclick = function() {
+	postAuthor.onclick = function() {	
+		event.preventDefault();
 		event.stopPropagation();
 		queryBrowse(data.userid);
 	};	
@@ -1331,9 +1335,12 @@ function fullLabel(postid, library) {
 		for (let i = 0; i < data.tags.length; i++) {
 			let displayStr = data.tags[i];
 			if (displayStr.length > 32) displayStr = displayStr.substring(0, 32) + "...";
-			let tag = make('a', " • " + displayStr);
+			let tag = make('a', " • " + displayStr);			
+			url.search = new URLSearchParams({tag:displayStr});
+			tag.href = url;
 			tags.appendChild(tag);
-			tag.onclick = function() {
+			tag.onclick = function() {			
+				event.preventDefault();
 				event.stopPropagation();
 				queryBrowse(null, data.tags[i]);
 			};
@@ -1413,8 +1420,11 @@ function fullLabel(postid, library) {
 		D(postid).scrollIntoView({behavior: "smooth", block:"nearest"});
 	}
 	
-	let label = make('div');
-	label.style = "overflow:hidden; cursor:pointer; padding:5px; position:relative";
+	let label = make('a');
+	label.style = "display:block; overflow:hidden; cursor:pointer; padding:5px; position:relative; color:#333";
+	
+	url.search = new URLSearchParams({postid});
+	label.href = url;
 	label.appendChild(postTitle);
 	label.appendChild(tags);
 	label.appendChild(postMeta);
@@ -1423,6 +1433,7 @@ function fullLabel(postid, library) {
 	label.onmouseenter = function() { actions.style.display = ""; };
 	label.onmouseleave = function() { actions.style.display = "none"; };
 	label.onclick = function() {
+		event.preventDefault();
 		fillPost(postid);
 		queryPost(postid);
 		if (!D(postid)) addToLib(postid);
@@ -2154,13 +2165,18 @@ function makeSubLi(userid, data) {
 	let subliwrap = make("li");
 	if (tag) subliwrap.id = "tag-" + userid;
 	else subliwrap.id = userid;
-	let subli = make('div');
+	let subli = make('a');
+	subli.style = "display:block; cursor:pointer; width:100%; padding:4px; position:relative; color: #333";	
+	let url = new URL(window.location);
+	if (tag) url.search = new URLSearchParams({tag:userid});
+	else url.search = new URLSearchParams({userid});
+	subli.href = url;
 	subli.onclick = function() {
+		event.preventDefault();
 		if (!tag) queryBrowse(userid);
 		else queryBrowse(null, userid);
 		flash(this);
 	};
-	subli.style = "cursor:pointer; width:100%; padding:4px; position:relative";
 	
 	let actions = make('div');
 	actions.style = "position:absolute; top:0px; right:0px; display:none; opacity:0.8";
@@ -2217,7 +2233,8 @@ function makeSubLi(userid, data) {
 				expirySpan = make('a', "Sponsorship ended • " + timeSince(data.expiryts) + " ago");
 				expirySpan.style = "font-style:italic";
 			}
-			expirySpan.onclick = function() {
+			expirySpan.onclick = function() {			
+				event.preventDefault();
 				event.stopPropagation();
 				if (!tag) queryBrowse(userid);
 				else queryBrowse(null, userid);
