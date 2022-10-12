@@ -95,7 +95,7 @@
 							<div style="font-size:0.85em; color:#888">Unique public address</div>
 							<div class='address' id="theirAddress" style="margin:5px 10px 15px 10px;" onclick="clickCopy(this, this.textContent)"> - </div>
 							<div style="font-size:0.85em; color:#888">Premium sponsorship • 30 days</div>
-							<span id="theirThreshold" style="margin:5px 0px 15px 10px;">&nbsp;-&nbsp;</span>&nbsp;XNO (or more)
+							<span id="theirThreshold" style="margin:5px 0px 15px 10px;">&nbsp;-&nbsp;</span>&nbsp;XNO or more
 							<div style="display:flex; justify-content:space-between; align-items:baseline; max-width:400px; margin:10px auto">
 							<input id="sponsorInput" onkeyup="" onkeydown="" placeholder="0.00" onblur="prepTwoDigit(this)" style="margin-right:5px; text-align:right; flex-grow:1; flex-basis:1px; overflow:hidden; text-overflow:ellipsis;" type="number" step="0.01" min="0" autocomplete="off"> XNO							
 							<button id="sendButton" onclick="sendMoney(this)" autocomplete="off" style="margin-left:20px; font-size:0.85em" disabled>Send</button>
@@ -864,6 +864,11 @@ function queryBrowse(userid, tag, suppressPanel) {
 	D('theirAddress').textContent = "\xa0-\xa0";
 	D('theirThreshold').textContent = "\xa0-\xa0";
 	
+	if (D('browseHeading').title) {
+		if (D(D('browseHeading').title)) removeActiveBar(D(D('browseHeading').title));
+		if (D("tag-" + D('browseHeading').title)) removeActiveBar(D("tag-" + D('browseHeading').title));
+	}
+	
 	if (userid) {		
 		D('sponsor').disabled = false;
 		if (XNO.address) {
@@ -872,7 +877,8 @@ function queryBrowse(userid, tag, suppressPanel) {
 		}		
 		if (userid == XNO.address) D('info').style.display = "";
 		identify(D('theirFunName'), userid);
-		D('theirAddress').textContent = userid;
+		D('theirAddress').textContent = userid;		
+		if (D(userid)) activeBar(D(userid));
 		
 		D('browseHeading').title = userid;
 		identify(D('browseHeading'), userid);
@@ -880,7 +886,9 @@ function queryBrowse(userid, tag, suppressPanel) {
 		fillBio(userid);
 		browseURL = {userid};
 	} else if (tag) {	
-		if (XNO.address) D('subscribe').disabled = false;
+		if (XNO.address) D('subscribe').disabled = false;			
+		if (D("tag-" + tag)) activeBar(D("tag-" + tag));
+		
 		D('browseHeading').title = tag;
 		D('browseHeading').textContent = tag;
 		D('bio').textContent = "An unmoderated tag."
@@ -1190,6 +1198,11 @@ function activeBar(elt) {
 	elt.firstElementChild.style.paddingLeft = "10px";
 }
 
+function removeActiveBar(elt) {
+	elt.firstElementChild.style.borderLeft = "";	
+	elt.firstElementChild.style.paddingLeft = "5px";
+}
+
 function fillBio(userid, block) {
 	let data = userCache[userid];
 	if (!data) {
@@ -1417,11 +1430,6 @@ function fillPost(postid, suppressPanel) {
 	D('comment').textContent = "Comment";
 	
 	// handle left bars
-	function removeActiveBar(elt) {
-		elt.firstElementChild.style.borderLeft = "";	
-		elt.firstElementChild.style.paddingLeft = "5px";
-	}
-
 	if (readPostid && D(readPostid)) removeActiveBar(D(readPostid));
 	if (readPostid && D(readPostid + "-disc")) removeActiveBar(D(readPostid + "-disc"));
 	if (D(postid)) activeBar(D(postid));
@@ -2137,14 +2145,16 @@ function makeSubLi(userid, data) {
 	let name = userid;
 	if (!tag) name = funName(userid);
 	
-	let subli = make("li");
-	subli.id = userid;
+	let subliwrap = make("li");
+	if (!tag) subliwrap.id = userid;
+	else subliwrap.id = "tag-" + userid;
+	let subli = make('div');
 	subli.onclick = function() {
 		if (!tag) queryBrowse(userid);
 		else queryBrowse(null, userid);
 		flash(this);
 	};
-	subli.style = "cursor:pointer; width:100%; padding:3px; position:relative";
+	subli.style = "cursor:pointer; width:100%; padding:4px; position:relative";
 	
 	let actions = make('div');
 	actions.style = "position:absolute; top:0px; right:0px; display:none; opacity:0.8";
@@ -2157,7 +2167,7 @@ function makeSubLi(userid, data) {
 		unsubBut.style.marginRight = "5px";
 		unsubBut.onclick = function() {
 			event.stopPropagation();
-			subli.parentNode.removeChild(subli);
+			subliwrap.parentNode.removeChild(subliwrap);
 			if (ws && ws.readyState == 1) ws.emit('unsubscribe', {userid});
 		};	
 		actions.appendChild(unsubBut);
@@ -2190,13 +2200,13 @@ function makeSubLi(userid, data) {
 		
 		if (data.expiryts) {
 			let expiryHolder = make('div');
-			expiryHolder.style = "margin-left:10px; font-size:0.85em;";
+			expiryHolder.style = "font-size:0.85em;";
 			let expirySpan;
 			if (data.expiryts > Date.now()) {
 				newDate = 2*Date.now() - data.expiryts;
 				expirySpan = make('a', "Premium sponsorship • " + timeSince(newDate) + " left");
 			} else {			
-				expirySpan = make('a', "Premium sponsorship ended • " + timeSince(data.expiryts) + " ago");
+				expirySpan = make('a', "Sponsorship ended • " + timeSince(data.expiryts) + " ago");
 				expirySpan.style = "font-style:italic";
 			}
 			expirySpan.onclick = function() {
@@ -2211,7 +2221,8 @@ function makeSubLi(userid, data) {
 		}
 	}
 	
-	D('subscriptions').appendChild(subli);
+	subliwrap.appendChild(subli);
+	D('subscriptions').appendChild(subliwrap);
 }
 
 function makeLibLi(postid, accessts, pushedts) {
