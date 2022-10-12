@@ -2229,6 +2229,11 @@ function makeSubLi(userid, data) {
 	
 	subliwrap.appendChild(subli);
 	D('subscriptions').appendChild(subliwrap);
+	
+	if (D('browseHeading').title) {
+		if (D(D('browseHeading').title)) activeBar(D(D('browseHeading').title));
+		if (D("tag-" + D('browseHeading').title)) activeBar(D("tag-" + D('browseHeading').title));
+	}
 }
 
 function makeLibLi(postid, accessts, pushedts) {
