@@ -934,6 +934,7 @@ function sponsorHandler(elt) {
 
 function subscribeHandler() {
 	if (D(D('browseHeading').title)) flash(D(D('browseHeading').title));
+	else if (D("tag-" + D('browseHeading').title)) flash(D("tag-" + D('browseHeading').title));
 	else {
 		makeSubLi(D('browseHeading').title);
 		if (ws && ws.readyState == 1) ws.emit("subscribe", {userid: D('browseHeading').title});
@@ -2142,12 +2143,10 @@ function queryPost(postid) {
 
 function makeSubLi(userid, data) {
 	let tag = (userid.substring(0, 5) != "nano_");
-	let name = userid;
-	if (!tag) name = funName(userid);
 	
 	let subliwrap = make("li");
-	if (!tag) subliwrap.id = userid;
-	else subliwrap.id = "tag-" + userid;
+	if (tag) subliwrap.id = "tag-" + userid;
+	else subliwrap.id = userid;
 	let subli = make('div');
 	subli.onclick = function() {
 		if (!tag) queryBrowse(userid);
@@ -2173,6 +2172,8 @@ function makeSubLi(userid, data) {
 		actions.appendChild(unsubBut);
 	}
 	
+	let name = userid;
+	if (!tag) name = funName(userid);
 	let nameSpan = make('span', name);
 	nameSpan.style.fontWeight = "600";
 	subli.appendChild(nameSpan);
