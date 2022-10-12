@@ -1280,7 +1280,7 @@ function receiveDOMdisplayName(userid, displayname, color) {
 	let urluserid = new URLSearchParams(window.location.search).get('userid');
 	if (urluserid == userid) document.title = funName(userid) + " - mktplc";
 	
-	if (userid == XNO.address) D('firstDiv').style.backgroundColor = "hsl(" + funColor(XNO.address, false, true) + ", 60%, 80%)";
+	if (userid == XNO.address) D('firstDiv').style.backgroundColor = "hsl(" + funColor(XNO.address, false, true) + ", 55%, 85%)";
 }
 
 function fillBrowseList(data) {
@@ -2054,7 +2054,7 @@ function importSeed() {
 		clearSeed();		
 		XNO.unpackSeed(seed, parseInt(index));		
 		D('displayName').textContent = funName(XNO.address);
-		D('firstDiv').style.backgroundColor = "hsl(" + funColor(XNO.address, false, true) + ", 60%, 80%)";
+		D('firstDiv').style.backgroundColor = "hsl(" + funColor(XNO.address, false, true) + ", 55%, 85%)";
 		
 		D("current").disabled = false;
 		D("clear").disabled = false;
