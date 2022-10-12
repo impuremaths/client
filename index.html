@@ -1260,6 +1260,8 @@ function closeBio() {
 	
 	D('bio-name').value = "";
 	D('bio-name').placeholder = "Public display name...";
+	
+	if (XNO.address) D('firstDiv').style.backgroundColor = "hsl(" + funColor(XNO.address, false, true) + ", 55%, 80%)";
 }
 
 function receiveDOMdisplayName(userid, displayname, color) {
@@ -2670,6 +2672,8 @@ function color(elt) {
 	if (theColor == 0) theColor = funColor(XNO.address, true, true);
 	elt.previousElementSibling.style.color = 'hsl(' + theColor + ', 100%, 27%)';
 	setCSS('--hue', theColor);
+	
+	D('firstDiv').style.backgroundColor = "hsl(" + theColor + ", 55%, 80%)";
 }
 
 function setCSS(variable, value) { document.documentElement.style.setProperty(variable, value);}
