@@ -2427,7 +2427,7 @@ function showAccordion(obj) { obj.style.maxHeight = obj.scrollHeight + "px"; }
 function flash(elt, str) {
 	if (elt) {
 		if (str != undefined) elt.textContent = str;
-		elt.style.backgroundColor = 'hsl(var(--hue), var(--butsat), 95%)';	
+		elt.style.backgroundColor = 'hsl(var(--hue), var(--butsat), 93%)';	
 		setTimeout(function() {	elt.style.backgroundColor = "";}, 500);
 	} else console.log("Element disappeared before display.");
 }
