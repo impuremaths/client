@@ -1186,7 +1186,7 @@ function cachePost(metaData, chain) {
 }
 
 function activeBar(elt) {
-	elt.firstElementChild.style.borderLeft = "solid 2px #e4e7e7";		
+	elt.firstElementChild.style.borderLeft = "solid 2px hsl(var(--hue), var(--butsat), 80%)";		
 	elt.firstElementChild.style.paddingLeft = "10px";
 }
 
@@ -1247,7 +1247,10 @@ function closeBio() {
 	D('bio-name').value = "";
 	D('bio-name').placeholder = "Public display name...";
 	
-	if (XNO.address) D('firstDiv').style.backgroundColor = "hsl(" + funColor(XNO.address, false, true) + ", 55%, 80%)";
+	if (XNO.address) {
+		D('firstDiv').style.backgroundColor = "hsl(" + funColor(XNO.address, false, true) + ", 55%, 80%)";
+		setCSS('--hue', funColor(XNO.address, false, true));
+	}
 }
 
 function receiveDOMdisplayName(data) {
@@ -1269,7 +1272,10 @@ function receiveDOMdisplayName(data) {
 	let urluserid = new URLSearchParams(window.location.search).get('userid');
 	if (urluserid == userid) document.title = funName(userid) + " - mktplc";
 	
-	if (userid == XNO.address) D('firstDiv').style.backgroundColor = "hsl(" + funColor(XNO.address, false, true) + ", 55%, 80%)";
+	if (userid == XNO.address) {
+		D('firstDiv').style.backgroundColor = "hsl(" + funColor(XNO.address, false, true) + ", 55%, 80%)";
+		setCSS('--hue', funColor(XNO.address, false, true));
+	}
 }
 
 function fillBrowseList(data) {
@@ -1542,7 +1548,7 @@ function fillContent(elt, content, wall, userid) {
 	for (let i = 0; i < content.length; i++) {	
 		let jsbox;
 		if (!content[i].content) {
-			let wording = "Content";
+			let wording = "Premium content";
 			if (content[i].type == "js") wording = "An applet";
 			if (content[i].type == "media") wording = "Media";
 			
@@ -1570,7 +1576,7 @@ function fillContent(elt, content, wall, userid) {
 		} else if (content[i].type == "js") {
 			jsbox = make("iframe");
 			jsbox.style = "width:100%; height:0px; border-top:0px; border-bottom:0px; border-left:2px solid transparent; border-right:0px;";
-			jsbox.onmouseenter = function() { jsbox.style.borderColor = "#e4e7e7"; }
+			jsbox.onmouseenter = function() { jsbox.style.borderColor = "hsl(var(--hue), var(--butsat), 80%)"; }
 			jsbox.onmouseleave = function() { jsbox.style.borderColor = "transparent"; }
 			jsbox.sandbox = "allow-scripts";
 			let str = `<script>window.onload = function() {
@@ -1654,7 +1660,7 @@ function fillContent(elt, content, wall, userid) {
 				elt.children[wall[i]].style.borderLeft = "2px solid transparent";
 				elt.children[wall[i]].onmouseenter = function() {
 					elt.children[wall[i]].style.opacity = "";
-					elt.children[wall[i]].style.borderColor = "#e4e7e7";
+					elt.children[wall[i]].style.borderColor = "hsl(var(--hue), var(--butsat), 80%)";
 				};
 				elt.children[wall[i]].onmouseleave = function() {
 					elt.children[wall[i]].style.opacity = "0.4";
@@ -2055,6 +2061,8 @@ function importSeed() {
 			XNO.unpackSeed(seed, parseInt(index));		
 			D('displayName').textContent = funName(XNO.address);
 			D('firstDiv').style.backgroundColor = "hsl(" + funColor(XNO.address, false, true) + ", 55%, 80%)";
+			setCSS("--butsat", "55%");
+			setCSS("--hue", funColor(XNO.address, false, true));
 			
 			D("current").disabled = false;
 			D("clear").disabled = false;
@@ -2097,6 +2105,7 @@ function clickClearSeed() {
 	XNO.encryptKey = "";	
 	D('displayName').textContent = "Guest";	
 	D('firstDiv').style.backgroundColor = "hsl(0, 0%, 80%)";
+	setCSS("--butsat", "0%");
 	
 	D("current").disabled = true;	
 	D("clear").disabled = true;
