@@ -183,19 +183,19 @@ button {
 	color: #333;
 	border-radius: 15px;
 	border: 0px solid #fff;
-	background-color: hsl(var(--hue), var(--butsat), 95%);
+	background-color: hsl(var(--hue), var(--butsat), 93%);
 	font-size:1em;
 	cursor: pointer;
 }
 
 button:disabled, button[disabled] {
 	color:#aaa !important;
-	background-color: hsl(var(--hue), 0%, 95%) !important;
+	background-color: hsl(var(--hue), 0%, 93%) !important;
 	cursor:initial;
 }
 
 button:hover {  
-	background-color: hsl(var(--hue), var(--butsat), 90%);
+	background-color: hsl(var(--hue), var(--butsat), 88%);
 }
 
 button.active {
@@ -425,7 +425,7 @@ li {
 	}
 	
 	button:hover {  
-		background-color: hsl(var(--hue), var(--butsat), 95%);
+		background-color: hsl(var(--hue), var(--butsat), 93%);
 	}
 	
 	button.active:hover {
