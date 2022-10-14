@@ -183,22 +183,24 @@ button {
 	color: #333;
 	border-radius: 15px;
 	border: 0px solid #fff;
-	background-color:#f1f4f4;
+	background-color: hsl(var(--hue), var(--butsat), 95%);
 	font-size:1em;
 	cursor: pointer;
 }
 
 button:disabled, button[disabled] {
 	color:#aaa !important;
+	background-color: hsl(var(--hue), 0%, 95%) !important;
 	cursor:initial;
 }
 
 button:hover {  
-	background-color: #e4e7e7;
+	background-color: hsl(var(--hue), var(--butsat), 90%);
 }
 
 button.active {
-	background-color: #d4d7d7;	
+	/*background-color: #d4d7d7;	*/
+	background-color: hsl(var(--hue), var(--butsat), 80%);
 }
 
 button.left {
@@ -300,6 +302,7 @@ a:hover {
 
 :root {
   --hue: 0;
+  --butsat: 0%;
   --sat: 70%;
 	
   --Llight:60%;
@@ -311,7 +314,7 @@ input[type=range].colorslider {
   opacity:0.1;
   -webkit-appearance: none;
   outline: none;
-  border: 0px solid #000000;
+  border: 0px solid #000;
   width: calc(100% - 20px);
   height: 15px;
   border-radius: 20px;
@@ -422,11 +425,12 @@ li {
 	}
 	
 	button:hover {  
-		background-color: #f1f4f4;
+		background-color: hsl(var(--hue), var(--butsat), 95%);
 	}
 	
 	button.active:hover {
-		background-color: #d4d7d7;	
+		/*background-color: #d4d7d7;	*/
+		background-color: hsl(var(--hue), var(--butsat), 80%);
 	}
 
 	button:focus {
