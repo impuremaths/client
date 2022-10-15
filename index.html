@@ -593,11 +593,11 @@ async function withdraw(symbol, elt, amt, destaddr, them) {
 	let totalAmt = BigInt(rawFromUnit(symbol, amt));
 	let balance = BigInt(rawFromUnit(symbol, D('balance').textContent));
 	let safetyMax = BigInt(rawFromUnit(symbol, hardMax));
-	if (totalAmt > safetyMax) showMsg("Send limit for built-in wallet: " + hardMax + " XNO");
+	if (totalAmt > safetyMax) showMsg("Limit for built-in wallet: " + hardMax + " XNO");
 	else if (totalAmt > balance) showMsg("Insufficient funds.");
 	else {
-		let confirmMessage = "Sponsor less than amount requested for premium content?";
-		if (totalAmt > BigInt(rawFromUnit(symbol, D('theirThreshold').textContent))) confirmMessage = "Sponsor more than amount requested for premium content?";
+		let confirmMessage = "Sponsor less than amount required for premium content?";
+		if (totalAmt > BigInt(rawFromUnit(symbol, D('theirThreshold').textContent))) confirmMessage = "Sponsor more than amount required for premium content?";
 		if (totalAmt == BigInt(rawFromUnit(symbol, D('theirThreshold').textContent)) || confirm(confirmMessage)) {
 			if (totalAmt >= BigInt(rawFromUnit(symbol, D('theirThreshold').textContent))) showMsg("Sponsoring \'" + them + "\'...", null, true);
 			else showMsg("Tipping \'" + them + "\'...", null, true);
@@ -845,6 +845,7 @@ function queryBrowse(userid, tag, suppressPanel) {
 	D('sponsor').disabled = true;	
 	D('subscribe').disabled = true;	
 	D('sendButton').disabled = true;
+	D('bioPreview').style.display = "none";
 	
 	D('theirFunName').style.color = "";	
 	D('theirFunName').textContent = "\xa0-\xa0";
@@ -857,6 +858,7 @@ function queryBrowse(userid, tag, suppressPanel) {
 	}
 	
 	if (userid) {		
+		D('bioPreview').style.display = "";
 		D('sponsor').disabled = false;
 		if (XNO.address) {
 			D('subscribe').disabled = false;
@@ -873,6 +875,7 @@ function queryBrowse(userid, tag, suppressPanel) {
 		fillBio(userid);
 		browseURL = {userid};
 	} else if (tag) {	
+		D('bioPreview').style.display = "";
 		if (XNO.address) D('subscribe').disabled = false;			
 		if (D("tag-" + tag)) activeBar(D("tag-" + tag));
 		
@@ -1241,7 +1244,7 @@ function openBio() {
 
 function closeBio() {
 	D('bioEditor').style.display = "none";
-	D('bioPreview').style.display = "";
+	if (D('browseHeading').title != "Recent") D('bioPreview').style.display = "";
 	clearDOM(D('bioBlocks'));
 	
 	D('bio-name').value = "";
@@ -2061,7 +2064,7 @@ function importSeed() {
 			XNO.unpackSeed(seed, parseInt(index));		
 			D('displayName').textContent = funName(XNO.address);
 			D('firstDiv').style.backgroundColor = "hsl(" + funColor(XNO.address, false, true) + ", 55%, 80%)";
-			setCSS("--butsat", "48%");
+			setCSS("--butsat", "50%");
 			setCSS("--hue", funColor(XNO.address, false, true));
 			
 			D("current").disabled = false;
