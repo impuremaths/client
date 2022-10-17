@@ -204,7 +204,7 @@
 				
 					<div style="margin-top:3px">
 						<span id="creation">Date published</span><span id="modification" style="font-style:italic"> (date updated)</span>
-						<a id="edit" onclick="event.preventDefault(); fillEdit(); queryPost();" style="cursor:pointer; display:none"> • Edit</a>
+						<a id="edit" onclick="event.preventDefault(); fillEdit(); queryPost();" style="cursor:pointer; display:none"> • Update</a>
 					</div>
 				</div>
 				
@@ -1374,7 +1374,7 @@ function fullLabel(postid, library) {
 	}
 	
 	if (data.userid == XNO.address) {
-		let editBut = make('a', " • Edit");			
+		let editBut = make('a', " • Update");			
 		editBut.onclick = function() {
 			event.stopPropagation();
 			fillEdit(postid);
@@ -1435,7 +1435,7 @@ function fullLabel(postid, library) {
 		queryPost(postid);
 		if (!D(postid)) addToLib(postid);
 		else D(postid).firstElementChild.firstElementChild.style.fontWeight = "";
-		flash(this);
+		flash(this.parentNode);
 	}
 	return label;
 }
@@ -1692,8 +1692,8 @@ function fillEdit(postid, officialData) {
 	
 	editPostid = postid;
 	editPostContent = theNewContent;
-	D('submitButton').textContent = "Publish Edit";
-	D('clearButton').textContent = "Cancel Edit";
+	D('submitButton').textContent = "Publish Update";
+	D('clearButton').textContent = "Cancel";
 	
 	if (!metaData) return false;
 	
@@ -2172,7 +2172,7 @@ function makeSubLi(userid, data) {
 		event.preventDefault();
 		if (!tag) queryBrowse(userid);
 		else queryBrowse(null, userid);
-		flash(this);
+		flash(this.parentNode);
 	};
 	
 	let actions = make('div');
@@ -2227,7 +2227,7 @@ function makeSubLi(userid, data) {
 				if (!tag) queryBrowse(userid);
 				else queryBrowse(null, userid);
 				if (!active('sponsor')) sponsorHandler(D('sponsor'));
-				flash(subli);
+				flash(subli.parentNode);
 			}
 			
 			let expiryHolder = make('div');
