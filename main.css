@@ -303,15 +303,15 @@ a:hover {
 :root {
   --hue: 0;
   --butsat: 0%;
-  --sat: 70%;
+  --sat: 55%;
 	
-  --Llight:60%;
+  --Llight:70%;
   --Mlight:85%;
   --Hlight:90%;
 }
 
 input[type=range].colorslider {
-  opacity:0.1;
+  opacity:0.3;
   -webkit-appearance: none;
   outline: none;
   border: 0px solid #000;
@@ -334,7 +334,7 @@ input[type=range].colorslider:hover {
   width: 20px;
   height: 25px;
   border-radius: 20px; 
-  background: hsl(var(--hue), 100%, 35%);
+  background: hsl(var(--hue), 55%, 70%);
   cursor: pointer;
   border: 2px solid white;
 }
@@ -343,7 +343,7 @@ input[type=range].colorslider:hover {
   width: 20px;
   height: 25px;
   border-radius: 20px;
-  background: hsl(var(--hue), 100%, 35%);
+  background: hsl(var(--hue), 55%, 70%);
   cursor: pointer;
   border: 2px solid white;
 }
