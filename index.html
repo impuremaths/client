@@ -1494,7 +1494,8 @@ function fullLabel(postid, library, mediaBox) {
 		sbdiv2.style.flexGrow = 1;
 		sbdiv2.style.marginLeft = "10px";
 		sbdiv2.style.height = "150px";
-		sbdiv2.style.backgroundColor = "hsl(" + funColor(XNO.address, false, true) + ", 55%, 80%)";
+		if (XNO.address) sbdiv2.style.backgroundColor = "hsl(" + funColor(XNO.address, false, true) + ", 55%, 80%)";
+		else sbdiv2.style.backgroundColor = "hsl(0, 0%, 80%)";
 		
 		sbdiv2.style.display = "flex";
 		sbdiv2.appendChild(mediaBox);		
