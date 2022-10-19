@@ -1293,7 +1293,65 @@ function fillBrowseList(data) {
 			cachePost(data[i]);			
 			let postli = make('li');
 			postli.id = data[i].postid + "-disc";
-			postli.appendChild(fullLabel(data[i].postid));
+			postli.style.marginBottom = "10px";
+			
+			let mediaBox;
+			if (typeof postCache[data[i].postid].content !== "string") {
+				for (let j = 0; j < postCache[data[i].postid].content.length; j++) {
+					let content = postCache[data[i].postid].content[j];
+					if (content.type == "image" || content.type == "media") {
+						let mediaURL = content.content.trim().split(" ");
+						if (mediaURL.length) mediaURL = mediaURL[0].split("[");
+						if (mediaURL.length) mediaURL = mediaURL[0].trim();
+						else mediaURL = "";			
+						let match = mediaURL.match(/^.*(youtu\.be\/|vi?\/|u\/\w\/|embed\/|\?vi?=|\&vi?=)([^#\&\?]*).*/);			
+						let ext = mediaURL.slice(-4).toLowerCase();	
+						
+						if (match && match[2].length == 11) {
+							mediaBox = make('div');		
+							mediaBox.style = "position:relative; width:100%";
+							
+							frame = make('div');
+							frame.style = "padding-bottom:56%";				
+							youtube = make("iframe");
+							youtube.style = "border:0px; background-color:black; position:absolute; height:100%; width:100%; top:0px";
+							youtube.src = "https://www.youtube.com/embed/" + match[2] + "?modestbranding=1"
+							
+							mediaBox.appendChild(frame);
+							mediaBox.appendChild(youtube);
+						} else if (ext == ".mp4" || ext == ".ogg" || ext == "webm") {
+							mediaBox = make("video");
+							mediaBox.controls = true;
+							mediaBox.src = mediaURL;
+							mediaBox.style = "width:100%";
+							fileSize(mediaURL);
+						} else if (ext == ".mp3" || ext == ".wav") {
+							mediaBox = make("audio");
+							mediaBox.controls = true;
+							mediaBox.src = mediaURL;
+							mediaBox.style = "width:100%; margin:auto;";
+							fileSize(mediaURL);
+						} else {
+							mediaBox = make('picture');
+							let imagediv = make("img");
+							imagediv.src = mediaURL;
+							imagediv.style.fontStyle = "italic";
+							imagediv.alt = "[unable to connect to media]";
+							imagediv.style.height = "fit-content";
+							imagediv.style.margin = "auto";
+							imagediv.style.maxWidth = "100%";
+							imagediv.style.maxHeight = "100%";
+							mediaBox.style = "width:100%; display:flex; justify-content:center";
+							mediaBox.appendChild(imagediv);
+							fileSize(mediaURL);
+						}
+						
+						break;
+					}		
+				}
+			}			
+			postli.appendChild(fullLabel(data[i].postid, null, mediaBox));
+			
 			if (readPostid == data[i].postid) activeBar(postli);
 			D('discovery').appendChild(postli);
 		}
@@ -1302,7 +1360,7 @@ function fillBrowseList(data) {
 	requestNames();
 }
 
-function fullLabel(postid, library) {
+function fullLabel(postid, library, mediaBox) {
 	let data = postCache[postid];
 	let postTitle = make('div', data.title);
 	postTitle.title = data.title;
@@ -1384,7 +1442,7 @@ function fullLabel(postid, library) {
 	
 	// Hover buttons
 	let actions = make('div');
-	actions.style = "position:absolute; top:0px; right:0px; display:none; opacity:0.8";
+	actions.style = "position:absolute; top:0px; right:0px; display:none; opacity:0.93";
 	
 	let postLink = make('button', "Link");
 	postLink.classList.add("left");
@@ -1407,7 +1465,7 @@ function fullLabel(postid, library) {
 			event.preventDefault();
 			remove(label.parentNode);
 			if (ws && ws.readyState == 1) ws.emit('deleteLibrary', {postid:label.parentNode.id});
-			if (!D('library').children[0]) D('libraryPlaceholder').style.display = "";
+			if (!D('library').firstElementChild) D('libraryPlaceholder').style.display = "";
 		};	
 	} else addBut.onclick = function() {
 		event.stopPropagation();
@@ -1418,13 +1476,30 @@ function fullLabel(postid, library) {
 	}
 	
 	let label = make('a');
-	label.style = "display:block; overflow:hidden; cursor:pointer; padding:5px; position:relative; color:#333";
+	label.style = "display:flex; overflow:hidden; cursor:pointer; padding:5px; position:relative; color:#333";
 	
 	url.search = new URLSearchParams({postid});
 	label.href = url;
-	label.appendChild(postTitle);
-	label.appendChild(tags);
-	label.appendChild(postMeta);
+	let sbdiv = make('div');
+	sbdiv.style = "text-overflow:ellipsis; overflow:hidden";
+	sbdiv.appendChild(postTitle);
+	sbdiv.appendChild(tags);
+	sbdiv.appendChild(postMeta);
+	label.appendChild(sbdiv);
+	if (mediaBox) {
+		sbdiv.style.flexBasis = "1px";
+		sbdiv.style.flexGrow = 1;		
+		let sbdiv2 = make('div');
+		sbdiv2.style.flexBasis = "1px";
+		sbdiv2.style.flexGrow = 1;
+		sbdiv2.style.marginLeft = "10px";
+		sbdiv2.style.height = "150px";
+		sbdiv2.style.backgroundColor = "hsl(" + funColor(XNO.address, false, true) + ", 55%, 80%)";
+		
+		sbdiv2.style.display = "flex";
+		sbdiv2.appendChild(mediaBox);		
+		label.appendChild(sbdiv2);
+	}
 	label.appendChild(actions);
 	
 	label.onmouseenter = function() { actions.style.display = ""; };
@@ -1615,19 +1690,23 @@ function fillContent(elt, content, wall, userid) {
 				mediaBox.controls = true;
 				mediaBox.src = mediaURL;
 				mediaBox.style = "width:100%";
+				fileSize(mediaURL);
 			} else if (ext == ".mp3" || ext == ".wav") {
 				mediaBox = make("audio");
 				mediaBox.controls = true;
 				mediaBox.src = mediaURL;
 				mediaBox.style = "width:100%";
+				fileSize(mediaURL);
 			} else {
 				mediaBox = make('picture');
 				let imagediv = make("img");
 				imagediv.src = mediaURL;
+				imagediv.style.fontStyle = "italic";
 				imagediv.alt = "[unable to connect to media]";
 				imagediv.style.maxWidth = "100%";
 				mediaBox.style = "width:100%; display:flex; justify-content:center";
 				mediaBox.appendChild(imagediv);
+				fileSize(mediaURL);
 			}
 			jsbox.appendChild(mediaBox);
 			let caption = str.match(/\[(.*)\]/);
@@ -1651,23 +1730,22 @@ function fillContent(elt, content, wall, userid) {
 	
 	if (wall) {
 		for (let i = 0; i < wall.length; i++) {
-			elt.children[wall[i]].style.opacity = "0.4";
+			let block = elt.children[wall[i]];
+			block.style.opacity = "0.4";
 			if (content[wall[i]].content) {
-				elt.children[wall[i]].style.transitionProperty = "opacity";
-				elt.children[wall[i]].style.transitionDuration = "1s";
-				elt.children[wall[i]].style.transitionTimingFunction = "";
-				setTimeout(function() {
-					elt.children[wall[i]].style.opacity = "";
-				}, 0);
+				block.style.transitionProperty = "opacity";
+				block.style.transitionDuration = "1s";
+				block.style.transitionTimingFunction = "";
+				setTimeout(function() { block.style.opacity = ""; }, 0);
 			} else {			
-				elt.children[wall[i]].style.borderLeft = "2px solid transparent";
-				elt.children[wall[i]].onmouseenter = function() {
-					elt.children[wall[i]].style.opacity = "";
-					elt.children[wall[i]].style.borderColor = "hsl(var(--hue), var(--butsat), 80%)";
+				block.style.borderLeft = "2px solid transparent";
+				block.onmouseenter = function() {
+					block.style.opacity = "";
+					block.style.borderColor = "hsl(var(--hue), var(--butsat), 80%)";
 				};
-				elt.children[wall[i]].onmouseleave = function() {
-					elt.children[wall[i]].style.opacity = "0.4";
-					elt.children[wall[i]].style.borderColor = "transparent";
+				block.onmouseleave = function() {
+					block.style.opacity = "0.4";
+					block.style.borderColor = "transparent";
 				};			
 			}
 		}
@@ -1747,7 +1825,7 @@ function appendBlock(type, previous, parent) {
 	textbox.style = "height:150px; width:100%; tab-size:4";	
 	block.appendChild(textbox);	
 	
-	let sponsBut = make('button', "Sponsors Only");
+	let sponsBut = make('button', "Premium");
 	sponsBut.style.marginRight = "5px";
 	sponsBut.style.fontSize = "0.85em";
 	sponsBut.tabIndex = "-1";
@@ -1820,7 +1898,7 @@ function appendBlock(type, previous, parent) {
 	delBut.onclick = function() { 
 		if (!textbox.value || confirm("Delete element?")) {
 			parent.removeChild(block); 		
-			if (parent.children.length == 1) parent.children[0].lastElementChild.lastElementChild.lastElementChild.previousElementSibling.disabled = true;
+			if (parent.children.length == 1) parent.firstElementChild.lastElementChild.lastElementChild.lastElementChild.previousElementSibling.disabled = true;
 		}
 	};
 	
@@ -2257,7 +2335,7 @@ function makeLibLi(postid, accessts, pushedts) {
 	if (!accessts) libli.firstElementChild.firstElementChild.style.fontWeight = "bold";	
 	//if (pushedts) libli.appendChild(make('span', timeSince(pushedts)));
 	if (postid == readPostid) activeBar(libli);
-	if (D('library').children[0]) D('library').insertBefore(libli, D('library').children[0]);
+	if (D('library').firstElementChild) D('library').insertBefore(libli, D('library').firstElementChild);
 	else {
 		D('library').appendChild(libli);
 		D('libraryPlaceholder').style.display = "none";
@@ -2680,6 +2758,20 @@ function color(elt) {
 
 function setCSS(variable, value) { document.documentElement.style.setProperty(variable, value);}
 
+function fileSize(url) {
+    return new Promise((resolve, reject) => {
+        let xhttp = new XMLHttpRequest();
+        xhttp.timeout = 10*1000; // 10 seconds
+        xhttp.onreadystatechange = function() {
+			if (this.readyState == 4) {
+				console.log("File size: " + xhttp.getResponseHeader("Content-Length"));
+				resolve(xhttp.getResponseHeader("Content-Length"));
+			}
+        };
+		xhttp.open("HEAD", url, true); // Notice "HEAD" instead of "GET",  to get only the header
+        xhttp.send();
+    });
+}
 
 function D(string) { return document.getElementById(string); }
 
