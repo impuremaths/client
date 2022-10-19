@@ -1364,11 +1364,13 @@ function fullLabel(postid, library, mediaBox) {
 	let data = postCache[postid];
 	let postTitle = make('div', data.title);
 	postTitle.title = data.title;
-	postTitle.style = "overflow:hidden; text-overflow:ellipsis; display: -webkit-box; -webkit-line-clamp: 3; line-clamp: 3; -webkit-box-orient: vertical;";
+	postTitle.style = "overflow:hidden; text-overflow:ellipsis;"
+	if (mediaBox) postTitle.style.display = "-webkit-box; -webkit-line-clamp: 3; line-clamp: 3; -webkit-box-orient: vertical;";
 			
 	// author and tags
 	let tags = make('div');
-	tags.style = "font-size:0.85em; overflow: hidden; text-overflow:ellipsis; display: -webkit-box; -webkit-line-clamp: 3; line-clamp: 3; -webkit-box-orient: vertical;";
+	tags.style = "font-size:0.85em; overflow: hidden; text-overflow:ellipsis;"
+	if (mediaBox) tags.style.display = "-webkit-box; -webkit-line-clamp: 3; line-clamp: 3; -webkit-box-orient: vertical;";
 	
 	let postAuthor = make('a');
 	postAuthor.style = "cursor:pointer; font-weight:600";
