@@ -1364,7 +1364,7 @@ function fullLabel(postid, library, mediaBox) {
 	let data = postCache[postid];
 	let postTitle = make('div', data.title);
 	postTitle.title = data.title;
-	postTitle.style = "overflow:hidden; text-overflow:ellipsis;"
+	postTitle.style = "overflow:hidden; text-overflow:ellipsis; margin-bottom:3px"
 	if (mediaBox) postTitle.style.display = "-webkit-box; -webkit-line-clamp: 3; line-clamp: 3; -webkit-box-orient: vertical;";
 			
 	// author and tags
