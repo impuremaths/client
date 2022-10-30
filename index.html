@@ -608,7 +608,7 @@ async function withdraw(symbol, elt, amt, destaddr, them) {
 				
 				if (totalAmt >= BigInt(rawFromUnit(symbol, D('theirThreshold').textContent))) {
 					showMsg("Sponsored \'" + them + "\' with " + amt + " " + symbol + "! Premium content now available.");
-					if (ws && ws.readyState == 1) ws.emit('sponsor', {userid:destaddr, blockid:sendResp });
+					if (ws) ws.emit('sponsor', {userid:destaddr, blockid:sendResp });
 				} else showMsg("Tipped \'" + them + "\' " + amt + " " + symbol + "!");
 				
 				D('sponsorInput').value = "";
@@ -668,7 +668,7 @@ var editPostContent = "";
 var editPostPending = false;
 var floatState = false;
 var backList = [];
-var browseURL;
+var browseURL = {};
 
 var DOMdisplayNameQueue = {};
 
@@ -931,7 +931,7 @@ function subscribeHandler() {
 		D(D('browseHeading').title).scrollIntoView({behavior: "smooth", block:"nearest"});
 	} else {
 		makeSubLi(D('browseHeading').title);
-		if (ws && ws.readyState == 1) ws.emit("subscribe", {userid: D('browseHeading').title});
+		if (ws) ws.emit("subscribe", {userid: D('browseHeading').title});
 		if (D(D('browseHeading').title)) D(D('browseHeading').title).scrollIntoView({behavior: "smooth", block:"nearest"});
 		else D("tag-" + D('browseHeading').title).scrollIntoView({behavior: "smooth", block:"nearest"});
 	}
@@ -974,22 +974,22 @@ function publish() {
 	for (let i = 0; i < D('editTags').children.length; i++) {	
 		tags.push(D('editTags').children[i].textContent);
 	}
-	console.log({wall:parseEditorWall(D('postEditor')), content:parseEditorContent(D('postEditor')), title:D('postTitle').value.trim(), tags,
-							prev_: prev, next_: next, recip_prev: active('recip-prev'), recip_next: active('recip-next'), createdts: parseInt(D('creationEdit').title)});
-	ws.emit('updatePost', {wall:parseEditorWall(D('postEditor')), content:parseEditorContent(D('postEditor')), title:D('postTitle').value.trim(), tags,
-							prev_: prev, next_: next, recip_prev: active('recip-prev'), recip_next: active('recip-next'), createdts: parseInt(D('creationEdit').title)});
+	let postData = {wall:parseEditorWall(), content:parseEditorContent(D('postEditor')), title:D('postTitle').value.trim(), tags,
+							prev_: prev, next_: next, recip_prev: active('recip-prev'), recip_next: active('recip-next'), createdts: parseInt(D('creationEdit').title)};
+	console.log(postData);
+	ws.emit('updatePost', postData);
 }
 
 function checkTitle(elt) {
 	let prev = "";
 	try { prev = new URLSearchParams((new URL(elt.value)).search).get('postid');} 
 	catch { prev = "" };
-	let titleElt = elt.parentNode.previousElementSibling;
+	let titleElt = elt.parentNode.previousElementSibling.firstElementChild;
 	let buttonElt = elt.parentNode.lastElementChild;
 	
 	if (prev) {
-		if (postCache[prev]) titleElt.firstElementChild.textContent = postCache[prev].title;
-		else titleElt.firstElementChild.textContent = "(unknown post)";
+		if (postCache[prev]) titleElt.textContent = postCache[prev].title;
+		else titleElt.textContent = "(unknown post)";
 		
 		if (prev.split("-")[0] == XNO.address) {
 			buttonElt.classList.add('active');
@@ -999,7 +999,7 @@ function checkTitle(elt) {
 			buttonElt.disabled = true;		
 		}		
 	} else {
-		titleElt.firstElementChild.textContent = "(none)"; 
+		titleElt.textContent = "(none)"; 
 		buttonElt.classList.remove('active');
 		buttonElt.disabled = true;
 	}
@@ -1043,12 +1043,12 @@ function hasDraft() {
 	return false;
 }
 
-function parseEditorWall(elt) {
+function parseEditorWall() {
 	let wall = [];
 	let k = 0;
-	for (let i = 0; i < elt.children.length; i++) {
-		if (elt.children[i].firstChild.value) {
-			if (active(elt.children[i].children[1].firstChild)) wall.push(k);
+	for (let i = 0; i < D('postEditor').children.length; i++) {
+		if (D('postEditor').children[i].firstChild.value) {
+			if (active(D('postEditor').children[i].children[1].firstChild)) wall.push(k);
 			k++;
 		}
 	}
@@ -1064,10 +1064,7 @@ function parseEditorContent(elt) {
 }
 
 function showPreview(elt) {
-	let content = parseEditorContent(D('postEditor'));
-	let wall = parseEditorWall(D('postEditor'));
-	fillContent(D('postPreview'), content, wall, XNO.address);
-	
+	fillContent(D('postPreview'), parseEditorContent(D('postEditor')), parseEditorWall(), XNO.address);	
 	D('previewButton').classList.add('active');
 	D('editButton').classList.remove('active');
 	D('postEditor').style.display = "none";
@@ -1200,18 +1197,17 @@ function removeActiveBar(elt) {
 
 function fillBio(userid, block) {
 	let data = userCache[userid];
-	if (!data) {
-		D('bio').textContent = "Full of possibilities."
-		return false;
+	if (!data) D('bio').textContent = "Full of possibilities.";
+	else {
+		if (data.sponsor_price) D('theirThreshold').textContent = data.sponsor_price;
+		else D('theirThreshold').textContent = "1.00";
+		if (!block) {
+			if (data.bio && data.bio.length) fillContent(D('bio'), data.bio);
+			else D('bio').textContent = "Full of possibilities."
+		}
+		receiveDOMdisplayName(data);
+		console.log(data);
 	}
-	if (data.sponsor_price) D('theirThreshold').textContent = data.sponsor_price;
-	else D('theirThreshold').textContent = "1.00";
-	if (!block) {
-		if (data.bio && data.bio.length) fillContent(D('bio'), data.bio);
-		else D('bio').textContent = "Full of possibilities."
-	}
-	receiveDOMdisplayName(data);
-	console.log(data);
 }
 
 function fillEditorContent(data, elt) {
@@ -1290,11 +1286,7 @@ function fillBrowseList(data) {
 	if (data) {
 		data.sort(function(x, y) { return y.createdts - x.createdts; });
 		for (let i = 0; i < data.length; i++) {	
-			cachePost(data[i]);			
-			let postli = make('li');
-			postli.id = data[i].postid + "-disc";
-			postli.style.marginBottom = "10px";
-			
+			cachePost(data[i]);				
 			let mediaBox;
 			if (typeof postCache[data[i].postid].content !== "string") {
 				for (let j = 0; j < postCache[data[i].postid].content.length; j++) {
@@ -1349,7 +1341,10 @@ function fillBrowseList(data) {
 						break;
 					}		
 				}
-			}			
+			}	
+			let postli = make('li');
+			postli.id = data[i].postid + "-disc";
+			postli.style.marginBottom = "10px";			
 			postli.appendChild(fullLabel(data[i].postid, null, mediaBox));
 			
 			if (readPostid == data[i].postid) activeBar(postli);
@@ -1365,15 +1360,15 @@ function fullLabel(postid, library, mediaBox) {
 	let postTitle = make('div', data.title);
 	postTitle.title = data.title;
 	postTitle.style = "overflow:hidden; text-overflow:ellipsis;"
-	if (mediaBox) {
-		postTitle.style.marginBottom = "3px";
-		postTitle.style.display = "-webkit-box; -webkit-line-clamp: 3; line-clamp: 3; -webkit-box-orient: vertical;";
-	}
 			
 	// author and tags
 	let tags = make('div');
 	tags.style = "font-size:0.85em; overflow: hidden; text-overflow:ellipsis;"
-	if (mediaBox) tags.style.display = "-webkit-box; -webkit-line-clamp: 3; line-clamp: 3; -webkit-box-orient: vertical;";
+	if (mediaBox) {
+		tags.style.display = "-webkit-box; -webkit-line-clamp: 3; line-clamp: 3; -webkit-box-orient: vertical;";
+		postTitle.style.display = "-webkit-box; -webkit-line-clamp: 3; line-clamp: 3; -webkit-box-orient: vertical;";
+		postTitle.style.marginBottom = "3px";
+	}
 	
 	let postAuthor = make('a');
 	postAuthor.style = "cursor:pointer; font-weight:600";
@@ -1446,8 +1441,6 @@ function fullLabel(postid, library, mediaBox) {
 	}
 	
 	// Hover buttons
-	let actions = make('div');
-	actions.style = "position:absolute; top:0px; right:0px; display:none; opacity:0.93";
 	
 	let postLink = make('button', "Link");
 	postLink.classList.add("left");
@@ -1458,24 +1451,31 @@ function fullLabel(postid, library, mediaBox) {
 		url.search = new URLSearchParams({postid});
 		clickCopy(this, url.href);
 	};
-	actions.appendChild(postLink);
 	
 	let addBut = make('button', "＋");
 	addBut.classList.add("right");
+	
+	let actions = make('div');
+	actions.style = "position:absolute; top:0px; right:0px; display:none; opacity:0.93";
+	actions.appendChild(postLink);
 	actions.appendChild(addBut);
+	
 	if (library) {
 		addBut.textContent = "✕";
 		addBut.onclick = function() {
 			event.stopPropagation();
 			event.preventDefault();
 			remove(label.parentNode);
-			if (ws && ws.readyState == 1) ws.emit('deleteLibrary', {postid:label.parentNode.id});
+			if (ws) ws.emit('deleteLibrary', {postid:label.parentNode.id});
 			if (!D('library').firstElementChild) D('libraryPlaceholder').style.display = "";
 		};	
 	} else addBut.onclick = function() {
 		event.stopPropagation();
-			event.preventDefault();
-		if (!D(postid)) addToLib(postid, true);
+		event.preventDefault();
+		if (!D(postid)) {
+			makeLibLi(postid);
+			if (XNO.address && ws) ws.emit('updateLibrary', { posts: [{ userid:data.userid, createdts:data.createdts, pushedts:Date.now() }] });
+		}
 		flash(D(postid));
 		D(postid).scrollIntoView({behavior: "smooth", block:"nearest"});
 	}
@@ -1514,8 +1514,11 @@ function fullLabel(postid, library, mediaBox) {
 		event.preventDefault();
 		fillPost(postid);
 		queryPost(postid);
-		if (!D(postid)) addToLib(postid);
-		else D(postid).firstElementChild.firstElementChild.style.fontWeight = "";
+		if (!D(postid)) {
+			let ts = Date.now();
+			if (XNO.address && ws) ws.emit('updateLibrary', { posts: [{ userid:data.userid, createdts:data.createdts, pushedts:ts, lastaccessedts:ts }] });
+			makeLibLi(postid, ts);
+		} else D(postid).firstElementChild.firstElementChild.style.fontWeight = "";
 		flash(this.parentNode);
 	}
 	return label;
@@ -2235,7 +2238,7 @@ function requestNames() {
 	for (let name in DOMdisplayNameQueue) {
 		userids.push(name);
 	}
-	if (ws && ws.readyState == 1 && userids.length) ws.emit('queryUsers', {userids});
+	if (ws && userids.length) ws.emit('queryUsers', {userids});
 }
 
 function queryPost(postid) {
@@ -2272,7 +2275,7 @@ function makeSubLi(userid, data) {
 			event.stopPropagation();
 			event.preventDefault();
 			remove(subli.parentNode);
-			if (ws && ws.readyState == 1) ws.emit('unsubscribe', {userid});
+			if (ws) ws.emit('unsubscribe', {userid});
 		};	
 		actions.appendChild(unsubBut);
 	}
@@ -2333,12 +2336,12 @@ function makeSubLi(userid, data) {
 	}
 }
 
-function makeLibLi(postid, accessts, pushedts) {
+function makeLibLi(postid, lastaccessedts, pushedts) {
 	let libli = make('li');
 	libli.id = postid;
 	libli.style.whiteSpace = "nowrap";
 	libli.appendChild(fullLabel(postid, true));	
-	if (!accessts) libli.firstElementChild.firstElementChild.style.fontWeight = "bold";	
+	if (!lastaccessedts) libli.firstElementChild.firstElementChild.style.fontWeight = "bold";	
 	//if (pushedts) libli.appendChild(make('span', timeSince(pushedts)));
 	if (postid == readPostid) activeBar(libli);
 	if (D('library').firstElementChild) D('library').insertBefore(libli, D('library').firstElementChild);
@@ -2346,17 +2349,6 @@ function makeLibLi(postid, accessts, pushedts) {
 		D('library').appendChild(libli);
 		D('libraryPlaceholder').style.display = "none";
 	}
-}
-
-function addToLib(postid, addOnly) {
-	let metaData = postCache[postid];
-	let ts;
-	if (!addOnly) ts = Date.now();
-	if (XNO.address && ws && ws.readyState == 1) {
-		let libdata = { posts: [{ userid:metaData.userid, createdts:metaData.createdts, pushedts:Date.now(), lastaccessedts:ts }] };
-		ws.emit('updateLibrary', libdata);
-	}
-	makeLibLi(postid, ts);
 }
 
 function showCurrent() {
@@ -2582,62 +2574,6 @@ function toggle(div) {
 	else div.classList.add('active');
 }
 
-function parseMd(md){  
-  //ul
-  md = md.replace(/^\s*\n\*/gm, '<ul>\n*');
-  md = md.replace(/^(\*.+)\s*\n([^\*])/gm, '$1\n</ul>\n\n$2');
-  md = md.replace(/^\*(.+)/gm, '<li>$1</li>');
-  
-  //ol
-  md = md.replace(/^\s*\n\d\./gm, '<ol>\n1.');
-  md = md.replace(/^(\d\..+)\s*\n([^\d\.])/gm, '$1\n</ol>\n\n$2');
-  md = md.replace(/^\d\.(.+)/gm, '<li>$1</li>');
-  
-  //blockquote
-  md = md.replace(/^\>(.+)/gm, '<blockquote>$1</blockquote>');
-  
-  //h
-  md = md.replace(/[\#]{6}(.+)/g, '<h6>$1</h6>');
-  md = md.replace(/[\#]{5}(.+)/g, '<h5>$1</h5>');
-  md = md.replace(/[\#]{4}(.+)/g, '<h4>$1</h4>');
-  md = md.replace(/[\#]{3}(.+)/g, '<h3>$1</h3>');
-  md = md.replace(/[\#]{2}(.+)/g, '<h2>$1</h2>');
-  md = md.replace(/[\#]{1}(.+)/g, '<h1>$1</h1>');
-  
-  //alt h
-  md = md.replace(/^(.+)\n\=+/gm, '<h1>$1</h1>');
-  md = md.replace(/^(.+)\n\-+/gm, '<h2>$1</h2>');
-  
-  //images
-  md = md.replace(/\!\[([^\]]+)\]\(([^\)]+)\)/g, '<img src="$2" alt="$1" />');
-  
-  //links
-  md = md.replace(/[\[]{1}([^\]]+)[\]]{1}[\(]{1}([^\)\"]+)(\"(.+)\")?[\)]{1}/g, '<a href="$2" title="$4">$1</a>');
-  
-  //font styles
-  md = md.replace(/[\*\_]{2}([^\*\_]+)[\*\_]{2}/g, '<b>$1</b>');
-  md = md.replace(/[\*\_]{1}([^\*\_]+)[\*\_]{1}/g, '<i>$1</i>');
-  md = md.replace(/[\~]{2}([^\~]+)[\~]{2}/g, '<del>$1</del>');
-  
-  //pre
-  md = md.replace(/^\s*\n\`\`\`(([^\s]+))?/gm, '<pre class="$2">');
-  md = md.replace(/^\`\`\`\s*\n/gm, '</pre>\n\n');
-  
-  //code
-  md = md.replace(/[\`]{1}([^\`]+)[\`]{1}/g, '<code>$1</code>');
-  
-  //p
-  md = md.replace(/^\s*(\n)?(.+)/gm, function(m){
-    return  /\<(\/)?(h\d|ul|ol|li|blockquote|pre|img)/.test(m) ? m : '<p>'+m+'</p>';
-  });
-  
-  //strip p from pre
-  md = md.replace(/(\<pre.+\>)\s*\n\<p\>(.+)\<\/p\>/gm, '$1$2');
-  
-  return md;
-  
-}
-
 function timeSince(date) {
 	if (typeof date !== 'object') date = new Date(date);
 
@@ -2676,7 +2612,7 @@ function addTabbing(elt) {
         let text = elt.value;
         let sel = elt.selectionStart;
 		let selEnd = elt.selectionEnd;
-        switch(evt.key){
+        switch (evt.key) {
             case "Escape":
                 evt.preventDefault();
 				evt.stopPropagation();
@@ -2707,8 +2643,7 @@ function addTabbing(elt) {
                 // selection?
                 if (sel == selEnd) { // These operations are undoable
                     if (!evt.shiftKey) document.execCommand('insertText', false, "\t");
-                    else if (elt.selectionStart > 0 && text[elt.selectionStart-1]=='\t') 
-                        document.execCommand('delete');
+                    else if (elt.selectionStart > 0 && text[elt.selectionStart-1]=='\t') document.execCommand('delete');
                 } else { // Block indent/unindent trashes undo stack.
                     // Select whole lines
                     while (sel > 0 && text[sel-1] != '\n') sel--;
