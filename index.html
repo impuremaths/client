@@ -1093,42 +1093,37 @@ function loadPanel(type, manual, holdHistory) {
 		if (type == prevType) postHeight = 0;
 	}
 	
-	if (manual && type != prevType) backList.push(prevType);
-	let postid = new URLSearchParams(window.location.search).get('postid');
-	let userid = new URLSearchParams(window.location.search).get('userid');
-	let tag = new URLSearchParams(window.location.search).get('tag');
+	let newManual = (manual && type != prevType);
+	let params = new URLSearchParams(window.location.search);
+	if (newManual) backList.push(prevType);
 	if (type == "read") {
 		url.search = new URLSearchParams({postid:readPostid});
-		if (!holdHistory && readPostid && postid != readPostid) {
-			if (manual && type != prevType && floatState) window.history.replaceState(null, "", url);
+		if (!holdHistory && readPostid && params.get('postid') != readPostid) {
+			if (newManual && floatState) window.history.replaceState(null, "", url);
 			else {
 				window.history.pushState(null, "", url);
 				backList = [];
-				if (manual && type != prevType) floatState = true;
-				else floatState = false;
+				floatState = newManual;
 			}
 		}			
 		if (postCache[readPostid]) document.title = postCache[readPostid].title + " - mktplc";
 		else document.title = "Read - mktplc";
 	} else if (type == "browse") {
-		let newTitle = "";
+		let newTitle = "mktplc";
 		if (browseURL.userid) {		
 			url.search = new URLSearchParams({userid:browseURL.userid});
 			newTitle = funName(browseURL.userid) + " - mktplc";
 		} else if (browseURL.tag) {
 			url.search = new URLSearchParams({tag:browseURL.tag});
 			newTitle = browseURL.tag + " - mktplc";
-		} else {
-			url.search = new URLSearchParams();
-			newTitle = "mktplc";
-		}		
-		if (!holdHistory && browseURL && (userid != browseURL.userid || tag != browseURL.tag || postid)) {
-			if (manual && type != prevType && floatState) window.history.replaceState(null, "", url);
+		} else url.search = new URLSearchParams();
+		
+		if (!holdHistory && browseURL && (params.get('userid') != browseURL.userid || params.get('tag') != browseURL.tag || params.get('postid'))) {
+			if (newManual && floatState) window.history.replaceState(null, "", url);
 			else {
 				window.history.pushState(null, "", url);
 				backList = [];
-				if (manual && type != prevType) floatState = true;
-				else floatState = false;
+				floatState = newManual;
 			}
 		}
 		document.title = newTitle;
@@ -1271,10 +1266,8 @@ function receiveDOMdisplayName(data) {
 	}
 	D('displayName').style.color = "";
 	D('browseHeading').style.color = "";
-	delete DOMdisplayNameQueue[userid];
-	
-	let urluserid = new URLSearchParams(window.location.search).get('userid');
-	if (urluserid == userid) document.title = funName(userid) + " - mktplc";
+	delete DOMdisplayNameQueue[userid];	
+	if (new URLSearchParams(window.location.search).get('userid') == userid) document.title = funName(userid) + " - mktplc";
 	
 	if (userid == XNO.address) {
 		D('firstDiv').style.backgroundColor = "hsl(" + funColor(XNO.address, false, true) + ", 55%, 80%)";
@@ -1374,10 +1367,7 @@ function fullLabel(postid, library, mediaBox) {
 		postTitle.style.display = "-webkit-box; -webkit-line-clamp: 3; line-clamp: 3; -webkit-box-orient: vertical;";
 		postTitle.style.marginBottom = "3px";
 	}
-	
-	let postAuthor = authorLabel(data.userid);
-	tags.appendChild(postAuthor);
-	
+	tags.appendChild(authorLabel(data.userid));	
 	if (data.tags) {
 		for (let i = 0; i < data.tags.length; i++) {
 			let displayStr = data.tags[i];
@@ -1424,8 +1414,7 @@ function fullLabel(postid, library, mediaBox) {
 		postMeta.appendChild(editBut);		
 	}
 	
-	// Hover buttons
-	
+	// Hover buttons	
 	let postLink = make('button', "Link");
 	postLink.classList.add("left");
 	postLink.style.marginRight = "4px";
@@ -1437,13 +1426,7 @@ function fullLabel(postid, library, mediaBox) {
 	};
 	
 	let addBut = make('button', "＋");
-	addBut.classList.add("right");
-	
-	let actions = make('div');
-	actions.style = "position:absolute; top:0px; right:0px; display:none; opacity:0.93";
-	actions.appendChild(postLink);
-	actions.appendChild(addBut);
-	
+	addBut.classList.add("right");	
 	if (library) {
 		addBut.textContent = "✕";
 		addBut.onclick = function() {
@@ -1463,6 +1446,11 @@ function fullLabel(postid, library, mediaBox) {
 		flash(D(postid));
 		D(postid).scrollIntoView({behavior: "smooth", block:"nearest"});
 	}
+	
+	let actions = make('div');
+	actions.style = "position:absolute; top:0px; right:0px; display:none; opacity:0.93";
+	actions.appendChild(postLink);
+	actions.appendChild(addBut);
 	
 	let label = make('a');
 	label.style = "display:flex; overflow:hidden; cursor:pointer; padding:5px; position:relative; color:#333";
@@ -1519,9 +1507,8 @@ function fillPost(postid, suppressPanel) {
 	if (D(postid)) activeBar(D(postid));
 	if (D(postid + "-disc")) activeBar(D(postid + "-disc"));
 	
-	let split = postid.split("-");
-	userid = split[0];
-	createdts = parseInt(split[1]);
+	let userid = postid.split("-")[0];
+	let createdts = parseInt(postid.split("-")[1]);
 	
 	D('readTitle').style.cursor = "pointer";
 	D('readTitle').onclick = function() {
@@ -1585,12 +1572,8 @@ function fillPost(postid, suppressPanel) {
 		
 		// comments
 		if (metaData.comments) {
-			metaData.comments.sort(function(x, y) {
-				return parseInt(x.commentid.split("-")[1]) - parseInt(y.commentid.split("-")[1]);
-			});		
-			for (let i = 0; i < metaData.comments.length; i++) {
-				addComment(metaData.comments[i]);
-			}	
+			metaData.comments.sort(function(x, y) {	return parseInt(x.commentid.split("-")[1]) - parseInt(y.commentid.split("-")[1]); });		
+			for (let i = 0; i < metaData.comments.length; i++) { addComment(metaData.comments[i]); }	
 		}
 		
 		if (metaData.chain) {
@@ -1617,32 +1600,15 @@ function fillPost(postid, suppressPanel) {
 function fillContent(elt, content, wall, userid) {
 	clearDOM(elt);
 	for (let i = 0; i < content.length; i++) {	
-		let jsbox;
+		let jsbox = make("div");
 		if (!content[i].content) {
 			let wording = "Premium content";
 			if (content[i].type == "js") wording = "An applet";
 			if (content[i].type == "media") wording = "Media";
-			
-			let author = make("span");
-			if (userid) {
-				identify(author, userid);	
-				author.style.cursor = "pointer";
-				author.style.fontWeight = "600";
-				author.onclick = function() {
-					event.stopPropagation();
-					queryBrowse(userid);
-				};	
-			} else author.textContent = "author";
-			queueDOMdisplayName(userid, author);
 		
-			jsbox = make("div");
-			jsbox.style.textAlign = "center";
-			jsbox.style.margin = "20px 0px";
-			jsbox.style.padding = "30px 10px";
-			jsbox.style.fontStyle = "italic";
-			
+			jsbox.style = "text-align:center; margin:20px 0px; padding:30px 10px; font-style:italic";			
 			jsbox.appendChild(make('span', wording + " available to "));
-			jsbox.appendChild(author);
+			jsbox.appendChild(authorLabel(userid));
 			jsbox.appendChild(make('span', "'s sponsors"));
 		} else if (content[i].type == "js") {
 			jsbox = make("iframe");
@@ -1664,7 +1630,6 @@ function fillContent(elt, content, wall, userid) {
 			let match = mediaURL.match(/^.*(youtu\.be\/|vi?\/|u\/\w\/|embed\/|\?vi?=|\&vi?=)([^#\&\?]*).*/);			
 			let ext = mediaURL.slice(-4).toLowerCase();	
 			
-			jsbox = make('div');
 			let mediaBox;
 			if (match && match[2].length == 11) {
 				mediaBox = make('div');		
@@ -1713,7 +1678,6 @@ function fillContent(elt, content, wall, userid) {
 				jsbox.appendChild(capbox);
 			}
 		} else {
-			jsbox = make("div");
 			jsbox.innerHTML = DOMPurify.sanitize(marked.parse(content[i].content));
 			jsbox.style.whiteSpace = "initial";
 		}
@@ -2230,9 +2194,7 @@ function queueDOMdisplayName(userid, elt) {
 
 function requestNames() {
 	let userids = [];	
-	for (let name in DOMdisplayNameQueue) {
-		userids.push(name);
-	}
+	for (let name in DOMdisplayNameQueue) {	userids.push(name);	}
 	if (ws && userids.length) ws.emit('queryUsers', {userids});
 }
 
@@ -2387,9 +2349,10 @@ window.addEventListener("beforeunload", function (e) {
 window.addEventListener('popstate', loadURL);
 
 function loadURL() {
-	let postid = new URLSearchParams(window.location.search).get('postid');
-	let userid = new URLSearchParams(window.location.search).get('userid');
-	let tag = new URLSearchParams(window.location.search).get('tag');
+	let params = new URLSearchParams(window.location.search);
+	let postid = params.get('postid');
+	let userid = params.get('userid');
+	let tag = params.get('tag');
 	if (postid) {
 		if (ws && ws.readyState == 1 && !D('browseHeading').textContent) queryBrowse(null, null, true);
 		fillPost(postid);
