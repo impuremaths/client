@@ -1299,7 +1299,7 @@ function fillBrowseList(data) {
 						
 						if (match && match[2].length == 11) {
 							mediaBox = make('div');		
-							mediaBox.style = "position:relative; width:100%";
+							mediaBox.style = "position:relative";
 							
 							frame = make('div');
 							frame.style = "padding-bottom:56%";				
@@ -1313,29 +1313,25 @@ function fillBrowseList(data) {
 							mediaBox = make("video");
 							mediaBox.controls = true;
 							mediaBox.src = mediaURL;
-							mediaBox.style = "width:100%";
 							fileSize(mediaURL);
 						} else if (ext == ".mp3" || ext == ".wav") {
 							mediaBox = make("audio");
+							mediaBox.style = "margin:auto";
 							mediaBox.controls = true;
 							mediaBox.src = mediaURL;
-							mediaBox.style = "width:100%; margin:auto;";
 							fileSize(mediaURL);
 						} else {
 							mediaBox = make('picture');
+							mediaBox.style = "display:flex; justify-content:center";
+							
 							let imagediv = make("img");
+							imagediv.style = "font-style:italic; height:fit-content; margin:auto; max-width:100%; max-height:100%";
 							imagediv.src = mediaURL;
-							imagediv.style.fontStyle = "italic";
 							imagediv.alt = "[unable to connect to media]";
-							imagediv.style.height = "fit-content";
-							imagediv.style.margin = "auto";
-							imagediv.style.maxWidth = "100%";
-							imagediv.style.maxHeight = "100%";
-							mediaBox.style = "width:100%; display:flex; justify-content:center";
 							mediaBox.appendChild(imagediv);
 							fileSize(mediaURL);
-						}
-						
+						}						
+						mediaBox.style.width = "100%";						
 						break;
 					}		
 				}
@@ -1465,16 +1461,12 @@ function fullLabel(postid, library, mediaBox) {
 	label.appendChild(sbdiv);
 	if (mediaBox) {
 		sbdiv.style.flexBasis = "1px";
-		sbdiv.style.flexGrow = 1;		
-		let sbdiv2 = make('div');
-		sbdiv2.style.flexBasis = "1px";
-		sbdiv2.style.flexGrow = 1;
-		sbdiv2.style.marginLeft = "10px";
-		sbdiv2.style.height = "150px";
-		if (XNO.address) sbdiv2.style.backgroundColor = "hsl(" + funColor(XNO.address, false, true) + ", 55%, 80%)";
-		else sbdiv2.style.backgroundColor = "hsl(0, 0%, 80%)";
+		sbdiv.style.flexGrow = 1;	
 		
-		sbdiv2.style.display = "flex";
+		let sbdiv2 = make('div');		
+		sbdiv2.style = "display:flex; flex-basis:1px; flex-grow:1; margin-left:10px; height:150px; border-radius:5px; overflow:hidden";
+		if (XNO.address) sbdiv2.style.backgroundColor = "hsl(" + funColor(XNO.address, false, true) + ", 55%, 80%)";
+		else sbdiv2.style.backgroundColor = "hsl(0, 0%, 80%)";		
 		sbdiv2.appendChild(mediaBox);		
 		label.appendChild(sbdiv2);
 	}
@@ -1647,13 +1639,11 @@ function fillContent(elt, content, wall, userid) {
 				mediaBox = make("video");
 				mediaBox.controls = true;
 				mediaBox.src = mediaURL;
-				mediaBox.style = "width:100%";
 				fileSize(mediaURL);
 			} else if (ext == ".mp3" || ext == ".wav") {
 				mediaBox = make("audio");
 				mediaBox.controls = true;
 				mediaBox.src = mediaURL;
-				mediaBox.style = "width:100%";
 				fileSize(mediaURL);
 			} else {
 				mediaBox = make('picture');
@@ -1662,7 +1652,7 @@ function fillContent(elt, content, wall, userid) {
 				imagediv.style.fontStyle = "italic";
 				imagediv.alt = "[unable to connect to media]";
 				imagediv.style.maxWidth = "100%";
-				mediaBox.style = "width:100%; display:flex; justify-content:center";
+				mediaBox.style = "display:flex; justify-content:center";
 				mediaBox.appendChild(imagediv);
 				fileSize(mediaURL);
 			}
