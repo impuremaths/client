@@ -1370,18 +1370,7 @@ function fullLabel(postid, library, mediaBox) {
 		postTitle.style.marginBottom = "3px";
 	}
 	
-	let postAuthor = make('a');
-	postAuthor.style = "cursor:pointer; font-weight:600";
-	identify(postAuthor, data.userid);	
-	url.search = new URLSearchParams({userid:data.userid});
-	postAuthor.href = url;
-	postAuthor.title = data.userid;
-	postAuthor.onclick = function() {	
-		event.preventDefault();
-		event.stopPropagation();
-		queryBrowse(data.userid);
-	};	
-	queueDOMdisplayName(data.userid, postAuthor);
+	let postAuthor = authorLabel(data.userid);
 	tags.appendChild(postAuthor);
 	
 	if (data.tags) {
@@ -1981,25 +1970,30 @@ function identify(elt, userid) {
 	elt.style.color = funColor(userid);	
 }
 
-function makeMetaLabel(userid, createdts, modifiedts) {	
+function authorLabel(userid) {
 	let postAuthor = make('a');
-	identify(postAuthor, userid);
+	postAuthor.style = "cursor:pointer; font-weight:600";
+	identify(postAuthor, userid);	
+	url.search = new URLSearchParams({userid});
+	postAuthor.href = url;
 	postAuthor.title = userid;
-	postAuthor.style.cursor = "pointer";
-	postAuthor.style.fontWeight = "600";
-	postAuthor.onclick = function() {
+	postAuthor.onclick = function() {	
+		event.preventDefault();
 		event.stopPropagation();
 		queryBrowse(userid);
 	};	
 	queueDOMdisplayName(userid, postAuthor);
-	
+	return postAuthor;
+}
+
+function makeMetaLabel(userid, createdts, modifiedts) {
 	let postDate = make('span', "\xa0\xa0" + timeSince(createdts));	
 	postDate.title = createdts;
 	postDate.style.color = "#888";
 		
 	let postMeta = make('div');
 	postMeta.style = "font-size:0.85em; overflow:hidden; text-overflow:ellipsis";
-	postMeta.appendChild(postAuthor);
+	postMeta.appendChild(authorLabel(userid));
 	postMeta.appendChild(postDate);	
 	
 	if (modifiedts && timeSince(modifiedts) != timeSince(createdts)) {
@@ -2017,12 +2011,13 @@ function addComment(commentData) {
 	let theComment = make('li', commentData.content);
 	theComment.id = commentData.commentid;
 	theComment.style = "margin-bottom:10px; font-size:0.9em";
-	let theLabel = makeMetaLabel(commentData.commentid.split("-")[0], parseInt(commentData.commentid.split("-")[1]), commentData.modifiedts);
+	let commentwriter = commentData.commentid.split("-")[0];
+	let theLabel = makeMetaLabel(commentwriter, parseInt(commentData.commentid.split("-")[1]), commentData.modifiedts);
 
 	// reply editor
 	let editPanel = make('textarea');
 	
-	if (XNO.address == commentData.commentid.split("-")[0]) {	
+	if (XNO.address == commentwriter) {	
 		// let editBut = make('button', "Edit");
 		let editBut = make('a', " • Edit");	
 		editBut.style.cursor = "pointer";
@@ -2063,11 +2058,11 @@ function addComment(commentData) {
 	if (D(commentData.commentid)) D(commentData.commentid).textContent = commentData.content;
 	else if (commentData.parentid) {
 		D(commentData.parentid + "-ul").appendChild(theLabel);	
-		if (XNO.address == commentData.commentid.split("-")[0])	D(commentData.parentid + "-ul").appendChild(editPanel);	
+		if (XNO.address == commentwriter) D(commentData.parentid + "-ul").appendChild(editPanel);	
 		D(commentData.parentid + "-ul").appendChild(theComment);
 	} else {
 		D('readComments').appendChild(theLabel);
-		if (XNO.address == commentData.commentid.split("-")[0])	D('readComments').appendChild(editPanel);	
+		if (XNO.address == commentwriter) D('readComments').appendChild(editPanel);	
 		D('readComments').appendChild(theComment);
 		
 		// future replies
@@ -2099,8 +2094,7 @@ function addComment(commentData) {
 		// reply button
 		repBut.style = "font-size:0.85em;";
 		repBut.title = commentData.commentid;
-		if (!XNO.address) repBut.disabled = true;
-		
+		if (!XNO.address) repBut.disabled = true;		
 		repBut.onclick = function() {
 			if (repPanel.style.display == "none") {
 				repPanel.style.display = "block";
@@ -2114,10 +2108,11 @@ function addComment(commentData) {
 			}
 		};
 		
-		let repButHolder = make('div');
-		repButHolder.style = "display:flex; justify-content:right; margin-bottom:10px;";
 		let repLine = make('div');
 		repLine.style = "background-color:#e4e7e7; height:2px; border-radius:20px; margin:auto 10px auto 10px; flex-grow:1";
+		
+		let repButHolder = make('div');
+		repButHolder.style = "display:flex; justify-content:right; margin-bottom:10px;";
 		repButHolder.appendChild(repLine);
 		repButHolder.appendChild(repBut);
 		D('readComments').appendChild(repButHolder);
@@ -2212,8 +2207,7 @@ function clickClearSeed() {
 }
 
 function clearSeed() {
-	// clearing actions that are needed even if switching accounts
-	
+	// clearing actions that are needed even if switching accounts	
 	clearDOM(D('subscriptions'));
 	clearDOM(D('library'));
 	D('libraryPlaceholder').style.display = "";	
