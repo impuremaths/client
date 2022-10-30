@@ -744,6 +744,11 @@ function setupWebsocket(fresh) {
 		clearDOM(D('subscriptions'));
 		if (XNO.address) makeSubLi(XNO.address);
 		if (data.edges) {
+			data.edges.sort(function(x, y) { 
+				if (x.lastpublishedts && !y.lastpublishedts) return -1;
+				if (!x.lastpublishedts && y.lastpublishedts) return 1;
+				return y.lastpublishedts - x.lastpublishedts; 
+			});
 			for (let i = 0; i < data.edges.length; i++) {
 				makeSubLi(data.edges[i].userid, data.edges[i]);
 			}
@@ -751,7 +756,7 @@ function setupWebsocket(fresh) {
 		receiveDOMdisplayName(data);
 		
 		clearDOM(D('library'));
-		data.library.sort(function(x, y) { return Math.round(x.pushedts - y.pushedts); });
+		data.library.sort(function(x, y) { return x.pushedts - y.pushedts; });
 		for (let i = 0; i < data.library.length; i++) {
 			cachePost(data.library[i]);
 			makeLibLi(data.library[i].postid, data.library[i].lastaccessedts, data.library[i].pushedts);
@@ -1993,25 +1998,25 @@ function timeLabel(createdts, modifiedts) {
 }
 
 function addComment(commentData) {
-	let theComment = make('li', commentData.content);
-	theComment.id = commentData.commentid;
-	theComment.style = "margin-bottom:10px; font-size:0.9em";
+	if (D(commentData.commentid)) {
+		D(commentData.commentid).textContent = commentData.content;
+		return false;
+	}	
+	
 	let userid = commentData.commentid.split("-")[0];	
+	let theLabel = make('div');
+	theLabel.style = "font-size:0.85em; overflow:hidden; text-overflow:ellipsis";
+	theLabel.appendChild(authorLabel(userid));
 	
 	let dateDiv = timeLabel(parseInt(commentData.commentid.split("-")[1]), commentData.modifiedts);
 	dateDiv.style.color = "#888";
 	dateDiv.style.marginLeft = "5px";
-	
-	let theLabel = make('div');
-	theLabel.style = "font-size:0.85em; overflow:hidden; text-overflow:ellipsis";
-	theLabel.appendChild(authorLabel(userid));
 	theLabel.appendChild(dateDiv);
 
 	// reply editor
 	let editPanel = make('textarea');
 	
-	if (XNO.address == userid) {	
-		// let editBut = make('button', "Edit");
+	if (XNO.address == userid) {
 		let editBut = make('a', " • Edit");	
 		editBut.style.cursor = "pointer";
 		
@@ -2047,24 +2052,16 @@ function addComment(commentData) {
 		};
 		theLabel.appendChild(editBut);
 	}	
-		
-	if (D(commentData.commentid)) D(commentData.commentid).textContent = commentData.content;
-	else if (commentData.parentid) {
+			
+	let theComment = make('li', commentData.content);
+	theComment.id = commentData.commentid;
+	theComment.style = "margin-bottom:10px; font-size:0.9em";
+	
+	if (commentData.parentid) {
 		D(commentData.parentid + "-ul").appendChild(theLabel);	
 		if (XNO.address == userid) D(commentData.parentid + "-ul").appendChild(editPanel);	
 		D(commentData.parentid + "-ul").appendChild(theComment);
 	} else {
-		D('readComments').appendChild(theLabel);
-		if (XNO.address == userid) D('readComments').appendChild(editPanel);	
-		D('readComments').appendChild(theComment);
-		
-		// future replies
-		let ulcomment = make('ul');
-		ulcomment.style = "margin-left:20px";
-		ulcomment.id = commentData.commentid + "-ul";
-		D('readComments').appendChild(ulcomment);
-		
-		// reply editor
 		let repPanel = make('textarea');
 		let repBut = make('button', "Reply");
 		repPanel.style = "display:none; margin-left:20px; margin-bottom:15px; margin-top:20px; width:calc(100% - 20px); font-size:0.9em";		
@@ -2081,8 +2078,7 @@ function addComment(commentData) {
 				repBut.textContent = "Reply";
 				event.stopPropagation();
 			}
-		}		
-		D('readComments').appendChild(repPanel);				
+		}					
 		
 		// reply button
 		repBut.style = "font-size:0.85em;";
@@ -2101,14 +2097,26 @@ function addComment(commentData) {
 			}
 		};
 		
-		let repLine = make('div');
-		repLine.style = "background-color:#e4e7e7; height:2px; border-radius:20px; margin:auto 10px auto 10px; flex-grow:1";
+		// future replies
+		let ulcomment = make('ul');
+		ulcomment.style = "margin-left:20px";
+		ulcomment.id = commentData.commentid + "-ul";
 		
 		let repButHolder = make('div');
 		repButHolder.style = "display:flex; justify-content:right; margin-bottom:10px;";
+		let repLine = make('div');
+		repLine.style = "background-color:#e4e7e7; height:2px; border-radius:20px; margin:auto 10px auto 10px; flex-grow:1";
 		repButHolder.appendChild(repLine);
 		repButHolder.appendChild(repBut);
-		D('readComments').appendChild(repButHolder);
+		
+		if (D('readComments').children.length) D('readComments').insertBefore(repButHolder, D('readComments').firstElementChild);
+		else D('readComments').appendChild(repButHolder);
+		
+		D('readComments').insertBefore(repPanel, D('readComments').firstElementChild);
+		D('readComments').insertBefore(ulcomment, D('readComments').firstElementChild);
+		D('readComments').insertBefore(theComment, D('readComments').firstElementChild);
+		if (XNO.address == userid) D('readComments').insertBefore(editPanel, D('readComments').firstElementChild);
+		D('readComments').insertBefore(theLabel, D('readComments').firstElementChild);
 	}
 }
 
