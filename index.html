@@ -1391,18 +1391,8 @@ function fullLabel(postid, library, mediaBox) {
 	
 	// Meta: dates, edit
 	let postMeta = make('div');
-	postMeta.style = "font-size:0.85em; overflow:hidden; text-overflow:ellipsis";	
-	
-	let postDate = make('span', timeSince(data.createdts));	
-	postDate.title = data.createdts;
-	postMeta.appendChild(postDate);	
-	
-	if (data.modifiedts && timeSince(data.modifiedts) != timeSince(data.createdts)) {
-		let postModified = make('span', " (" + timeSince(data.modifiedts) + ")");
-		postModified.style.fontStyle = "italic";
-		postModified.title = data.modifiedts;
-		postMeta.appendChild(postModified);
-	}
+	postMeta.style = "font-size:0.85em; overflow:hidden; text-overflow:ellipsis";		
+	postMeta.appendChild(timeLabel(data.createdts, data.modifiedts));
 	
 	if (data.wall && data.wall.length) {	
 		let premium = make('span', " • Premium");
@@ -1986,38 +1976,41 @@ function authorLabel(userid) {
 	return postAuthor;
 }
 
-function makeMetaLabel(userid, createdts, modifiedts) {
-	let postDate = make('span', "\xa0\xa0" + timeSince(createdts));	
+function timeLabel(createdts, modifiedts) {	
+	let dateDiv = make('span');
+	
+	let postDate = make('span', timeSince(createdts));	
 	postDate.title = createdts;
-	postDate.style.color = "#888";
-		
-	let postMeta = make('div');
-	postMeta.style = "font-size:0.85em; overflow:hidden; text-overflow:ellipsis";
-	postMeta.appendChild(authorLabel(userid));
-	postMeta.appendChild(postDate);	
+	dateDiv.appendChild(postDate);	
 	
 	if (modifiedts && timeSince(modifiedts) != timeSince(createdts)) {
 		let postModified = make('span', " (" + timeSince(modifiedts) + ")");
-		postModified.title = modifiedts;
-		postModified.style.color = "#888";
 		postModified.style.fontStyle = "italic";
-		postMeta.appendChild(postModified);
+		postModified.title = modifiedts;
+		dateDiv.appendChild(postModified);
 	}
-	
-	return postMeta;
+	return dateDiv;
 }
 
 function addComment(commentData) {
 	let theComment = make('li', commentData.content);
 	theComment.id = commentData.commentid;
 	theComment.style = "margin-bottom:10px; font-size:0.9em";
-	let commentwriter = commentData.commentid.split("-")[0];
-	let theLabel = makeMetaLabel(commentwriter, parseInt(commentData.commentid.split("-")[1]), commentData.modifiedts);
+	let userid = commentData.commentid.split("-")[0];	
+	
+	let dateDiv = timeLabel(parseInt(commentData.commentid.split("-")[1]), commentData.modifiedts);
+	dateDiv.style.color = "#888";
+	dateDiv.style.marginLeft = "5px";
+	
+	let theLabel = make('div');
+	theLabel.style = "font-size:0.85em; overflow:hidden; text-overflow:ellipsis";
+	theLabel.appendChild(authorLabel(userid));
+	theLabel.appendChild(dateDiv);
 
 	// reply editor
 	let editPanel = make('textarea');
 	
-	if (XNO.address == commentwriter) {	
+	if (XNO.address == userid) {	
 		// let editBut = make('button', "Edit");
 		let editBut = make('a', " • Edit");	
 		editBut.style.cursor = "pointer";
@@ -2058,11 +2051,11 @@ function addComment(commentData) {
 	if (D(commentData.commentid)) D(commentData.commentid).textContent = commentData.content;
 	else if (commentData.parentid) {
 		D(commentData.parentid + "-ul").appendChild(theLabel);	
-		if (XNO.address == commentwriter) D(commentData.parentid + "-ul").appendChild(editPanel);	
+		if (XNO.address == userid) D(commentData.parentid + "-ul").appendChild(editPanel);	
 		D(commentData.parentid + "-ul").appendChild(theComment);
 	} else {
 		D('readComments').appendChild(theLabel);
-		if (XNO.address == commentwriter) D('readComments').appendChild(editPanel);	
+		if (XNO.address == userid) D('readComments').appendChild(editPanel);	
 		D('readComments').appendChild(theComment);
 		
 		// future replies
