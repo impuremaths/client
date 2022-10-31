@@ -1430,7 +1430,7 @@ function fullLabel(postid, library, mediaBox) {
 	actions.appendChild(addBut);
 	
 	let label = make('a');
-	label.style = "display:flex; overflow:hidden; cursor:pointer; padding:5px; position:relative; color:#333";
+	label.style = "display:flex; overflow:hidden; padding:5px; position:relative; color:#333";
 	
 	url.search = new URLSearchParams({postid});
 	label.href = url;
@@ -1901,7 +1901,7 @@ function tagLabel(tagStr) {
 
 function authorLabel(userid) {
 	let postAuthor = make('a');
-	postAuthor.style = "cursor:pointer; font-weight:600";
+	postAuthor.style = "font-weight:600";
 	url.search = new URLSearchParams({userid});
 	postAuthor.href = url;
 	queueDOMdisplayName(userid, postAuthor);
@@ -2177,7 +2177,7 @@ function makeSubLi(userid, data) {
 	let tag = (userid.substring(0, 5) != "nano_");
 	
 	let subli = make('a');
-	subli.style = "display:block; cursor:pointer; width:100%; padding:4px; position:relative; color: #333";	
+	subli.style = "display:block; width:100%; padding:4px; position:relative; color: #333";	
 	if (tag) url.search = new URLSearchParams({tag:userid});
 	else url.search = new URLSearchParams({userid});
 	subli.href = url;
