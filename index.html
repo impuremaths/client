@@ -75,11 +75,11 @@
 				<span id="loadingMsg" style="margin-left:10px; font-style:italic; display:none">Loading...</span>
 			</div>
 			<div style="display:flex">
-				<div style="flex-basis:1px; flex-grow:2; margin-right:50px;">
+				<div style="flex-basis:1px; flex-grow:5; margin-right:50px;">
 					<ul id="discovery"></ul>
 				</div>
 				
-				<div style="flex-basis:1px; flex-grow:2; margin-right:20px; overflow:hidden">					
+				<div style="flex-basis:1px; flex-grow:4; margin-right:20px; overflow:hidden">					
 					<div id="bioPreview" style="overflow:hidden">
 						<div id="bio" style="font-size:0.9em; margin-top:30px; margin-bottom:40px"></div>
 						
@@ -1445,7 +1445,7 @@ function fullLabel(postid, library, mediaBox) {
 		sbdiv.style.flexGrow = 1;	
 		
 		let sbdiv2 = make('div');		
-		sbdiv2.style = "display:flex; flex-basis:1px; flex-grow:1; margin-left:10px; height:150px; border-radius:5px; overflow:hidden";
+		sbdiv2.style = "display:flex; flex-basis:1px; flex-grow:1; margin-left:10px; height:169px; border-radius:5px; overflow:hidden";
 		if (XNO.address) sbdiv2.style.backgroundColor = "hsl(" + funColor(XNO.address, false, true) + ", 55%, 80%)";
 		else sbdiv2.style.backgroundColor = "hsl(0, 0%, 80%)";		
 		sbdiv2.appendChild(mediaBox);		
