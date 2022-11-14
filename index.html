@@ -53,7 +53,7 @@
 				<span style="font-size:0.9em; color:#888; margin-left:0px">Library</span>
 			</div>
 			<div class="accordion">
-				<div id="libraryPlaceholder" style="font-style:italic; color:#888; text-align:center; margin-top:20px">Browse, read, write! (Log in above to persist.)</div>
+				<div id="libraryPlaceholder" style="font-style:italic; color:#888; text-align:center; margin-top:20px">- Reading list (log in above to persist) -</div>
 				<ul id="library" style="overflow:auto; max-height:calc(100% - 15px); margin-left:10px; margin-top:10px; margin-bottom:10px"></ul>
 			</div>
 		</div>
@@ -137,7 +137,7 @@
 			<div style="flex-basis:1px; flex-grow:1; max-width:360px; overflow:hidden">
 				<input id="postTitle" style="font-weight:bold; font-size:1.1em; width:100%; margin-bottom:10px;" autocomplete="off" placeholder="Title (required)..." type="text" onkeyup="if (event.keyCode == 27) this.value = '';">
 				<div id="editid" style="font-size:0.85em; margin-left:10px; display:none">
-					<span id="creationEdit"></span><span id="modificationEdit" style="font-style:italic"></span>
+					<span id="creationEdit"></span><span id="modificationEdit"></span>
 				</div>
 				
 				<div id="editTags" style="font-size:0.85em; margin-top:15px"></div>
@@ -203,7 +203,7 @@
 					</div>
 				
 					<div style="margin-top:3px">
-						<span id="creation">Date published</span><span id="modification" style="font-style:italic"> (date updated)</span>
+						<span id="creation">Date published</span><span id="modification"> (date updated)</span>
 						<a id="edit" onclick="event.preventDefault(); fillEdit(); queryPost();" style="cursor:pointer; display:none"> • Update</a>
 					</div>
 				</div>
@@ -920,6 +920,7 @@ function sponsorHandler(elt) {
 	} else {
 		D('bioSponsor').style.display = "";
 		D('sponsorInput').focus();
+		D('sponsorInput').scrollIntoView({behavior: "smooth", block:"end"});
 	}
 	toggle(elt);
 }
@@ -937,23 +938,20 @@ function subscribeHandler() {
 
 function addTag() {
 	let newTagFlag = D('set-tag').value.toLowerCase().trim();
-	for (let i = 0; i < D('editTags').children.length; i++) {
-		if (D('editTags').children[i].textContent == newTagFlag) {
-			newTagFlag = "";
-			flash(D('editTags').children[i]);
-		}
-		if (!newTagFlag) break;
-	}
-	
-	if (newTagFlag) {
-		let newTag = make('span', newTagFlag);
-		newTag.onclick = function() { remove(newTag); }
-		newTag.style = "cursor:pointer; margin:5px 10px 0px 10px; padding:3px 5px 3px 5px; border-radius:5px; display:inline-block";
-		D('editTags').appendChild(newTag);
-		flash(newTag);
-	}
 	D('set-tag').value = "";
 	D('set-tag').select();
+	if (!newTagFlag) return true;
+	for (let i = 0; i < D('editTags').children.length; i++) {
+		if (D('editTags').children[i].textContent == newTagFlag) {
+			flash(D('editTags').children[i]);
+			return true;
+		}
+	}
+	let newTag = make('span', newTagFlag);
+	newTag.onclick = function() { remove(newTag); }
+	newTag.style = "cursor:pointer; margin:5px 10px 0px 10px; padding:3px 5px 3px 5px; border-radius:5px; display:inline-block";
+	D('editTags').appendChild(newTag);
+	flash(newTag);
 }
 
 function publish() {
@@ -1282,48 +1280,7 @@ function fillBrowseList(data) {
 				for (let j = 0; j < postCache[data[i].postid].content.length; j++) {
 					let content = postCache[data[i].postid].content[j];
 					if (content.type == "image" || content.type == "media") {
-						let mediaURL = content.content.trim().split(" ");
-						if (mediaURL.length) mediaURL = mediaURL[0].split("[");
-						if (mediaURL.length) mediaURL = mediaURL[0].trim();
-						else mediaURL = "";			
-						let match = mediaURL.match(/^.*(youtu\.be\/|vi?\/|u\/\w\/|embed\/|\?vi?=|\&vi?=)([^#\&\?]*).*/);			
-						let ext = mediaURL.slice(-4).toLowerCase();	
-						
-						if (match && match[2].length == 11) {
-							mediaBox = make('div');		
-							mediaBox.style = "position:relative";
-							
-							frame = make('div');
-							frame.style = "padding-bottom:56%";	
-							mediaBox.appendChild(frame);	
-							
-							youtube = make("iframe");
-							youtube.style = "border:0px; background-color:black; position:absolute; height:100%; width:100%; top:0px";
-							youtube.src = "https://www.youtube.com/embed/" + match[2] + "?modestbranding=1"							
-							mediaBox.appendChild(youtube);
-						} else if (ext == ".mp4" || ext == ".ogg" || ext == "webm") {
-							mediaBox = make("video");
-							mediaBox.controls = true;
-							mediaBox.src = mediaURL;
-							fileSize(mediaURL);
-						} else if (ext == ".mp3" || ext == ".wav") {
-							mediaBox = make("audio");
-							mediaBox.style = "margin:auto";
-							mediaBox.controls = true;
-							mediaBox.src = mediaURL;
-							fileSize(mediaURL);
-						} else {
-							mediaBox = make('picture');
-							mediaBox.style = "display:flex; justify-content:center";
-							
-							let imagediv = make("img");
-							imagediv.style = "font-style:italic; height:fit-content; margin:auto; max-width:100%; max-height:100%";
-							imagediv.src = mediaURL;
-							imagediv.alt = "unable to connect to media";
-							mediaBox.appendChild(imagediv);
-							fileSize(mediaURL);
-						}						
-						mediaBox.style.width = "100%";						
+						mediaBox = fillMediaBox(content.content.trim().split(" "), true);					
 						break;
 					}		
 				}
@@ -1339,6 +1296,54 @@ function fillBrowseList(data) {
 	}	
 	requestNames();
 }
+						
+function fillMediaBox(mediaURL, preview) {
+	let mediaBox;
+	if (mediaURL.length) mediaURL = mediaURL[0].split("[");
+	if (mediaURL.length) mediaURL = mediaURL[0].trim();
+	else mediaURL = "";			
+	let match = mediaURL.match(/^.*(youtu\.be\/|vi?\/|u\/\w\/|embed\/|\?vi?=|\&vi?=)([^#\&\?]*).*/);			
+	let ext = mediaURL.slice(-4).toLowerCase();	
+	
+	if (match && match[2].length == 11) {
+		mediaBox = make('div');		
+		mediaBox.style = "position:relative";
+		
+		let frame = make('div');
+		frame.style = "padding-bottom:56%";	
+		mediaBox.appendChild(frame);	
+		
+		let youtube = make("iframe");
+		youtube.style = "border:0px; background-color:black; position:absolute; height:100%; width:100%; top:0px; left:0px;";
+		youtube.src = "https://www.youtube.com/embed/" + match[2] + "?modestbranding=1"							
+		mediaBox.appendChild(youtube);
+	} else if (ext == ".mp4" || ext == ".ogg" || ext == "webm") {
+		mediaBox = make("video");
+		mediaBox.controls = true;
+		mediaBox.src = mediaURL;
+		fileSize(mediaURL);
+	} else if (ext == ".mp3" || ext == ".wav") {
+		mediaBox = make("audio");
+		mediaBox.style = "margin:auto";
+		mediaBox.controls = true;
+		mediaBox.src = mediaURL;
+		fileSize(mediaURL);
+	} else {
+		mediaBox = make('picture');
+		mediaBox.style = "display:flex; justify-content:center";
+		
+		let imagediv = make("img");
+		imagediv.style = "font-style:italic; height:fit-content; margin:auto; max-width:100%; max-height:100%";
+		imagediv.alt = "- missing image -";
+		mediaBox.appendChild(imagediv);
+		fileSize(mediaURL).then(function(size) {
+			if (!preview || size < 262144) imagediv.src = mediaURL;
+			else imagediv.alt = "- large image -";
+		});
+	}						
+	mediaBox.style.width = "100%";	
+	return mediaBox;
+}	
 
 function fullLabel(postid, library, mediaBox) {
 	let data = postCache[postid];
@@ -1369,12 +1374,14 @@ function fullLabel(postid, library, mediaBox) {
 	if (data.wall && data.wall.length) {	
 		let premium = make('span', " • Premium");
 		postMeta.appendChild(premium);			
-		premium.style.opacity = "0.4";
+		premium.style.opacity = "0.5";		
+		premium.style.fontStyle = "italic";
 		let colorIn = true;
 		for (let i = 0; i < data.wall.length; i++) {
 			if (!data.content[data.wall[i]].content) colorIn = false;
 		}
 		if (colorIn || data.userid == XNO.address) {
+			premium.style.fontStyle = "";
 			premium.style.transitionProperty = "opacity";
 			premium.style.transitionDuration = "1s";
 			premium.style.transitionTimingFunction = "";
@@ -1444,10 +1451,10 @@ function fullLabel(postid, library, mediaBox) {
 		sbdiv.style.flexBasis = "1px";
 		sbdiv.style.flexGrow = 1;	
 		
-		let sbdiv2 = make('div');		
-		sbdiv2.style = "display:flex; flex-basis:1px; flex-grow:1; margin-left:10px; height:169px; border-radius:5px; overflow:hidden";
-		if (XNO.address) sbdiv2.style.backgroundColor = "hsl(" + funColor(XNO.address, false, true) + ", 55%, 80%)";
-		else sbdiv2.style.backgroundColor = "hsl(0, 0%, 80%)";		
+		let sbdiv2 = make('button');
+		label.classList.add("parentbutton");
+		sbdiv2.classList.add("childbutton");
+		sbdiv2.style = "display:flex; flex-basis:1px; flex-grow:1; margin-left:10px; height:169px; border-radius:5px; overflow:hidden; padding:0px";
 		sbdiv2.appendChild(mediaBox);		
 		label.appendChild(sbdiv2);
 	}
@@ -1565,14 +1572,21 @@ function fillContent(elt, content, wall, userid) {
 	for (let i = 0; i < content.length; i++) {	
 		let jsbox = make("div");
 		if (!content[i].content) {
-			let wording = "Premium content";
-			if (content[i].type == "js") wording = "An applet";
-			if (content[i].type == "media") wording = "Media";
+			let wording = "- Premium content";
+			if (content[i].type == "js") wording = "- An applet";
+			if (content[i].type == "media") wording = "- Media";
 		
 			jsbox.style = "text-align:center; margin:20px 0px; padding:30px 10px; font-style:italic";			
 			jsbox.appendChild(make('span', wording + " available to "));
-			jsbox.appendChild(authorLabel(userid));
-			jsbox.appendChild(make('span', "'s sponsors"));
+			let athlabel = authorLabel(userid);
+			athlabel.onclick = function() {			
+				event.preventDefault();
+				event.stopPropagation();
+				queryBrowse(userid);
+				if (!active('sponsor')) sponsorHandler(D('sponsor'));
+			}
+			jsbox.appendChild(athlabel);
+			jsbox.appendChild(make('span', "'s sponsors -"));
 		} else if (content[i].type == "js") {
 			jsbox = make("iframe");
 			jsbox.style = "width:100%; height:0px; border-top:0px; border-bottom:0px; border-left:2px solid transparent; border-right:0px;";
@@ -1585,49 +1599,8 @@ function fillContent(elt, content, wall, userid) {
 			};<` + "/" + `script>`;
 			jsbox.srcdoc = content[i].content + str;
 		} else if (content[i].type == "image" || content[i].type == "media") {
-			let str = content[i].content.trim();
-			let mediaURL = str.split(" ");
-			if (mediaURL.length) mediaURL = mediaURL[0].split("[");
-			if (mediaURL.length) mediaURL = mediaURL[0].trim();
-			else mediaURL = "";			
-			let match = mediaURL.match(/^.*(youtu\.be\/|vi?\/|u\/\w\/|embed\/|\?vi?=|\&vi?=)([^#\&\?]*).*/);			
-			let ext = mediaURL.slice(-4).toLowerCase();	
-			
-			let mediaBox;
-			if (match && match[2].length == 11) {
-				mediaBox = make('div');		
-				mediaBox.style = "position:relative";
-				
-				frame = make('div');
-				frame.style = "padding-bottom:56%";	
-				mediaBox.appendChild(frame);
-				
-				youtube = make("iframe");
-				youtube.style = "border:0px; background-color:black; position:absolute; height:100%; width:100%; top:0px";
-				youtube.src = "https://www.youtube.com/embed/" + match[2] + "?modestbranding=1"				
-				mediaBox.appendChild(youtube);
-			} else if (ext == ".mp4" || ext == ".ogg" || ext == "webm") {
-				mediaBox = make("video");
-				mediaBox.controls = true;
-				mediaBox.src = mediaURL;
-				fileSize(mediaURL);
-			} else if (ext == ".mp3" || ext == ".wav") {
-				mediaBox = make("audio");
-				mediaBox.controls = true;
-				mediaBox.src = mediaURL;
-				fileSize(mediaURL);
-			} else {
-				mediaBox = make('picture');
-				let imagediv = make("img");
-				imagediv.src = mediaURL;
-				imagediv.style.fontStyle = "italic";
-				imagediv.alt = "[unable to connect to media]";
-				imagediv.style.maxWidth = "100%";
-				mediaBox.style = "display:flex; justify-content:center";
-				mediaBox.appendChild(imagediv);
-				fileSize(mediaURL);
-			}
-			jsbox.appendChild(mediaBox);
+			let str = content[i].content.trim();			
+			jsbox.appendChild(fillMediaBox(str.split(" ")));
 			let caption = str.match(/\[(.*)\]/);
 			if (!caption && str.indexOf(' ') + 1) {
 				caption = str.substring(str.indexOf(' ') + 1);
@@ -1649,7 +1622,7 @@ function fillContent(elt, content, wall, userid) {
 	if (wall) {
 		for (let i = 0; i < wall.length; i++) {
 			let block = elt.children[wall[i]];
-			block.style.opacity = "0.4";
+			block.style.opacity = "0.5";
 			if (content[wall[i]].content) {
 				block.style.transitionProperty = "opacity";
 				block.style.transitionDuration = "1s";
@@ -1662,7 +1635,7 @@ function fillContent(elt, content, wall, userid) {
 					block.style.borderColor = "hsl(var(--hue), var(--butsat), 80%)";
 				};
 				block.onmouseleave = function() {
-					block.style.opacity = "0.4";
+					block.style.opacity = "0.5";
 					block.style.borderColor = "transparent";
 				};			
 			}
@@ -1792,7 +1765,7 @@ function appendBlock(type, previous, parent) {
 	mediaBut.classList.add("right");
 	mediaBut.onclick = function() {
 		textbox.title = "media";
-		textbox.placeholder = "Image, audio, or video link [optional caption]...\n\nSupport: most images; mp3, wav; mp4, ogg, webm, Youtube URL";
+		textbox.placeholder = "Image, audio, or video link [optional caption]...\n\nSupports: most images; mp3, wav; mp4, ogg, webm, Youtube URL";
 		textbox.spellcheck = false;
 		textbox.style.fontFamily = "Segoe UI, Source Sans Pro, Roboto, Helvetica, sans-serif";
 		if (textbox.value == "<div>\n\n</div>\n\n" + "<script>\n\n</" + "script>") textbox.value = "";		
@@ -1922,7 +1895,7 @@ function timeLabel(createdts, modifiedts) {
 	
 	if (modifiedts && timeSince(modifiedts) != timeSince(createdts)) {
 		let postModified = make('span', " (" + timeSince(modifiedts) + ")");
-		postModified.style.fontStyle = "italic";
+		// postModified.style.fontStyle = "italic";
 		postModified.title = modifiedts;
 		dateDiv.appendChild(postModified);
 	}
@@ -2085,7 +2058,7 @@ function importSeed() {
 			D("current").disabled = false;
 			D("clear").disabled = false;
 			D("submitButton").disabled = false;
-			D("libraryPlaceholder").textContent = "Browse, read, write!";
+			D("libraryPlaceholder").textContent = "- Reading list -";
 			D("subPanel").style.display = "flex";
 			localStorage.setItem("localSeed", XNO.seed);
 			
@@ -2126,7 +2099,7 @@ function clickClearSeed() {
 	D("current").disabled = true;	
 	D("clear").disabled = true;
 	D("submitButton").disabled = true;
-	D("libraryPlaceholder").textContent = "Browse, read, write! (Log in above to persist.)";
+	D("libraryPlaceholder").textContent = "- Reading list (log in above to persist) -";
 	D("subPanel").style.display = "none";	
 	localStorage.removeItem("localSeed");
 	
