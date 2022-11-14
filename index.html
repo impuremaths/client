@@ -1334,12 +1334,15 @@ function fillMediaBox(mediaURL, preview) {
 		
 		let imagediv = make("img");
 		imagediv.style = "font-style:italic; height:fit-content; margin:auto; max-width:100%; max-height:100%";
-		imagediv.alt = "- missing image -";
+		imagediv.alt = "loading image...";
 		mediaBox.appendChild(imagediv);
 		fileSize(mediaURL).then(function(size) {
-			if (!preview || size < 262144) imagediv.src = mediaURL;
-			else imagediv.alt = "- large image -";
-		});
+			if (!preview || size < 262144) {
+				imagediv.alt = "- missing image -";
+				imagediv.src = mediaURL;
+			} else if (size > 0) imagediv.alt = "- large image -";
+			else imagediv.alt = "- missing image -";
+		}).catch(function() { imagediv.alt = "- missing image -"; });
 	}						
 	mediaBox.style.width = "100%";	
 	return mediaBox;
