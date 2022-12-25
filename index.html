@@ -155,7 +155,7 @@
 			<div class="sidebar desktop" style="flex-grow:1; max-width:360px; margin-left:50px;">
 				<input id="postTitle" style="font-weight:bold; font-size:1.1em; width:100%; margin-bottom:10px;" autocomplete="off" placeholder="Title (required)..." type="text" onkeyup="if (event.keyCode == 27) this.value = '';">
 				<div id="editid" style="font-size:0.85em; margin-left:10px; display:none">
-					<span id="creationEdit"></span><span id="modificationEdit" style="font-style:italic; opacity:0.5"></span>
+					<span id="creationEdit"></span><span id="modificationEdit" style="font-style:italic;"></span>
 				</div>
 				
 				<div id="editTags" style="font-size:0.85em; margin-top:15px"></div>
@@ -222,7 +222,7 @@
 					</div>
 				
 					<div style="margin-top:3px">
-						<span id="creation">Date published</span><span id="modification" style="font-style:italic; opacity:0.5">  •&nbsp;date updated</span>
+						<span id="creation">Date published</span><span id="modification" style="font-style:italic;">  •&nbsp;date updated</span>
 						<a id="edit" onclick="event.preventDefault(); fillEdit();" style="cursor:pointer; display:none"> • Update</a>
 					</div>
 				</div>
@@ -846,7 +846,7 @@ function setupWebsocket(fresh) {
 		if (data.user.userid) {
 			userCache[data.user.userid] = data.user;
 			fillBio(data.user.userid, !update);
-			if (D(data.user.userid) && D(data.user.userid).children[2]) D(data.user.userid).children[2].style = "font-size:0.85em; color:#888";
+			if (D(data.user.userid + "-time")) D(data.user.userid + "-time").style = "font-size:0.85em; color:#888";
 		}
 	});
 	
@@ -1818,20 +1818,7 @@ function fullLabel(postid, type, mediaBox) {
 	
 	if (data.wall && data.wall.length) {	
 		let premium = make('span', " • Premium");
-		postMeta.appendChild(premium);			
-		premium.style.opacity = "0.5";		
-		premium.style.fontStyle = "italic";
-		let colorIn = true;
-		for (let i = 0; i < data.wall.length; i++) {
-			if (!data.content[data.wall[i]].content) colorIn = false;
-		}
-		if (colorIn || data.userid == XNO.address) {
-			premium.style.fontStyle = "";
-			premium.style.transitionProperty = "opacity";
-			premium.style.transitionDuration = "1s";
-			premium.style.transitionTimingFunction = "";
-			setTimeout(function() {	premium.style.opacity = ""; }, 0);
-		}
+		postMeta.appendChild(premium);
 	}
 	
 	if (data.userid == XNO.address) {
@@ -1954,7 +1941,6 @@ function timeLabel(createdts, modifiedts) {
 	if (modifiedts && timeSince(modifiedts) != timeSince(createdts)) {
 		let postModified = make('span', " •\xa0" + timeSince(modifiedts));
 		postModified.style.fontStyle = "italic";
-		postModified.style.opacity = "0.5";
 		postModified.title = unixToTime(modifiedts);
 		dateDiv.appendChild(postModified);
 	}
@@ -2326,11 +2312,12 @@ function makeNoteLi(data) {
 	theLabel.appendChild(dateDiv);
 	
 	let text = make('div');
+	text.style.marginLeft = "1em";
 	if (data.ntype == "comment") {
 		text.textContent = "Commented on ";
-		text.style.fontStyle = "italic";
 		let postid = JSON.parse(data.message).postid;
 		let link = make('a');
+		link.style.fontStyle = "italic";
 		link.textContent = "your post";		
 		if (postCache[postid]) link.textContent = postCache[postid].title;
 		url.search = new URLSearchParams({postid});
@@ -2345,11 +2332,9 @@ function makeNoteLi(data) {
 	}
 	if (data.ntype == "subscribe") {
 		text.textContent = "Subscribed!";
-		text.style.fontStyle = "italic";
 	}
 	if (data.ntype == "sponsor") {
 		text.textContent = "Sponsored!";
-		text.style.fontStyle = "italic";
 	}
 	theLabel.appendChild(text);
 	
@@ -2406,6 +2391,8 @@ function makeSubLi(userid, data) {
 	if (data) {
 		if (data.lastpublishedts) {
 			let publishSpan = make('span', "\xa0\xa0" + timeSince(data.lastpublishedts));
+			publishSpan.id = userid + "-time";
+			if (label.tag) publishSpan.id = "tag-" + userid + "-time";
 			publishSpan.style = "font-size:0.85em; color:#888";
 			if (data.lastaccessedts && data.lastaccessedts < data.lastpublishedts) publishSpan.style.fontWeight = "bold";
 			subli.appendChild(publishSpan);			
@@ -2415,29 +2402,29 @@ function makeSubLi(userid, data) {
 			let expirySpan;
 			if (data.expiryts > Date.now()) {
 				newDate = 2*Date.now() - data.expiryts;
-				expirySpan = make('a', "Premium sponsorship • " + timeSince(newDate) + " left");
+				expirySpan = make('span', "Premium sponsorship • " + timeSince(newDate) + " left");
 			} else {			
 				expirySpan = make('a', "Sponsorship ended • " + timeSince(data.expiryts) + " ago");
-				expirySpan.style = "font-style:italic";
-			}
-			expirySpan.onclick = function() {			
-				event.preventDefault();
-				event.stopPropagation();
-				queryBrowse(label);
-				sponsorHandler();
-				flash(subli.parentNode);
+				//expirySpan.style = "font-style:italic";
+				expirySpan.onclick = function() {			
+					event.preventDefault();
+					event.stopPropagation();
+					queryBrowse(label);
+					sponsorHandler();
+					flash(subli.parentNode);
+				}
 			}
 			
 			let expiryHolder = make('div');
-			expiryHolder.style = "font-size:0.85em;";
+			expiryHolder.style = "font-size:0.85em; margin-left:1em";
 			expiryHolder.appendChild(expirySpan);
 			subli.appendChild(expiryHolder);			
 		}
 	}
 	
 	let subliwrap = make("li");
+	subliwrap.id = userid;
 	if (label.tag) subliwrap.id = "tag-" + userid;
-	else subliwrap.id = userid;
 	subliwrap.appendChild(subli);
 	D('subscriptions').appendChild(subliwrap);
 	
