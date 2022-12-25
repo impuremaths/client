@@ -1470,42 +1470,50 @@ function fillMediaBox(mediaURL, preview) {
 }	
 
 function addComment(commentData) {
-	if (D(commentData.commentid)) {
-		D(commentData.commentid).textContent = commentData.content;
-		return false;
-	}	
-	
-	let userid = commentData.commentid.split("-")[0];	
-	let theLabel = make('div');
-	theLabel.style = "font-size:0.85em; overflow:hidden; text-overflow:ellipsis; margin-bottom:0.3em";
-	theLabel.appendChild(authorLabel(userid));
+	let theComment = D(commentData.commentid);
+	if (theComment) theComment.textContent = commentData.content;
+	else theComment = make('li', commentData.content);
+	theComment.innerHTML = theComment.innerHTML.replace(/([\n]{2,})/g, "<p style='margin:0.9em 0px'></p>");
 	
 	let dateDiv = timeLabel(parseInt(commentData.commentid.split("-")[1]), commentData.modifiedts);
+	dateDiv.id = commentData.commentid + "-date";
 	dateDiv.style.color = "#888";
-	dateDiv.style.marginLeft = "5px";
+	dateDiv.style.marginLeft = "5px";	
+	if (D(commentData.commentid + "-date")) D(commentData.commentid + "-date").replaceWith(dateDiv);
+	
+	if (theComment.id == commentData.commentid) return false;	
+	theComment.id = commentData.commentid;
+	theComment.style = "margin-bottom:1em; font-size:0.9em";	
+	
+	let theLabel = make('div');
+	theLabel.style = "font-size:0.85em; overflow:hidden; text-overflow:ellipsis; margin-bottom:0.3em";
+	let userid = commentData.commentid.split("-")[0];	
+	theLabel.appendChild(authorLabel(userid));
 	theLabel.appendChild(dateDiv);
 
-	// reply editor
-	let editPanel = make('textarea');
-	
+	let editPanel;	
 	if (XNO.address == userid) {
+		editPanel = make('textarea');
 		let editBut = make('a', " • Edit");	
 		editBut.style.cursor = "pointer";
 		
-		editPanel.placeholder = "Reply...";
+		let tempContent = commentData.content;
+		editPanel.value = tempContent;
+		
 		editPanel.onfocus = function() { scrollPanel(editPanel); };
 		editPanel.style = "height:80px; margin-bottom:5px; margin-top:10px; width:100%; display:none; font-size:0.9em";	
 		editPanel.style.fontFamily = "Segoe UI, Source Sans Pro, Roboto, Helvetica, sans-serif";
+		
 		editPanel.oninput = function() {
-			if (editPanel.value) editBut.textContent = " • Publish Edit";
+			if (editPanel.value) editBut.textContent = " • Publish edit";
 			else editBut.textContent = " • Cancel";
 		};
 		editPanel.onkeyup = function() {
 			if (event.keyCode == 27) {
-				editPanel.value = "";
+				event.stopPropagation();
+				editPanel.value = tempContent;
 				editPanel.style.display = "none";
 				editBut.textContent = " • Edit";
-				event.stopPropagation();
 			}
 		}
 		
@@ -1513,28 +1521,26 @@ function addComment(commentData) {
 		editBut.onclick = function() {
 			if (editPanel.style.display) {
 				editPanel.style.display = "";
-				editPanel.value = D(commentData.commentid).textContent;
 				this.textContent = " • Cancel";
 				editPanel.focus();
 			} else {
-				editPanel.style.display = "none";
-				if (editPanel.value && editPanel.value != D(commentData.commentid).textContent)
+				if (editPanel.value && editPanel.value != tempContent)
 					ws.emit('updateComment', {content:editPanel.value, postid: commentData.postid, parentid: commentData.parentid, commentid: commentData.commentid });
-				this.textContent = " • Edit";
+					
+				tempContent = editPanel.value;
+				editPanel.style.display = "none";
+				editBut.textContent = " • Edit";
 			}
 		};
 		theLabel.appendChild(editBut);
 	}	
-			
-	let theComment = make('li', commentData.content);
-	theComment.innerHTML = theComment.innerHTML.replace(/([\n]{2,})/g, "<p style='margin:0.9em 0px'></p>");
-	theComment.id = commentData.commentid;
-	theComment.style = "margin-bottom:1em; font-size:0.9em";
 	
 	if (commentData.parentid) {
 		D(commentData.parentid + "-ul").appendChild(theLabel);	
-		if (XNO.address == userid) D(commentData.parentid + "-ul").appendChild(editPanel);	
-		D(commentData.parentid + "-ul").appendChild(theComment);
+		if (editPanel) {
+			editPanel.placeholder = "Comment...";
+			D(commentData.parentid + "-ul").appendChild(editPanel);	
+		} D(commentData.parentid + "-ul").appendChild(theComment);
 	} else {
 		let repPanel = make('textarea');
 		let repBut = make('button', "Reply");
@@ -1591,7 +1597,10 @@ function addComment(commentData) {
 		D('readComments').insertBefore(repPanel, D('readComments').firstElementChild);
 		D('readComments').insertBefore(ulcomment, D('readComments').firstElementChild);
 		D('readComments').insertBefore(theComment, D('readComments').firstElementChild);
-		if (XNO.address == userid) D('readComments').insertBefore(editPanel, D('readComments').firstElementChild);
+		if (editPanel) {
+			editPanel.placeholder = "Reply...";
+			D('readComments').insertBefore(editPanel, D('readComments').firstElementChild);
+		}
 		D('readComments').insertBefore(theLabel, D('readComments').firstElementChild);
 	}
 }
