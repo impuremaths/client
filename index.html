@@ -879,7 +879,9 @@ function setupWebsocket(fresh) {
 	ws.on('subscribeResponse', function(data) {	console.log(data); });
 	
 	ws.on('sponsorResponse', function(data) {
-		makeSubLi(data.userid2, data); 
+		console.log(data);
+		makeSubLi(data.userid2, data);
+		D(data.userid2).scrollIntoView({behavior: "smooth", block:"nearest"});
 	});
 }
 
@@ -2435,7 +2437,8 @@ function makeSubLi(userid, data) {
 	subliwrap.id = userid;
 	if (label.tag) subliwrap.id = "tag-" + userid;
 	subliwrap.appendChild(subli);
-	D('subscriptions').appendChild(subliwrap);
+	if (D(userid)) D(userid).replaceWith(subliwrap);
+	else D('subscriptions').appendChild(subliwrap);
 	
 	if (D('browseHeading').title) {
 		if (D(D('browseHeading').title)) activeBar(D(D('browseHeading').title));
