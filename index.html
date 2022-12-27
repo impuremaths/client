@@ -87,7 +87,7 @@
 		
 		<div id="browse" style="padding-bottom:80px; max-width:1200px">			
 			<div>
-				<span style="font-weight:bold; font-size:1.1em; cursor:pointer;" onclick="queryBrowse()" id="browseHeading"></span>
+				<span style="font-weight:bold; font-size:1.1em; cursor:pointer;" onclick="queryBrowse(browseURL)" id="browseHeading"></span>
 				<span id="loadingMsg" style="margin-left:10px; font-style:italic; display:none">Loading...</span>
 			</div>
 			<div style="display:flex">			
@@ -686,7 +686,7 @@ var readPostContent = "";
 var editPostid = "";
 var editPostContent = "";
 var editPostPending = false;
-var floatState = false;
+var usingRAM = false;
 var backList = [];
 var browseURL = {};
 var currentTitle = "";
@@ -965,6 +965,7 @@ function queryBrowse(label, automatic, passive) {
 	let {userid, tag} = label;
 	browseURL = label;
 	closeBio();
+	if (active('sponsor')) sponsorHandler();
 	D('profileBut').style.display = "none";
 	D('toggleBrowse').style.display = "";
 		
@@ -1008,8 +1009,6 @@ function queryBrowse(label, automatic, passive) {
 		D('bio').textContent = "The trickle of recent posts."
 	}
 	
-	D('browseHeading').onclick = function() { queryBrowse(label); };
-	if (active('sponsor')) sponsorHandler();
 	
 	if (browseCache[D('browseHeading').title]) fillBrowseList(browseCache[D('browseHeading').title]);
 	else D('discovery').style.opacity = "0.5";
@@ -1115,8 +1114,6 @@ function fillPost(postid, manual) {
 		D("comment").disabled = false;
 	}
 	// readHeight = 0;
-	loadPanel('read');
-	if (active('toggleRead')) D('toggleRead').click();	
 	if (!postCache[postid] || manual) ws.emit('queryPostChain', {userid, createdts});
 	if (manual) {
 		if (!D(postid)) {
@@ -1125,18 +1122,21 @@ function fillPost(postid, manual) {
 			makeLibLi(postid, ts);
 		} else D(postid).firstElementChild.firstElementChild.style.fontWeight = "";
 	}
+	
+	loadPanel('read');
+	if (active('toggleRead')) D('toggleRead').click();	
 }
 
-function fillEdit(postid, dataConfirmation) {	
-	if (!dataConfirmation && !cancelPost()) return false;
+function fillEdit(postid, confirmation) {	
+	if (!confirmation && !cancelPost()) return false;
 	
 	if (!postid) postid = readPostid;
-	editPostPending = !dataConfirmation;
-	if (editPostPending) {
+	editPostPending = !confirmation;
+	if (!confirmation) {
 		ws.emit('queryPostChain', { userid: postid.split("-")[0], createdts: parseInt(postid.split("-")[1]) });
 		postHeight = 0;
+		loadPanel('post', true);
 	}
-	loadPanel('post');
 	
 	let theNewContent = "";
 	let metaData = postCache[postid];
@@ -1202,11 +1202,7 @@ function setTitle(str, reset) {
 	else document.title = prepend + " Brewri";
 }
 
-function loadPanel(type, manual, holdHistory) {
-	console.log("heights:");
-	console.log(browseHeight);
-	console.log(readHeight);
-	console.log(postHeight);
+function loadPanel(type, useRAM, goingBack) {
 	let prevType = "browse";
 	if (D('browse').style.display != 'none') {
 		browseHeight = Math.ceil(D('secondDivInner').scrollTop);
@@ -1223,19 +1219,6 @@ function loadPanel(type, manual, holdHistory) {
 		if (type == prevType) postHeight = 0;
 	}
 	
-	let newManual = (manual && type != prevType);
-	if (newManual) backList.push(prevType);	
-	function changeHistory() {
-		if (!holdHistory) {
-			if (newManual && floatState) window.history.replaceState(null, "", url);
-			else {
-				window.history.pushState(null, "", url);
-				backList = [];
-				floatState = newManual;
-			}
-		}
-	}
-	
 	D('post').style.display = 'none';
 	D('read').style.display = 'none';
 	D('browse').style.display = 'none';
@@ -1247,6 +1230,17 @@ function loadPanel(type, manual, holdHistory) {
 	D(type + "Button").classList.add('active');
 	popularTags.classList.add("desktop");
 	if (type != "browse" && active('sponsor')) sponsorHandler();
+	
+	useRAM = (useRAM && type != prevType);
+	if (useRAM && !goingBack) backList.push(prevType);	
+	function changeHistory() {
+		if (useRAM && usingRAM) window.history.replaceState(null, "", url);
+		else {
+			window.history.pushState(null, "", url);
+			backList = [];
+			usingRAM = useRAM;
+		}
+	}
 	
 	let params = new URLSearchParams(window.location.search);
 	let theHeight = postHeight;
@@ -1269,6 +1263,9 @@ function loadPanel(type, manual, holdHistory) {
 		
 		D(type).style.display = "";
 		popularTags.classList.remove("desktop");
+	} else {
+		url = new URL(window.location);
+		changeHistory();
 	}
 
 	D('secondDivInner').scrollTo(0, theHeight);	
@@ -2505,34 +2502,35 @@ window.addEventListener("beforeunload", function (e) {
 });
 
 window.addEventListener('popstate', function() { 
-	if (!closeSidebar()) loadURL(); 
+	if (!closeSidebar()) {
+		if (backList.length) {
+			window.history.pushState(null, "", new URL(window.location));
+			loadPanel(backList.pop(), true, true);
+		} else loadURL(); 
+	}
 	//else window.history.pushState(null, "", new URL(window.location));
 });
 
 function closeSidebar() {
-	if (D('browse').style.display != 'none' && active('toggleBrowse')) {
-		D('toggleBrowse').click();
-		event.preventDefault();
-	} else if (D('read').style.display != 'none' && active('toggleRead')) {
-		D('toggleRead').click();
-		event.preventDefault();
-	} else if (D('post').style.display != 'none' && active('toggleEdit')) {
-		D('toggleEdit').click();
-		event.preventDefault();
-	} else return false;
+	if (D('browse').style.display != 'none' && active('toggleBrowse')) D('toggleBrowse').click();
+	else if (D('read').style.display != 'none' && active('toggleRead')) D('toggleRead').click();
+	else if (D('post').style.display != 'none' && active('toggleEdit')) D('toggleEdit').click();
+	else return false;	
+	event.preventDefault();
 	return true;
 }
 
 function loadURL(link) {
 	let activeClick = false;
-	if (!link) link = window.location;
-	else activeClick = !activeClick;
+	if (link) activeClick = true;
+	else link = window.location;
 	let params = new URLSearchParams(link.search);
-	let postid = params.get('postid');
-	if (postid) {
-		if (ws && ws.readyState == 1 && !D('browseHeading').textContent) queryBrowse(null, true, true);
-		fillPost(postid, activeClick);
-	} else queryBrowse({userid:params.get('userid'), tag:params.get('tag')}, !activeClick);
+	if (params.get('postid')) {
+		if (ws && ws.readyState == 1 && !D('browseHeading').textContent) queryBrowse({}, true, true);
+		fillPost(params.get('postid'), activeClick);
+	} else if (params.get('userid')) queryBrowse({userid:params.get('userid')}, !activeClick);
+	else if (params.get('tag')) queryBrowse({tag:params.get('tag')}, !activeClick);
+	else queryBrowse({}, !activeClick);
 	
 	if (ws && ws.readyState == 3) {	setupWebsocket(); }
 }
@@ -2563,10 +2561,10 @@ window.addEventListener('copy', function(e) {
 
 window.addEventListener('keydown', function(evt) {
 	if (document.activeElement.tagName.toLowerCase() != 'input' && document.activeElement.tagName.toLowerCase() != 'textarea') {
-		if (evt.keyCode == 8 && backList.length && !closeSidebar()) {
-			evt.preventDefault();
-			loadPanel(backList.pop(), false, true);
-		} 
+	//	if (evt.keyCode == 8 && backList.length && !closeSidebar()) {
+	//		evt.preventDefault();
+	//		loadPanel(backList.pop(), false, true);
+	//	} 
 		
 		if (evt.keyCode == 27) {
 			evt.preventDefault();
