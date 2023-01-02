@@ -40,7 +40,7 @@
 			</div>	
 		</div>	
 		
-		<div id="notePanel" class="objectWrapper" style="padding-right:0px; overflow:hidden; display:none; flex-direction:column; flex-shrink:0; max-height:33vh" onclick="openSubAccordion(this)">
+		<div id="notePanel" class="objectWrapper" style="padding-right:0px; overflow:hidden; display:none; flex-direction:column; flex-shrink:0; max-height:33vh" onclick="openSubAccordion(this); refreshNoteCounter()">
 			<div class="clickFlash leftRightBase" style="margin:0px 10px" onclick="toggleSubAccordion(this)">
 				<div id="notificationHeading" style="font-size:0.9em; color:#888; margin-left:0px; flex-grow:1">Activity</div>
 				<div id="balance" class="clickFlash" style="overflow:hidden; text-overflow:ellipsis; flex-shrink:0; max-width:60%; font-size:0.9em; margin-left:5px; color:#888">0.00</div><span style="font-size:0.9em; color:#888" onclick="refreshData(); event.stopPropagation()">&nbsp;XNO</span>
@@ -683,6 +683,7 @@ function cyclePending(symbol) {
 
 var readPostid = "";
 var readPostContent = "";
+var readPostWall = false;
 var editPostid = "";
 var editPostContent = "";
 var editPostPending = false;
@@ -699,6 +700,8 @@ var postCache = {};
 var userCache = {};
 var browseCache = {};
 var noteCount = 0;
+var iframes = [];
+var youtubes = [];
 
 const enc = new TextEncoder();
 const dec = new TextDecoder();
@@ -719,7 +722,7 @@ const animals = ["Puppy", "Kitten", "Bunny", "Hamster", "Panda", "Otter", "Hedge
 var url = new URL(window.location);						
 var possibleOrigins = ["https://brewri.github.io"];
 
-var serverURL = 'wss://brewri-server-stg.fly.dev';
+var serverURL = 'wss://brewri-server.fly.dev';
 var ws;
 setupWebsocket(true);
 
@@ -793,6 +796,7 @@ function setupWebsocket(fresh) {
 		clearDOM(D('notifications'));
 		D('notificationHeading').textContent = "Activity";
 		noteCount = 0;
+		if (data.notifCounter) noteCount = data.notifCounter;
 		setTitle(false, true);
 		if (data.notifications) {
 			data.notifications.sort(function(x, y) { return x.timestamp - y.timestamp; });
@@ -802,12 +806,19 @@ function setupWebsocket(fresh) {
 		}
 		
 		clearDOM(D('library'));
-		data.library.sort(function(x, y) { return x.pushedts - y.pushedts; });
-		for (let i = 0; i < data.library.length; i++) {
-			cachePost(data.library[i]);
-			makeLibLi(data.library[i].postid, data.library[i].lastaccessedts, data.library[i].pushedts);
+		if (data.library) {
+			data.library.sort(function(x, y) { return x.pushedts - y.pushedts; });
+			for (let i = 0; i < data.library.length; i++) {
+				cachePost(data.library[i]);
+				makeLibLi(data.library[i].postid, data.library[i].lastaccessedts, data.library[i].pushedts);
+			}
 		}
 		requestNames();
+		
+		if (readPostWall) {
+			console.log("Trying to clear a wall");
+			fillPost(readPostid, true);
+		}
 	});
 	
 	ws.on('updateNotificationResponse', function(data) { 
@@ -935,7 +946,7 @@ function receiveDOMdisplayName(data) {
 	}
 	delete DOMdisplayNameQueue[userid];	
 	
-	if (new URLSearchParams(window.location.search).get('userid') == userid) setTitle(funName(userid));
+	if (userid && new URLSearchParams(window.location.search).get('userid') == userid) setTitle(funName(userid));
 	
 	if (userid == XNO.address && D('bioEditor').style.display == "none") {
 		D('firstDiv').style.backgroundColor = "hsl(" + funColor(XNO.address, false, true) + ", 55%, 80%)";
@@ -1011,7 +1022,7 @@ function queryBrowse(label, automatic, passive) {
 	
 	
 	if (browseCache[D('browseHeading').title]) fillBrowseList(browseCache[D('browseHeading').title]);
-	else D('discovery').style.opacity = "0.5";
+	else D('discovery').style.opacity = "0.6";
 	
 	if (!(automatic && browseCache[D('browseHeading').title]) && ws && ws.readyState == 1) {
 		D('loadingMsg').style.display = "";
@@ -1223,6 +1234,17 @@ function loadPanel(type, useRAM, goingBack) {
 		if (type == prevType) postHeight = 0;
 	}
 	
+	if (type != prevType) {
+		let newYoutubes = [];
+		for (let i = 0; i < youtubes.length; i++) {
+			if (youtubes[i].parentNode && youtubes[i].contentWindow) {
+				youtubes[i].contentWindow.postMessage('{"event":"command","func":"' + 'pauseVideo' + '","args":""}', '*');
+				newYoutubes.push(youtubes[i]);
+			}
+		}
+		youtubes = newYoutubes;
+	}
+	
 	D('post').style.display = 'none';
 	D('read').style.display = 'none';
 	D('browse').style.display = 'none';
@@ -1257,7 +1279,7 @@ function loadPanel(type, useRAM, goingBack) {
 		theHeight = readHeight;
 	} else if (type == "browse") {		
 		url.search = new URLSearchParams(browseURL);
-		if (params.get('userid') != browseURL.userid || params.get('tag') != browseURL.tag || params.get('postid') || params.get('editid')) changeHistory();
+		if (params.get('userid') != browseURL.userid || params.get('tag') != browseURL.tag || params.get('postid') != null || params.get('editid') != null) changeHistory();
 		
 		if (browseURL.userid) setTitle(funName(browseURL.userid));
 		else if (browseURL.tag) setTitle(browseURL.tag);
@@ -1330,9 +1352,11 @@ function fillBio(userid, block) {
 
 function fillContent(elt, content, wall, userid) {
 	clearDOM(elt);
+	if (elt == D('readContent')) readPostWall = false;
 	for (let i = 0; i < content.length; i++) {	
 		let jsbox = make("div");
 		if (!content[i].content) {
+			readPostWall = true;
 			let wording = "- Premium content";
 			if (content[i].type == "js") wording = "- An applet";
 			if (content[i].type == "media") wording = "- Media";
@@ -1350,9 +1374,20 @@ function fillContent(elt, content, wall, userid) {
 			jsbox.appendChild(make('span', "'s sponsors -"));
 		} else if (content[i].type == "js") {
 			jsbox = make("iframe");
-			jsbox.style = "width:100%; height:0px; border-top:0px; border-bottom:0px; border-left:2px solid transparent; border-right:0px;";
-			jsbox.onmouseenter = function() { jsbox.style.borderColor = "hsl(var(--hue), var(--butsat), 80%)"; }
-			jsbox.onmouseleave = function() { if (jsbox != document.activeElement) jsbox.style.borderColor = "transparent"; }
+			iframes.push(jsbox);
+			jsbox.style = "width:100%; height:0px; border-top:0px; border-bottom:0px; border-left:2px solid transparent; border-right:0px; border-color:transparent; opacity:0.6";
+			jsbox.onmouseenter = function() { 
+				if (jsbox.style.borderColor == "transparent") {
+					jsbox.style.borderColor = "hsl(var(--hue), 0%, 90%)"; 
+					jsbox.style.opacity = "0.75";
+				}
+			}
+			jsbox.onmouseleave = function() { 
+				if (jsbox != document.activeElement) {
+					jsbox.style.borderColor = "transparent"; 
+					jsbox.style.opacity = "0.6";
+				}
+			}
 			jsbox.sandbox = "allow-scripts";
 			let str = `<script>window.onload = function() {
 				window.parent.postMessage({height:Math.max( document.body.scrollHeight, document.body.offsetHeight, document.body.clientHeight,
@@ -1394,7 +1429,7 @@ function fillContent(elt, content, wall, userid) {
 	if (wall) {
 		for (let i = 0; i < wall.length; i++) {
 			let block = elt.children[wall[i]];
-			block.style.opacity = "0.5";
+			block.style.opacity = "0.6";
 			if (content[wall[i]].content) {
 				block.style.transitionProperty = "opacity";
 				block.style.transitionDuration = "1s";
@@ -1407,7 +1442,7 @@ function fillContent(elt, content, wall, userid) {
 					block.style.borderColor = "hsl(var(--hue), var(--butsat), 80%)";
 				};
 				block.onmouseleave = function() {
-					block.style.opacity = "0.5";
+					block.style.opacity = "0.6";
 					block.style.borderColor = "transparent";
 				};			
 			}
@@ -1442,8 +1477,9 @@ function fillMediaBox(mediaURL, preview) {
 		
 		let youtube = make("iframe");
 		youtube.style = "border:0px; background-color:black; position:absolute; height:100%; width:100%; top:0px; left:0px;";
-		youtube.src = "https://www.youtube.com/embed/" + match[2] + "?modestbranding=1"							
+		youtube.src = "https://www.youtube.com/embed/" + match[2] + "?modestbranding=1&enablejsapi=1"							
 		mediaBox.appendChild(youtube);
+		youtubes.push(youtube);
 	} else if (ext == ".mp4" || ext == ".ogg" || ext == "webm") {
 		mediaBox = make("video");
 		mediaBox.controls = true;
@@ -1531,7 +1567,7 @@ function addComment(commentData) {
 				editPanel.focus();
 			} else {
 				if (editPanel.value && editPanel.value != tempContent)
-					ws.emit('updateComment', {content:editPanel.value, postid: commentData.postid, parentid: commentData.parentid, commentid: commentData.commentid });
+					ws.emit('updateComment', {content:editPanel.value, postid: commentData.postid, parentid: commentData.parentid, commentid: commentData.commentid, previd: commentData.previd });
 					
 				tempContent = editPanel.value;
 				editPanel.style.display = "none";
@@ -1546,7 +1582,8 @@ function addComment(commentData) {
 		if (editPanel) {
 			editPanel.placeholder = "Comment...";
 			D(commentData.parentid + "-ul").appendChild(editPanel);	
-		} D(commentData.parentid + "-ul").appendChild(theComment);
+		}
+		D(commentData.parentid + "-ul").appendChild(theComment);
 	} else {
 		let repPanel = make('textarea');
 		let repBut = make('button', "Reply");
@@ -1580,7 +1617,9 @@ function addComment(commentData) {
 			} else {
 				repPanel.style.display = "none";
 				this.textContent = "Reply";
-				if (repPanel.value) ws.emit('updateComment', {content:repPanel.value, postid: commentData.postid, parentid: commentData.commentid });
+				let previd = "";
+				if (D(commentData.commentid + "-ul").lastElementChild) previd = D(commentData.commentid + "-ul").lastElementChild.id;
+				if (repPanel.value) ws.emit('updateComment', {content:repPanel.value, postid:commentData.postid, parentid:commentData.commentid, previd});
 				repPanel.value = "";
 			}
 		};
@@ -2157,6 +2196,7 @@ function cancelPost(override) {
 	D('clearButton').textContent = "Clear";
 	
 	if (active('toggleEdit')) D('toggleEdit').click();
+	setTitle("Write");
 	return true;
 }
 
@@ -2361,8 +2401,10 @@ function makeNoteLi(data) {
 		D('notifications').appendChild(theLabel);
 	}
 	
-	noteCount++;
-	D('notificationHeading').textContent = "Activity (" + noteCount + ")";
+	if (data.notifCounter) {
+		noteCount = data.notifCounter;
+		D('notificationHeading').textContent = "Activity (" + noteCount + ")";
+	}
 	setTitle(false, true);
 }
 
@@ -2487,17 +2529,31 @@ function toggleVisibility() {
 // Global event listeners ///////////////////////////////////////////////////////////////////////
 
 window.addEventListener('blur', function() {
-	let sender = Array.from(document.getElementsByTagName('iframe')).filter(iframe => {
-		return iframe === document.activeElement;
-	});
-	if (sender[0]) sender[0].style.borderColor = "hsl(var(--hue), var(--butsat), 80%)";
+	let iframesNew = [];
+	for (let i = 0; i < iframes.length; i++) {
+		if (iframes[i].parentNode) {
+			iframesNew.push(iframes[i]);
+			if (iframes[i].style.borderColor != "transparent") {
+				iframes[i].style.borderColor = "hsl(var(--hue), var(--butsat), 80%)";				
+				iframes[i].style.opacity = "";
+			}
+		} 
+	}
+	iframes = iframesNew;
 });
 
 window.addEventListener('focus', function() {
-	let sender = document.getElementsByTagName('iframe');
-	for (let i = 0; i < sender.length; i++) {
-		sender[i].style.borderColor = "transparent";
+	let iframesNew = [];
+	for (let i = 0; i < iframes.length; i++) {
+		if (iframes[i].parentNode) {
+			iframesNew.push(iframes[i]);
+			if (iframes[i].style.borderColor != "transparent") {
+				iframes[i].style.borderColor = "transparent";		
+				iframes[i].style.opacity = "0.6";
+			}
+		}
 	}
+	iframes = iframesNew;
 });		
 			
 window.addEventListener("beforeunload", function (e) {
@@ -2532,10 +2588,11 @@ function loadURL(link) {
 	if (link) activeClick = true;
 	else link = window.location;
 	let params = new URLSearchParams(link.search);
-	if (params.get('postid')) {
+	if (params.get('postid') != null) {
 		if (ws && ws.readyState == 1 && !D('browseHeading').textContent) queryBrowse({}, true, true);
-		fillPost(params.get('postid'), activeClick);
-	} else if (params.get('editid')) {
+		if (params.get('postid')) fillPost(params.get('postid'), activeClick);
+		else loadPanel("read");
+	} else if (params.get('editid') != null) {
 		if (ws && ws.readyState == 1 && !D('browseHeading').textContent) queryBrowse({}, true, true);
 		if (XNO.address == params.get('editid').split("-")[0] && (editPostPending || editPostid != params.get('editid'))) fillEdit(params.get('editid'));
 		else loadPanel("post");
@@ -2632,6 +2689,13 @@ function funColor(userid, generated, raw) {
 function D(string) { 
 if (!string) console.error("Empty dom string");
 return document.getElementById(string); 
+}
+
+function refreshNoteCounter() {
+	ws.emit('updateNotifCounter');
+	noteCount = 0;
+	setTitle(false, true);
+	D('notificationHeading').textContent = "Activity";
 }
 
 function toggleSubAccordion(but) {
