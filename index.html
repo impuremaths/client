@@ -722,7 +722,7 @@ const animals = ["Puppy", "Kitten", "Bunny", "Hamster", "Panda", "Otter", "Hedge
 var url = new URL(window.location);						
 var possibleOrigins = ["https://brewri.github.io"];
 
-var serverURL = 'wss://brewri-server.fly.dev';
+var serverURL = 'wss://brewri-server-stg.fly.dev';
 var ws;
 setupWebsocket(true);
 
@@ -796,6 +796,7 @@ function setupWebsocket(fresh) {
 		clearDOM(D('notifications'));
 		D('notificationHeading').textContent = "Activity";
 		noteCount = 0;
+		console.log(data);
 		if (data.notifCounter) noteCount = data.notifCounter;
 		setTitle(false, true);
 		if (data.notifications) {
@@ -2401,10 +2402,8 @@ function makeNoteLi(data) {
 		D('notifications').appendChild(theLabel);
 	}
 	
-	if (data.notifCounter) {
-		noteCount = data.notifCounter;
-		D('notificationHeading').textContent = "Activity (" + noteCount + ")";
-	}
+	if (data.notifCounter) noteCount = data.notifCounter;
+	if (noteCount) D('notificationHeading').textContent = "Activity (" + noteCount + ")";
 	setTitle(false, true);
 }
 
