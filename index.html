@@ -2370,8 +2370,14 @@ function makeNoteLi(data) {
 	let text = make('div');
 	text.style.marginLeft = "1em";
 	if (data.ntype == "comment") {
-		if (JSON.parse(data.message).parentid) text.textContent = "Replied to a comment on ";
-		else text.textContent = "Commented on ";
+		if (JSON.parse(data.message).previd) {
+			if (JSON.parse(data.message).previd.split("-")[0] == XNO.address) text.textContent = "Replied to you in a discussion on ";
+			else if (JSON.parse(data.message).parentid && JSON.parse(data.message).parentid.split("-")[0] == XNO.address) text.textContent = "Replied to your discussion on ";
+			else text.textContent = "Replied to a discussion on ";
+		} else if (JSON.parse(data.message).parentid) {
+			if (JSON.parse(data.message).parentid.split("-")[0] == XNO.address) text.textContent = "Replied to your comment on ";
+			text.textContent = "Replied to a comment on ";
+		} else text.textContent = "Commented on ";
 		let postid = JSON.parse(data.message).postid;
 		let link = make('a');
 		link.style.fontStyle = "italic";
