@@ -2376,7 +2376,7 @@ function makeNoteLi(data) {
 			else text.textContent = "Replied to a discussion on ";
 		} else if (JSON.parse(data.message).parentid) {
 			if (JSON.parse(data.message).parentid.split("-")[0] == XNO.address) text.textContent = "Replied to your comment on ";
-			text.textContent = "Replied to a comment on ";
+			else text.textContent = "Replied to a comment on ";
 		} else text.textContent = "Commented on ";
 		let postid = JSON.parse(data.message).postid;
 		let link = make('a');
