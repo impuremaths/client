@@ -2370,7 +2370,8 @@ function makeNoteLi(data) {
 	let text = make('div');
 	text.style.marginLeft = "1em";
 	if (data.ntype == "comment") {
-		text.textContent = "Commented on ";
+		if (JSON.parse(data.message).parentid) text.textContent = "Replied to a comment on ";
+		else text.textContent = "Commented on ";
 		let postid = JSON.parse(data.message).postid;
 		let link = make('a');
 		link.style.fontStyle = "italic";
