@@ -2603,10 +2603,16 @@ function loadURL(link) {
 		if (ws && ws.readyState == 1 && !D('browseHeading').textContent) queryBrowse({}, true, true);
 		if (XNO.address == params.get('editid').split("-")[0] && (editPostPending || editPostid != params.get('editid'))) fillEdit(params.get('editid'));
 		else loadPanel("post");
-	} 
-	else if (params.get('userid')) queryBrowse({userid:params.get('userid')}, !activeClick);
-	else if (params.get('tag')) queryBrowse({tag:params.get('tag')}, !activeClick);
-	else queryBrowse({}, !activeClick);
+	} else if (params.get('userid')) {
+		if (params.get('userid') != browseURL.userid || !browseCache[browseURL.userid]) queryBrowse({userid:params.get('userid')}, !activeClick);
+		else loadPanel("browse");
+	} else if (params.get('tag')) {
+		if (params.get('tag') != browseURL.tag || !browseCache[browseURL.tag]) queryBrowse({tag:params.get('tag')}, !activeClick);
+		else loadPanel("browse");
+	} else {
+		if (browseURL.tag || browseURL.userid || !browseCache["Recent"]) queryBrowse({}, !activeClick);
+		else loadPanel("browse");
+	}
 	
 	if (ws && ws.readyState == 3) {	setupWebsocket(); }
 }
