@@ -334,8 +334,6 @@ function twoDigit(str) {
 	return `${parts[0]}.${fraction}`;	
 }
 
-
-
 let ccc = {};
 ccc['XNO'] = {shift:30, flashColor:'#def', keyType:'seed', min:0, fee:0, donation:'nano_1gpquwssoy8491ajmxp9cxjb3o38imcxidissob7cxc38o6h6r4d8gg639b7',
 				server:'https://proxy.nanos.cc/proxy',				
@@ -344,16 +342,55 @@ ccc['XNO'] = {shift:30, flashColor:'#def', keyType:'seed', min:0, fee:0, donatio
 				faucet: 'https://nanodrop.io/',
 				representative:'nano_1natrium1o3z5519ifou7xii8crpxpk8y65qmkih8e8bpsjri651oza8imdd',
 				repRec:'https://mynano.ninja/api/accounts/verified'};
-				
-				
-for (let symbol in ccc) { 
-	ccc[symbol].queue = new Promise(function(resolve, reject) { resolve(true); });
-}
+for (let symbol in ccc) { ccc[symbol].queue = new Promise(function(resolve, reject) { resolve(true); }); }
 	
 ccc['XNO'].getPending = function() {return post(ccc['XNO'].server, {action: 'pending', account: XNO.address, source:true}); };
-ccc['XNO'].receive = function(hash) { return enqueue('XNO', function() {return nanoReceive('XNO', hash);}); };	
-ccc['XNO'].getBlock = function(hash) { return post(ccc['XNO'].server, {action: 'block_info', json_block: true, hash: hash}); };		
-ccc['XNO'].sendTo = function(destination, amt) { return enqueue('XNO', function() {return nanoSend('XNO', destination, amt);}); };
+ccc['XNO'].getBlock = function(hash) { return post(ccc['XNO'].server, {action: 'block_info', json_block: true, hash: hash}); };	
+ccc['XNO'].receive = function(hash) { return enqueue('XNO', async function() {
+	let symbol = 'XNO';
+	let blockInfoFetch = post(ccc[symbol].server, {action: 'block_info', json_block: true, hash: hash});
+	let oldBalance = '0';
+	let previous = '0'.padStart(64, '0');
+	let representative = ccc[symbol].representative;
+	let workInput = XNO.publicKey;
+	
+	let frontierBlock = await fetchFrontier(symbol);
+	if (frontierBlock) {
+		oldBalance = frontierBlock.balance;
+		previous = frontierBlock.hash;
+		representative = frontierBlock.representative;
+		workInput = frontierBlock.hash;
+	} else {
+		console.log("Fetched frontier failed check; attempting open block.");
+		await fetch(ccc[symbol].repRec).then(function(response) {
+			return response.json().then(function(data) { 
+				if (!data) return false;
+				data.sort(function(x, y) { return y.score - x.score; });
+				let repAddr = data[0].account;
+				if (!repAddr) repAddr = data[0].address;
+				if (repAddr) {
+					ccc[symbol].representative = repAddr;
+					inputEvent(D(`${symbol}-new-rep`), repAddr);
+				}
+			});
+		}).catch(function() {networkFailMsg();});
+		representative = ccc[symbol].representative;
+	}
+	
+	return await blockInfoFetch.then(async function(blockInfo) {
+		if (!blockInfo) return false;
+		return await postBlock(symbol, 'receive', workInput, previous, representative, (BigInt(oldBalance) + BigInt(blockInfo.amount)).toString(), hash);
+	});
+});};	
+ccc['XNO'].sendTo = function(destination, amt) { return enqueue('XNO', async function() { 
+	// check frontier
+	let frontierBlock = await fetchFrontier("XNO");
+	if (!frontierBlock) return false;
+	
+	return await postBlock("XNO", 'send', frontierBlock.hash, frontierBlock.hash, frontierBlock.representative, 
+		(BigInt(frontierBlock.balance) - BigInt(amt)).toString(), destination);
+}); }
+
 ccc['XNO'].createBlock = function(secretKey, data) {
 	if (typeof data.work === 'undefined') throw new Error('Work is not set');
 	if (!XNO.checkAddress(data.representative)) throw new Error('Representative is not valid');
@@ -368,9 +405,8 @@ ccc['XNO'].createBlock = function(secretKey, data) {
 	if (correctedPrevious === BLANK_HASH && (linkIsAddress || correctedLink === BLANK_HASH)) throw new Error('Block is impossible');
 
 	let publicKey = XNO.pubFromPriv(secretKey);
-	let linkBytes;
+	let linkBytes = hexToByteArray(correctedLink);
 	if (XNO.checkAddress(correctedLink)) linkBytes = hexToByteArray(XNO.pubFromAddr(correctedLink));
-	else linkBytes = hexToByteArray(correctedLink);
 	
 	const context = blake2bInit(32)
 	blake2bUpdate(context, STATE_BLOCK_PREAMBLE_BYTES)
@@ -380,82 +416,31 @@ ccc['XNO'].createBlock = function(secretKey, data) {
 	blake2bUpdate(context, hexToByteArray(BigInt(data.balance).toString(16).padStart(32, '0')))
 	blake2bUpdate(context, linkBytes)
 	const hashBytes = blake2bFinal(context)
-	let link
-	let linkAsAddress
-	if (linkIsAddress) {
-		linkAsAddress = correctedLink
-		link = XNO.pubFromAddr(linkAsAddress)
-	} else {
-		link = correctedLink
-		linkAsAddress = XNO.addrFromPub(link)
-	}
+	
 	const block = {
 		type: 'state',
 		account: XNO.addrFromPub(publicKey),
 		previous: correctedPrevious,
 		representative: data.representative,
 		balance: data.balance,
-		link,
+		link: correctedLink,
 		// eslint-disable-next-line @typescript-eslint/camelcase
-		link_as_account: linkAsAddress,
+		link_as_account: XNO.addrFromPub(correctedLink),
 		work: data.work,
 		signature: byteArrayToHex(signDetached(hashBytes, hexToByteArray(secretKey))),
 	}
-	return { hash: byteArrayToHex(hashBytes), block: block };
+	return { hash: byteArrayToHex(hashBytes), block };
 }
 
-
-async function nanoReceive(symbol, hash) {
-	let blockInfoFetch = post(ccc[symbol].server, {action: 'block_info', json_block: true, hash: hash});
-	let oldBalance = '0';
-	let previous = '0'.padStart(64, '0');
-	let representative = ccc[symbol].representative;
-	let workInput = XNO.publicKey;
-	
-	let frontierBlock = await fetchFrontier(symbol, await ccc[symbol].getAccountInfo());
-	if (frontierBlock) {
-		oldBalance = frontierBlock.balance;
-		previous = frontierBlock.hash;
-		representative = frontierBlock.representative;
-		workInput = frontierBlock.hash;
-	} else {
-		console.log("Fetched frontier failed check; attempting open block.");
-		await suggestRep(symbol);
-		representative = ccc[symbol].representative;
-	}
-	
-	return await blockInfoFetch.then(async function(blockInfo) {
-		if (!blockInfo) return false;
-		return await postBlock(symbol, 'receive', workInput, previous, representative, (BigInt(oldBalance) + BigInt(blockInfo.amount)).toString(), hash);
-	});
-};
-
-function suggestRep(symbol) {
-	return fetch(ccc[symbol].repRec).then(function(response) {
-		return response.json().then(function(data) { 
-			if (!data) return false;
-			data.sort(function(x, y) { return y.score - x.score; });
-			let repAddr = data[0].account;
-			if (!repAddr) repAddr = data[0].address;
-			if (repAddr) {
-				ccc[symbol].representative = repAddr;
-				inputEvent(D(`${symbol}-new-rep`), repAddr);
-			}
-		});
-	}).catch(function() {networkFailMsg();});
-}
-
-
-ccc['XNO'].getAccountInfo = function() { return nanoGetAccountInfo('XNO'); };
-function nanoGetAccountInfo(symbol) {
-	return post(ccc[symbol].server, {action: 'account_info', pending: true, representative: true, account: XNO.address}).then(function(accountInfo) {
+ccc['XNO'].getAccountInfo = function() { 
+	return post(ccc['XNO'].server, {action: 'account_info', pending: true, representative: true, account: XNO.address}).then(function(accountInfo) {
 		if (accountInfo && !accountInfo.frontier) {
 			accountInfo.balance = "0";
 			accountInfo.detail = "Unopened account.";
 		} 
 		return accountInfo;
 	});
-}
+};
 
 function enqueue(symbol, func) {
 	ccc[symbol].queue = ccc[symbol].queue.then(func);
@@ -488,27 +473,45 @@ function post(url, params) {
     });
 }	
 
-async function nanoSend(symbol, destination, amt) {
-	// check frontier
-	let frontierBlock = await fetchFrontier(symbol, await ccc[symbol].getAccountInfo());
-	if (!frontierBlock) return false;
+
+function setLocalJSON(name, data) { localStorage.setItem(name, JSON.stringify(data)); }
+
+function getLocalJSON(name) {
+	let data = localStorage.getItem(name);
+	if (data) data = JSON.parse(data);
+	return data;
+}
+
+async function findWork(workInput, subtype) {
+	let localWork = getLocalJSON("localWork");
+	if (!localWork) localWork = {};
+
+	if (!workInput) {
+		workInput = XNO.publicKey;
+		let frontierBlock = await fetchFrontier('XNO');
+		if (frontierBlock) workInput = frontierBlock.hash;
+	}
+	let rawWorkThreshold = await post(ccc['XNO'].server, { action: 'active_difficulty' });
+	let difficulty = rawWorkThreshold.network_current;
+	if (subtype == 'receive') difficulty = rawWorkThreshold.network_receive_current;
 	
-	return await postBlock(symbol, 'send', frontierBlock.hash, frontierBlock.hash, frontierBlock.representative, 
-		(BigInt(frontierBlock.balance) - BigInt(amt)).toString(), destination);
+	let work = null;
+	if (localWork[XNO.address] && localWork[XNO.address].workInput == workInput && localWork[XNO.address].difficulty == difficulty) {
+		work = localWork[XNO.address].work;
+		console.warn("Using local work!!");
+	} else {
+		let prework = (await post(ccc['XNO'].server, {action: 'work_generate', hash: workInput, difficulty}));
+		if (prework && prework.work) work = prework.work;
+		console.warn("Using REMOTE work!!");
+	}
+	if (work) localWork[XNO.address] = {work, workInput, difficulty};	
+	
+	setLocalJSON("localWork", localWork);
+	return work;
 }
 
 async function postBlock(symbol, subtype, workInput, previous, representative, balance, link) {
-	let rawWorkThreshold = await post(ccc[symbol].server, { action: 'active_difficulty' });
-	let work_threshold = rawWorkThreshold.network_current;
-	if (subtype == 'receive') work_threshold = rawWorkThreshold.network_receive_current;
-
-	let prework = (await post(ccc[symbol].server, {action: 'work_generate', hash: workInput, difficulty: work_threshold}));
-	if (!prework) {
-		showMsg("Proof of work failed. Amount NOT processed; try again.");
-		return false;
-	}
-	let work = prework.work;
-	if (work === undefined) work = null;
+	let work = await findWork(workInput, subtype);
 	
 	let block = ccc[symbol].createBlock(XNO.privateKey, {
 		work: work,
@@ -527,40 +530,35 @@ async function postBlock(symbol, subtype, workInput, previous, representative, b
 	}
 	
 	let formData = {action: 'process', json_block: true, subtype: subtype, block: block.block};
-	if (work === null) {
+	if (!work) {
 		formData.do_work = true;
-		formData.block.work = undefined;
+		formData.block.work = undefined;		
+		showMsg("Proof of work failed. Amount NOT processed; try again.");
+		// return false;
 	}
 	post(ccc[symbol].server, formData);
-	return confirmBlock(symbol, block.hash);
-}
-
-
-function confirmBlock(symbol, hash) {
+	
 	return new Promise(async function(resolve, reject) {
-		let firstBlockInfo = await ccc[symbol].getBlock(hash);
-		if (firstBlockInfo && firstBlockInfo.confirmed == "true") resolve(firstBlockInfo);
-		else {
-			let counter = 0;
-			waitCheckHash();
-			function waitCheckHash() {
-				setTimeout(async function() {
-					let blockInfo = await ccc[symbol].getBlock(hash);
-					if (blockInfo && blockInfo.confirmed == "true") resolve(hash);
-					else if (counter < 15) {
-						counter++;
-						waitCheckHash();
-					} else {
-						showMsg("Transfer seems to have failed or is delayed.");
-						resolve();
-					}
-				}, 1000);
-			}
+		let counter = 0;
+		waitCheckHash();
+		function waitCheckHash() {
+			setTimeout(async function() {
+				let blockInfo = await ccc[symbol].getBlock(block.hash);
+				if (blockInfo && blockInfo.confirmed == "true") resolve(block.hash);
+				else if (counter < 15) {
+					counter++;
+					waitCheckHash();
+				} else {
+					showMsg("Transfer seems to have failed or is delayed.");
+					resolve();
+				}
+			}, 1000);
 		}
 	});
 }
 
-function fetchFrontier(symbol, accountInfo) {
+async function fetchFrontier(symbol) {
+	let accountInfo = await ccc[symbol].getAccountInfo();
 	if (!accountInfo || !accountInfo.frontier) return false;
 	return post(ccc[symbol].server, {action: 'block_info', json_block: true, hash: accountInfo.frontier}).then(function(res) {
 		if (!res) return false;
@@ -608,75 +606,73 @@ function unitFromRaw(symbol, str) {
 	return whole + '.' + fraction;	
 }
 
-async function withdraw(symbol, elt, amt, destaddr, them) {
-	elt.disabled = true;
-	let totalAmt = BigInt(rawFromUnit(symbol, amt));
-	let balance = BigInt(rawFromUnit(symbol, D('balance').textContent));
-	let safetyMax = BigInt(rawFromUnit(symbol, hardMax));
-	if (totalAmt > safetyMax) showMsg("Limit for built-in wallet: " + hardMax + " XNO");
-	else if (totalAmt > balance) showMsg("Insufficient funds.");
-	else {
-		let confirmMessage = "Sponsor less than amount required for premium content?";
-		if (totalAmt > BigInt(rawFromUnit(symbol, D('theirThreshold').textContent))) confirmMessage = "Sponsor more than amount required for premium content?";
-		if (totalAmt == BigInt(rawFromUnit(symbol, D('theirThreshold').textContent)) || confirm(confirmMessage)) {
-			if (totalAmt >= BigInt(rawFromUnit(symbol, D('theirThreshold').textContent))) showMsg("Sponsoring \'" + them + "\'...", null, true);
-			else showMsg("Tipping \'" + them + "\'...", null, true);
-			let sendResp = await ccc[symbol].sendTo(destaddr, totalAmt.toString());
-			if (sendResp) {
-				console.log(sendResp);
-				flash(D('balance'), unitFromRaw(symbol, BigInt(rawFromUnit(symbol, D('balance').textContent)) - totalAmt));
-				
-				if (totalAmt >= BigInt(rawFromUnit(symbol, D('theirThreshold').textContent))) {
-					showMsg("Sponsored \'" + them + "\' with " + amt + " " + symbol + "! Premium content now available.");
-					if (ws) ws.emit('sponsor', {userid:destaddr, blockid:sendResp, amt});
-				} else showMsg("Tipped \'" + them + "\' " + amt + " " + symbol + "!");
-				
-				D('sponsorInput').value = "";
-				refreshData(symbol);
-			}
-		}
-	}
-	elt.disabled = false;
-	return false;
-}
-
-function sendMoney(elt) {
+async function sendMoney(elt) {
 	if (D('sponsorInput').validationMessage == "Please enter a number." || D('sponsorInput').value <= 0) {
 		showMsg("Enter a positive value.");
 		flash(D('sponsorInput'));
-	} else withdraw("XNO", elt, D('sponsorInput').value, D('theirAddress').textContent, D('theirFunName').textContent);
+	} else {
+		let symbol = "XNO";
+		let amt = D('sponsorInput').value;
+		let destaddr = D('theirAddress').textContent;
+		let them = D('theirFunName').textContent;
+			
+		elt.disabled = true;
+		let totalAmt = BigInt(rawFromUnit(symbol, amt));
+		let balance = BigInt(rawFromUnit(symbol, D('balance').textContent));
+		let safetyMax = BigInt(rawFromUnit(symbol, hardMax));
+		if (totalAmt > safetyMax) showMsg("Limit for built-in wallet: " + hardMax + " XNO");
+		else if (totalAmt > balance) showMsg("Insufficient funds.");
+		else {
+			let confirmMessage = "Sponsor less than amount required for premium content?";
+			if (totalAmt > BigInt(rawFromUnit(symbol, D('theirThreshold').textContent))) confirmMessage = "Sponsor more than amount required for premium content?";
+			if (totalAmt == BigInt(rawFromUnit(symbol, D('theirThreshold').textContent)) || confirm(confirmMessage)) {
+				if (totalAmt >= BigInt(rawFromUnit(symbol, D('theirThreshold').textContent))) showMsg("Sponsoring \'" + them + "\'...", null, true);
+				else showMsg("Tipping \'" + them + "\'...", null, true);
+				let sendResp = await ccc[symbol].sendTo(destaddr, totalAmt.toString());
+				if (sendResp) {
+					console.log(sendResp);
+					flash(D('balance'), unitFromRaw(symbol, BigInt(rawFromUnit(symbol, D('balance').textContent)) - totalAmt));
+					
+					if (totalAmt >= BigInt(rawFromUnit(symbol, D('theirThreshold').textContent))) {
+						showMsg("Sponsored \'" + them + "\' with " + amt + " " + symbol + "! Premium content now available.");
+						if (ws) ws.emit('sponsor', {userid:destaddr, blockid:sendResp, amt});
+					} else showMsg("Tipped \'" + them + "\' " + amt + " " + symbol + "!");
+					
+					D('sponsorInput').value = "";
+					refreshData(symbol);
+				}
+			}
+		}
+		elt.disabled = false;
+	}
 }
-
 
 function refreshData(symbol) {	
 	if (!symbol) symbol = "XNO";
 	console.log("refreshing");
-	ccc[symbol].getAccountInfo().then(function(accountInfo) {
+	ccc[symbol].getAccountInfo().then(async function(accountInfo) {
 		if (!XNO.address || !accountInfo) return false;
 		
 		if (accountInfo.balance !== undefined) flash(D('balance'), unitFromRaw(symbol, accountInfo.balance));
 		// if (accountInfo.pending !== undefined) flash(D(`${symbol}-balance-pending`), unitFromRaw(symbol, accountInfo.pending));
 		
-		if (accountInfo.detail == "Unopened account.") {
-			if (symbol == "XNO" || symbol == "BAN") cyclePending(symbol);
-		} else cyclePending(symbol);
+		if (XNO.address) {
+			let data = await ccc[symbol].getPending();
+			if (data) {
+				let count = 0;
+				for (const block in data.blocks) {
+					await ccc[symbol].receive(block);
+					count++;
+				}
+				if (count) {
+					refreshData(symbol);
+					return accountInfo;
+				}
+			}
+			findWork();
+		}
 		return accountInfo;
 	});
-}
-
-function cyclePending(symbol) {
-	if (!XNO.address) return false;
-	console.log("cycling");
-	ccc[symbol].getPending().then(async function(data) {
-		if (data) {
-			let count = 0;
-			for (const block in data.blocks) {
-				await ccc[symbol].receive(block);
-				count++;
-			}
-			if (count) refreshData(symbol);
-		}
-	});	
 }
 
 // Global variables and macros; and initializers ///////////////////////////////////////////////////////////////////////
