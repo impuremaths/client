@@ -24,7 +24,7 @@
 		<div id="profilePanel" class="objectWrapper" style="margin-top:30px; margin-bottom:5px" onclick="openSubAccordion(this)">
 			<div class="clickFlash" style="display:flex; justify-content:space-between; margin:0px 10px; align-items:baseline" onclick="toggleSubAccordion(this)">
 				<div id="displayName" style="text-overflow:ellipsis; overflow:hidden; font-size:1.1em; white-space:nowrap; font-weight:bold; flex-grow:1" class="flash">Guest</div>
-				<a id="abtLink" class="clickFlash" style="font-style:italic; font-size:0.9em; margin-left:5px;" href="">- Help -</a>
+				<a id="abtLink" class="clickFlash" style="font-size:0.9em; margin-left:5px;" href="">( ? )</a>
 			</div>
 
 			<div id="editPanel" class="accordion" style="max-height:0px; margin:0px 10px">
@@ -348,7 +348,7 @@ ccc['XNO'].getPending = function() {return post(ccc['XNO'].server, {action: 'pen
 ccc['XNO'].getBlock = function(hash) { return post(ccc['XNO'].server, {action: 'block_info', json_block: true, hash: hash}); };	
 ccc['XNO'].receive = function(hash) { return enqueue('XNO', async function() {
 	let symbol = 'XNO';
-	let blockInfoFetch = post(ccc[symbol].server, {action: 'block_info', json_block: true, hash: hash});
+	let blockInfoFetch = ccc['XNO'].getBlock(hash);
 	let oldBalance = '0';
 	let previous = '0'.padStart(64, '0');
 	let representative = ccc[symbol].representative;
@@ -370,10 +370,10 @@ ccc['XNO'].receive = function(hash) { return enqueue('XNO', async function() {
 				if (!repAddr) repAddr = data[0].address;
 				if (repAddr) {
 					ccc[symbol].representative = repAddr;
-					inputEvent(D(`${symbol}-new-rep`), repAddr);
+					// inputEvent(D(`${symbol}-new-rep`), repAddr);
 				}
 			});
-		}).catch(function() {networkFailMsg();});
+		}).catch(function() { console.error("Using default rep")});
 		representative = ccc[symbol].representative;
 	}
 	
@@ -560,26 +560,26 @@ async function postBlock(symbol, subtype, workInput, previous, representative, b
 async function fetchFrontier(symbol) {
 	let accountInfo = await ccc[symbol].getAccountInfo();
 	if (!accountInfo || !accountInfo.frontier) return false;
-	return post(ccc[symbol].server, {action: 'block_info', json_block: true, hash: accountInfo.frontier}).then(function(res) {
-		if (!res) return false;
-		let fetchedFrontierBlock = res.contents;
+	let res = await ccc['XNO'].getBlock(accountInfo.frontier);
+	
+	if (!res) return false;
+	let fetchedFrontierBlock = res.contents;
 
-		let producedFrontierBlock = ccc[symbol].createBlock(XNO.privateKey, {
-			work: fetchedFrontierBlock.work,
-			previous: fetchedFrontierBlock.previous,
-			representative: accountInfo.representative.replace('ban_', 'nano_'),
-			balance: accountInfo.balance,
-			link: fetchedFrontierBlock.link
-		}).block;	
-		if (fetchedFrontierBlock.signature != producedFrontierBlock.signature) {
-			console.error(fetchedFrontierBlock);
-			console.error(producedFrontierBlock);
-			alert("Frontier block failed verification. This should NOT happen.");
-			return false;
-		}
-		fetchedFrontierBlock.hash = accountInfo.frontier;
-		return fetchedFrontierBlock;
-	});
+	let producedFrontierBlock = ccc[symbol].createBlock(XNO.privateKey, {
+		work: fetchedFrontierBlock.work,
+		previous: fetchedFrontierBlock.previous,
+		representative: accountInfo.representative.replace('ban_', 'nano_'),
+		balance: accountInfo.balance,
+		link: fetchedFrontierBlock.link
+	}).block;	
+	if (fetchedFrontierBlock.signature != producedFrontierBlock.signature) {
+		console.error(fetchedFrontierBlock);
+		console.error(producedFrontierBlock);
+		alert("Frontier block failed verification. This should NOT happen.");
+		return false;
+	}
+	fetchedFrontierBlock.hash = accountInfo.frontier;
+	return fetchedFrontierBlock;
 }
 
 function rawFromUnit(symbol, str) {
@@ -669,7 +669,8 @@ function refreshData(symbol) {
 					return accountInfo;
 				}
 			}
-			findWork();
+			if (unitFromRaw(symbol, accountInfo.balance) != 0) findWork();
+			else console.log("Empty account");
 		}
 		return accountInfo;
 	});
@@ -2942,6 +2943,7 @@ function toggleSecondDiv(elt) {
 }
 
 function networkFailMsg(error) {
+	console.error("XNO network error");
 	if (!error || error.message == "Network Error") showMsg("Unable to connect to XNO network.");
 	else showMsg("Transfer seems to have failed or is delayed.");
 	return false;
