@@ -17,6 +17,21 @@ body {
   box-sizing: border-box;
 }
 
+.horizontalLine {
+	background-color:#e4e7e7; 
+	height:2px; 
+	border-radius:20px; 
+	margin:auto 0.85em auto 0.85em; 
+	flex-grow:1;
+}
+
+.popularTags {
+	overflow:auto; 
+	display:flex; 
+	align-items:center; 
+	font-size:0.85em;
+}
+
 .scroll-shadows {
   overflow: auto;
 
@@ -65,13 +80,13 @@ body {
 	filter:opacity(0.9);
 }
 
-.containerDiv {	
+.outermostContainer {	
 	display:flex;
 	height:100%;
 	width:100%;
 }
 
-.firstDiv {
+.leftSidebar {
 	overflow:auto; 
 	resize:horizontal; 
 	box-shadow: #d4d4d4 0px 0px 7px; 
@@ -82,7 +97,7 @@ body {
 	flex-shrink:0;
 }
 
-.secondDiv {
+.centralWindow {
 	position:relative; 
 	flex-grow:1;
 	overflow-wrap: break-word;  
@@ -92,9 +107,8 @@ body {
 	min-width:0px;
 }
 
-.secondDivInner {		
-	padding:0px 30px 30px 30px;	
-	padding-left:50px;
+.centralWindowScroller {		
+	padding:0px 40px 30px 50px;
 	display:flex; 
 	flex-direction:column; 
 	overflow:auto;
@@ -116,6 +130,8 @@ body {
 .sidebar {
 	flex-basis:1px; 
 	overflow:hidden;
+	margin-left:50px;
+	flex-grow:1;
 }
 
 .accordion {
@@ -442,6 +458,11 @@ li {
 
 .mobile {
 	display:none;
+	position:absolute; 
+	bottom:45px; 
+	right:10px; 
+	font-weight:bold; 
+	z-index:10;
 }
 
 .controlpanel {
@@ -466,7 +487,9 @@ li {
 		display:none !important;
 	}
 	
-	
+	.popularTags {
+		margin-right:0px;
+	}
 	
 	html {
 		overflow:auto;
@@ -517,11 +540,11 @@ li {
 		padding: 8px 5px;
 	}
 	
-	.containerDiv {	
+	.outermostContainer {	
 		width:200%;
 	}
 	
-	.firstDiv {
+	.leftSidebar {
 		resize:initial; 
 		box-shadow:initial; 
 		flex-basis:100px;
@@ -530,13 +553,13 @@ li {
 		scrollbar-width:none;
 	}
 	
-	.secondDiv {
+	.centralWindow {
 		flex-basis:100px;
 		flex-grow:1;
 		scroll-snap-align:end;
 	}
 	
-	.secondDivInner {		
+	.centralWindowScroller {		
 		padding:0px 15px 15px 15px;
 	}
 	
