@@ -1279,7 +1279,7 @@ function fillBrowseList(data) {
 	D('browsePlaceholder').style.display = "none";
 	D('browseList').style.opacity = "";
 	
-	if (data) {
+	if (data && data.length) {
 		data.sort(function(x, y) { return y.createdts - x.createdts; });
 		for (let i = 0; i < data.length; i++) {	
 			cachePost(data[i]);				
