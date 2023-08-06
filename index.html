@@ -679,6 +679,8 @@ const imgurl2 = /src="data:image\/png;base64,[a-zA-Z0-9;:=%&/~_:\-\.,\?\(\)\+]+"
 
 var scrollCache = {browse:0, read:0, write:0};
 var readPanelButtons = [D("subscribe2"), D("sponsor2"), D("comment")];
+var repButList = [];
+var editButList = [];
 
 const adj = ["Disillusioned", "Nihilistic", "Disenchanted", "Embittered", "Worldly", "Embattled", "Cynical", "Skeptical", "Contemplative", 
 				"Introspective", "Meditative", "Pensive", "Philosophical", "Stoic", "Apathetic", "Analytical", "Scholarly", "Erudite", "Composed", "Detached", "Problematic", 
@@ -985,11 +987,13 @@ function queryBrowse(label, automatic, passive) {
 		D('theirAddress').textContent = userid;
 		if (D(userid)) activeBar(D(userid));
 		
+		if (D('browseHeading').title != userid) scrollCache.browse = 0;
 		queueDOMdisplayName(userid, D('browseHeading'), true);
 		fillBio(userid);
 	} else if (tag) {			
 		if (D("tag-" + tag)) activeBar(D("tag-" + tag));
 		
+		if (D('browseHeading').title != tag) scrollCache.browse = 0;
 		D('browseHeading').title = tag;
 		D('browseHeading').textContent = tag;
 		D('bio').textContent = "An unmoderated tag."
@@ -997,6 +1001,7 @@ function queryBrowse(label, automatic, passive) {
 		D('bioPreview').style.display = "none";
 		D('toggleBrowse').style.display = "none";
 		
+		if (D('browseHeading').title != "Recent") scrollCache.browse = 0;
 		D('browseHeading').title = "Recent";
 		D('browseHeading').textContent = "Recent";
 		D('bio').textContent = "The trickle of recent posts."
@@ -1027,6 +1032,7 @@ function fillPost(postid, automatic, passive) {
 		D('commentContent').style.display = 'none';
 		D('commentContent').value = "";
 		D("comment").textContent = "Comment";
+		D("comment").classList.remove("active");
 		
 		if (active('sponsor2')) postSponsorHandler();
 		
@@ -1059,6 +1065,8 @@ function fillPost(postid, automatic, passive) {
 	D('modification').style.display = "none";
 	
 	clearDOM(D('readComments'));
+	repButList.length = 0;
+	editButList.length = 0;
 	clearDOM(D('mapul'));	
 	let metaData = postCache[postid];
 	if (metaData) {
@@ -1494,6 +1502,7 @@ function addComment(commentData) {
 		editPanel = make('textarea');
 		let editBut = make('a', " • Edit");	
 		editBut.style.cursor = "pointer";
+		editButList.push({editBut, userid});
 		
 		let tempContent = commentData.content;
 		editPanel.value = tempContent;
@@ -1503,7 +1512,7 @@ function addComment(commentData) {
 		editPanel.style.fontFamily = "Segoe UI, Source Sans Pro, Roboto, Helvetica, sans-serif";
 		
 		editPanel.oninput = function() {
-			if (editPanel.value) editBut.textContent = " • Publish edit";
+			if (editPanel.value) editBut.textContent = " • Send edit";
 			else editBut.textContent = " • Cancel";
 		};
 		editPanel.onkeyup = function() {
@@ -1543,13 +1552,14 @@ function addComment(commentData) {
 	} else {
 		let repPanel = make('textarea');
 		let repBut = make('button', "Reply");
+		repButList.push(repBut);
 		
 		repPanel.onfocus = function() { scrollPanel(repPanel); };
 		repPanel.style = "height:80px; display:none; margin-left:20px; margin-bottom:15px; margin-top:20px; width:calc(100% - 20px); font-size:0.9em";		
 		repPanel.style.fontFamily = "Segoe UI, Source Sans Pro, Roboto, Helvetica, sans-serif";
 		repPanel.placeholder = "Reply...";
 		repPanel.oninput = function() {
-			if (repPanel.value) repBut.textContent = "Reply";
+			if (repPanel.value) repBut.textContent = "Send";
 			else repBut.textContent = "Cancel";
 		};
 		repPanel.onkeyup = function() {
@@ -1557,6 +1567,7 @@ function addComment(commentData) {
 				repPanel.value = "";
 				repPanel.style.display = "none";
 				repBut.textContent = "Reply";
+				repBut.classList.remove("active");
 				event.stopPropagation();
 			}
 		}					
@@ -1569,10 +1580,12 @@ function addComment(commentData) {
 			if (repPanel.style.display == "none") {
 				repPanel.style.display = "block";
 				this.textContent = "Cancel";
+				repBut.classList.add("active");
 				repPanel.focus();
 			} else {
 				repPanel.style.display = "none";
 				this.textContent = "Reply";
+				repBut.classList.remove("active");
 				let previd = "";
 				if (D(commentData.commentid + "-ul").lastElementChild) previd = D(commentData.commentid + "-ul").lastElementChild.id;
 				if (repPanel.value) ws.emit('updateComment', {content:repPanel.value, postid:commentData.postid, parentid:commentData.commentid, previd});
@@ -2188,19 +2201,24 @@ function commentKeypress() {
 		D('commentContent').value = "";
 		D('commentContent').style.display = "none";
 		D("comment").textContent = "Comment";
+		D("comment").classList.remove("active");
 		event.stopPropagation();
-	} else if (D('commentContent').value) D("comment").textContent = "Comment";
-	else D("comment").textContent = "Cancel";
+	} else {
+		if (D('commentContent').value) D("comment").textContent = "Send";
+		else D("comment").textContent = "Cancel";
+	}
 }
 
 function comment() {
 	if (D('commentContent').style.display) {
 		D('commentContent').style.display = "";
 		D("comment").textContent = "Cancel";
+		D("comment").classList.add("active");
 		D('commentContent').focus();
 	} else {
 		D('commentContent').style.display = "none";
 		D("comment").textContent = "Comment";
+		D("comment").classList.remove("active");
 		ws.emit('updateComment', {content:D('commentContent').value, postid: readPostid});
 		D('commentContent').value = "";
 	}
@@ -2259,7 +2277,16 @@ function buttonLogout(side) {
 	D("publishButton").disabled = side;
 	
 	D("subscribe").disabled = side;
-	if (readPostid) for (let i = 0; i < readPanelButtons.length; i++) { readPanelButtons[i].disabled = side; }
+	if (readPostid) {
+		for (let i = 0; i < readPanelButtons.length; i++) { readPanelButtons[i].disabled = side; }
+		for (let i = 0; i < repButList.length; i++) { repButList[i].disabled = side; }
+		if (!side) {
+			for (let i = 0; i < editButList.length; i++) { 
+				if (editButList[i].userid == XNO.address) editButList[i].editBut.style.display = ""; 
+				else editButList[i].editBut.style.display = "none";
+			}
+		} else for (let i = 0; i < editButList.length; i++) { editButList[i].editBut.style.display = "none"; }
+	}
 	
 	D('sendButton').disabled = side;
 	D('postSendButton').disabled = side;
