@@ -17,9 +17,9 @@
 <body>
 	<strong id="msg" class="msg" style="display:none;"></strong>
 	
-	<div class="containerDiv">
+	<div class="outermostContainer">
 	
-	<div id="firstDiv" class="firstDiv" style="background-color:hsl(0, 0%, 80%)">	
+	<div id="leftSidebar" class="leftSidebar" style="background-color:hsl(0, 0%, 80%)">	
 	
 		<div id="profilePanel" class="objectWrapper" style="margin-top:30px; margin-bottom:5px" onclick="openSubAccordion(this)">
 			<div class="clickFlash" style="display:flex; justify-content:space-between; margin:0px 10px; align-items:baseline" onclick="toggleSubAccordion(this)">
@@ -29,7 +29,7 @@
 
 			<div id="editPanel" class="accordion" style="max-height:0px; margin:0px 10px">
 				<div style="text-align:center; margin-top:20px">
-					<button tabindex="-1" class="left" onclick="generateSeed()">Generate PIN</button><button id="current" class="center" tabindex="-1" onclick="showCurrent()" autocomplete="off" disabled>Current PIN</button><button id="clear" class="right" onclick="if (confirm('Log out of the current account? (Have you saved your account PIN elsewhere?!)')) clickClearSeed();" autocomplete="off" disabled>Log Out</button>
+					<button tabindex="-1" class="left" onclick="generateSeed()">Generate PIN</button><button id="currentLoginButton" class="center" tabindex="-1" onclick="showCurrent()" autocomplete="off" disabled>Current PIN</button><button id="logoutButton" class="right" onclick="if (confirm('Log out of the current account? (Have you saved your account PIN elsewhere?!)')) clickClearSeed();" autocomplete="off" disabled>Log Out</button>
 				</div>
 				
 				<div style="display:flex; justify-content:space-between; margin-top:15px; margin-bottom:5px">
@@ -43,10 +43,10 @@
 		<div id="notePanel" class="objectWrapper" style="padding-right:0px; overflow:hidden; display:none; flex-direction:column; flex-shrink:0; max-height:33vh" onclick="openSubAccordion(this); refreshNoteCounter()">
 			<div class="clickFlash leftRightBase" style="margin:0px 10px" onclick="toggleSubAccordion(this)">
 				<div id="notificationHeading" style="font-size:0.9em; color:#888; margin-left:0px; flex-grow:1">Activity</div>
-				<div id="balance" class="clickFlash" style="overflow:hidden; text-overflow:ellipsis; flex-shrink:0; max-width:60%; font-size:0.9em; margin-left:5px; color:#888">0.00</div><span style="font-size:0.9em; color:#888" onclick="refreshData(); event.stopPropagation()">&nbsp;XNO</span>
+				<div id="balance" class="clickFlash" style="overflow:hidden; text-overflow:ellipsis; flex-shrink:0; max-width:60%; font-size:0.9em; margin-left:5px; color:#888">0.00</div><span style="font-size:0.9em; color:#888" onclick="refreshBalance(); event.stopPropagation()">&nbsp;XNO</span>
 			</div>
 			<div class="accordion" style="max-height:0px">
-				<div id="notificationPlaceholder" style="font-style:italic; color:#888; text-align:center; margin-top:20px">- empty -</div>
+				<div id="notificationPlaceholder" style="font-style:italic; color:#888; text-align:center; margin-top:20px">- no activity -</div>
 				<ul id="notifications" style="overflow:auto; max-height:calc(100% - 15px); margin-left:10px; margin-top:10px; margin-bottom:5px;"></ul>
 			</div>
 		</div>
@@ -62,60 +62,61 @@
 
 		<div class="objectWrapper" style="padding-right:0px; margin-bottom:10px; overflow:hidden; display:flex; flex-direction:column" onclick="openSubAccordion(this)">
 			<div class="clickFlash leftRightBase" style="margin:0px 10px" onclick="toggleSubAccordion(this)">
-				<span style="font-size:0.9em; color:#888; margin-left:0px">Library</span>
+				<span style="font-size:0.9em; color:#888; margin-left:0px">My Library</span>
 			</div>
 			<div class="accordion">
-				<div id="libraryPlaceholder" style="font-style:italic; color:#888; text-align:center; margin-top:20px">- empty (sign in to persist) -</div>
+				<div id="libraryPlaceholder" style="font-style:italic; color:#888; text-align:center; margin-top:20px">- no history (sign in to persist) -</div>
 				<ul id="library" style="overflow:auto; max-height:calc(100% - 15px); margin-left:10px; margin-top:10px; margin-bottom:5px"></ul>
 			</div>
 		</div>
 		
 	</div>
 	
-	<div id="secondDiv" class="secondDiv">
-	<div id="secondDivInner" class="secondDivInner">
+	<div id="centralWindow" class="centralWindow">
+	<div id="centralWindowScroller" class="centralWindowScroller">
 	
 		<div class="controlbar">
 			<div class="controlpanel">
-			<button id="browseButton" style="min-width:fit-content" class="left active" onclick="loadPanel('browse', true)" title="Alt + 1">Browse</button><button id="readButton" style="min-width:fit-content" class="center" onclick="loadPanel('read', true)" autocomplete="off" title="Alt + 2">Read</button><button id="postButton" style="min-width:fit-content" class="right" onclick="loadPanel('post', true)" autocomplete="off" title="Alt + 3">Write</button>
+				<button id="browseButton" style="min-width:fit-content" class="left active" onclick="loadPanel('browse', true)" title="Alt + 1">Browse</button><button id="readButton" style="min-width:fit-content" class="center" onclick="loadPanel('read', true)" autocomplete="off" title="Alt + 2">Read</button><button id="writeButton" style="min-width:fit-content" class="right" onclick="loadPanel('write', true)" autocomplete="off" title="Alt + 3">Write</button>
 			</div>
 		
-			<div id="popularTags" class="scroll-shadows hideScroll desktop" style="overflow:auto; display:flex; align-items:center; font-size:0.85em">
-				<a onclick="queryBrowse();" style="flex-shrink:0; cursor:pointer; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:250px">Recent</a>
+			<div id="popularTags" class="popularTags scroll-shadows hideScroll desktop">
+				<a onclick="queryBrowse();" style="flex-shrink:0; cursor:pointer; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:250px; font-weight:600; color:#333">Recent</a>
 			</div>
 		</div>
 		
 		<div id="browse" style="padding-bottom:80px; max-width:1200px">			
-			<div>
+			<div style="margin-bottom:5px">
 				<span style="font-weight:bold; font-size:1.1em; cursor:pointer;" onclick="queryBrowse(browseURL)" id="browseHeading"></span>
 				<span id="loadingMsg" style="margin-left:10px; font-style:italic; display:none">Loading...</span>
 			</div>
 			<div style="display:flex">			
-				<button id="toggleBrowse" class="mobile" onclick="toggleSecondDiv(this)" style="position:absolute; bottom:45px; right:10px; font-weight:bold; z-index:10">. . .</button>
+				<button id="toggleBrowse" class="mobile" onclick="toggleSecondDiv(this)">. . .</button>
 				<div style="flex-basis:1px; flex-grow:5;">
-					<ul id="discovery"></ul>
+					<div id="browsePlaceholder" style="font-style:italic; color:#888; text-align:center; margin-top:20px; display:none">- no posts -</div>
+					<ul id="browseList"></ul>
 				</div>
 				
-				<div class="sidebar desktop" style="flex-grow:4; margin-left:30px;">					
+				<div class="sidebar desktop" style="flex-grow:4; margin-left:40px;">					
 					<div id="bioPreview" style="overflow:hidden; display:none">
 						<div id="bio" style="font-size:0.9em; margin-top:30px; margin-bottom:2em"></div>
 						
 						<div style="display:flex; justify-content:right;">
-							<button id="profileBut" onclick="openBio()" style="font-size:0.85em">Update Profile</button>
-							<div id="bioLine" style="background-color:#e4e7e7; height:2px; border-radius:20px; margin:auto 0.85em auto 0.85em; flex-grow:1"></div>						
+							<button id="profileBut" onclick="openBioEditor()" style="font-size:0.85em">Update Profile</button>
+							<div id="bioLine" class="horizontalLine"></div>						
 							<button id="subscribe" onclick="subscribeHandler()" autocomplete="off" style="font-size:0.85em" disabled>Subscribe</button>
 							&nbsp;<button id="sponsor" onclick="sponsorHandler()" autocomplete="off" style="font-size:0.85em" disabled>Sponsor</button>	
 						</div>
 				
-						<div id="bioSponsor" style="margin:1em; margin-top:1.5em; display:none;">
+						<div id="bioSponsor" style="margin:1.5em auto; max-width:fit-content; display:none;">
 							<div id="theirFunName" style="margin-bottom:10px; font-weight:600"> - </div>					
 							<div style="font-size:0.85em; color:#888">Unique public address</div>
 							<div class='address' id="theirAddress" style="margin:5px 10px 15px 10px;" onclick="clickCopy(this, this.textContent)"> - </div>
 							<div style="font-size:0.85em; color:#888">Premium sponsorship • 30 days</div>
-							<span id="theirThreshold" style="margin:5px 0px 15px 10px;">&nbsp;-&nbsp;</span>&nbsp;XNO or more
+							<span id="theirThreshold" style="margin:5px 0px 15px 10px; cursor:pointer; border-radius:3px" onclick="clickPaste(this, false)">&nbsp;-&nbsp;</span>&nbsp;XNO
 							<div style="display:flex; justify-content:space-between; align-items:baseline; max-width:400px; margin:10px auto">
 							<input id="sponsorInput" onfocus="scrollPanel(this)" onkeyup="" onkeydown="" placeholder="0.00" onblur="prepTwoDigit(this)" style="scroll-margin:10px; margin-right:5px; text-align:right; flex-grow:1; flex-basis:1px; overflow:hidden; text-overflow:ellipsis;" type="number" step="0.01" min="0" autocomplete="off"> XNO							
-							<button id="sendButton" onclick="sendMoney(this)" autocomplete="off" style="margin-left:20px; font-size:0.85em" disabled>Send</button>
+							<button id="sendButton" onclick="sendMoney()" autocomplete="off" style="margin-left:20px; font-size:0.85em" disabled>Send</button>
 							</div>
 						</div>
 					</div>
@@ -132,14 +133,14 @@
 						</div>
 						
 						<button onclick="setData()" style="margin-top:30px">Update</button>
-						<button onclick="closeBio()">Cancel</button>
+						<button onclick="closeBioEditor()">Cancel</button>
 					</div>
 				</div>
 			</div>
 		</div>
 
-		<div id="post" style="display:none; padding-bottom:80px; max-width:1200px;">		
-			<button id="toggleEdit" class="mobile" onclick="toggleSecondDiv(this)" style="position:absolute; bottom:45px; right:10px; font-weight:bold; z-index:10">. . .</button>
+		<div id="write" style="display:none; padding-bottom:80px; max-width:1200px;">		
+			<button id="toggleEdit" class="mobile" onclick="toggleSecondDiv(this)">. . .</button>
 		
 			<div style="flex-basis:1px; flex-grow:2; position:relative; margin-top:0.5em;">
 			
@@ -152,7 +153,7 @@
 				
 			</div>
 			
-			<div class="sidebar desktop" style="flex-grow:1; max-width:360px; margin-left:50px;">
+			<div class="sidebar desktop" style="max-width:360px;">
 				<input id="postTitle" style="font-weight:bold; font-size:1.1em; width:100%; margin-bottom:10px;" autocomplete="off" placeholder="Title (required)..." type="text" onkeyup="if (event.keyCode == 27) this.value = '';">
 				<div id="editid" style="font-size:0.85em; margin-left:10px; display:none">
 					<span id="creationEdit"></span><span id="modificationEdit" style="font-style:italic;"></span>
@@ -169,7 +170,7 @@
 				</div>
 				
 				<div style="margin-top:5px; display:flex; justify-content:space-between; flex-grow:1">
-					<input placeHolder="Previous post link..." id="set-prev" autocomplete="off"
+					<input placeHolder="URL to preceding post..." id="set-prev" autocomplete="off"
 						   style="padding-right:30px; flex-grow:1; width:1px" type="text" autocapitalize="off" onkeyup="if (event.keyCode == 27) this.value = ''; checkTitle(this);" oninput="checkTitle(this);">
 					<button tabindex="-1" class="close-icon" onclick="closeCopy(this.previousElementSibling)"></button>
 					<button id="recip-prev" onclick="toggle(this)" tabindex="-1" style="font-size:0.85em; min-width:fit-content; margin-left:10px" disabled>Reciprocate</button>
@@ -180,7 +181,7 @@
 				</div>
 				
 				<div style="margin-top:5px; display:flex; justify-content:space-between; flex-grow:1">
-					<input onfocus="scrollPanel(this)" placeHolder="Next post link..." id="set-next" autocomplete="off"
+					<input onfocus="scrollPanel(this)" placeHolder="URL to next post..." id="set-next" autocomplete="off"
 						   style="padding-right:30px; flex-grow:1; width:1px" type="text" autocapitalize="off" onkeyup="if (event.keyCode == 27) this.value = ''; checkTitle(this);"oninput="checkTitle(this);">
 					<button tabindex="-1" class="close-icon" onclick="closeCopy(this.previousElementSibling)"></button>
 					<button id="recip-next" onclick="toggle(this)" tabindex="-1" style="font-size:0.85em; min-width:fit-content; margin-left:10px" disabled>Reciprocate</button>
@@ -188,31 +189,43 @@
 					
 				
 				<div style="margin-top:50px; display:flex;">
-					<button id="submitButton" onclick="publish()" tabindex="-1" disabled>Publish</button>
+					<button id="publishButton" onclick="publish()" tabindex="-1" disabled>Publish</button>
 					<button id="clearButton" style="margin-left:5px" tabindex="-1" onclick="cancelPost()">Clear</button>	
 				</div>
 			</div>
 		</div>
 		
 		<div id="read" style="display:none; padding-bottom:80px; max-width:1200px;">
-			<button id="toggleRead" class="mobile" onclick="toggleSecondDiv(this)" style="position:absolute; bottom:45px; right:10px; font-weight:bold; z-index:10">. . .</button>
-			<div style="flex-basis:1px; flex-grow:2;">				
+			<button id="toggleRead" class="mobile" onclick="toggleSecondDiv(this)">. . .</button>
+			<div style="flex-basis:1px; flex-grow:2; overflow:hidden">				
 				<div id="readContent" style="margin-bottom:2.5em; margin-top:2em">Browse for something interesting!</div>
 				
 				
 				<textarea id="commentContent" onfocus="scrollPanel(this)" style="margin-top:10px; margin-bottom:15px; height:80px; width:100%; display:none; font-family:Segoe UI, Source Sans Pro, Roboto, Helvetica, sans-serif; font-size:0.9em" autocomplete="off" onkeyup="commentKeypress()" oninput="commentKeypress()" placeholder="Comment..."></textarea>
 				<div style="display:flex; justify-content:right;">				
 					<button id="edit2" onclick=" fillEdit();" style="font-size:0.85em; display:none">Update</button>
-					<div style="background-color:#e4e7e7; height:2px; border-radius:20px; margin:auto 0.85em auto 0.85em; flex-grow:1"></div>										
+					<div class="horizontalLine"></div>										
 					<button id="subscribe2" onclick="subscribeHandler(D('author').title)" autocomplete="off" style="font-size:0.85em" disabled>Subscribe</button>				
-					&nbsp;<button id="sponsor2" onclick="queryBrowse({userid:D('author').title}); sponsorHandler()" autocomplete="off" style="font-size:0.85em" disabled>Sponsor</button>
+					&nbsp;<button id="sponsor2" onclick="postSponsorHandler()" autocomplete="off" style="font-size:0.85em" disabled>Sponsor</button>
 					&nbsp;<button id="comment" onclick="comment()" autocomplete="off" style="font-size:0.85em" disabled>Comment</button>
+				</div>
+				
+				<div id="postSponsor" style="margin:1.5em auto 3em auto; max-width:fit-content; display:none">
+					<div id="postTheirFunName" style="margin-bottom:10px; font-weight:600"> - </div>					
+					<div style="font-size:0.85em; color:#888">Unique public address</div>
+					<div class='address' id="postTheirAddress" style="margin:5px 10px 15px 10px;" onclick="clickCopy(this, this.textContent)"> - </div>
+					<div style="font-size:0.85em; color:#888">Premium sponsorship • 30 days</div>
+					<span id="postTheirThreshold" style="margin:5px 0px 15px 10px; cursor:pointer; border-radius:3px" onclick="clickPaste(this, true)">&nbsp;-&nbsp;</span>&nbsp;XNO
+					<div style="display:flex; justify-content:space-between; align-items:baseline; max-width:400px; margin:10px auto">
+					<input id="postSponsorInput" onfocus="scrollPanel(this)" onkeyup="" onkeydown="" placeholder="0.00" onblur="prepTwoDigit(this)" style="scroll-margin:80px; margin-right:5px; text-align:right; flex-grow:1; flex-basis:1px; overflow:hidden; text-overflow:ellipsis;" type="number" step="0.01" min="0" autocomplete="off"> XNO							
+					<button id="postSendButton" onclick="sendMoney(true)" autocomplete="off" style="margin-left:20px; font-size:0.85em" disabled>Send</button>
+					</div>
 				</div>
 				
 				<ul id="readComments" style="margin-top:1.5em"><ul>
 			</div>
 			
-			<div class="sidebar desktop" style="flex-grow:1; max-width:360px; margin-left:50px;">			
+			<div class="sidebar desktop" style="max-width:360px;">			
 				<div id="readTitle" style="font-weight:bold; font-size:1.1em; margin-bottom:3px; cursor:pointer">Title</div>	
 				
 				<div style="font-size:0.85em">
@@ -243,7 +256,7 @@
   <script src="marked.js"></script>
 <script>
 
-// crypto methods ///////////////////////////////////////////////////////////////////////
+// Raw crypto methods ///////////////////////////////////////////////////////////////////////
 
 var XNO = {};
 var hardMax = 100;
@@ -278,16 +291,11 @@ XNO.derivePrivateKey = function(seed, index) {
   return byteArrayToHex(blake2bFinal(context))
 }
 
-XNO.addressFromSeed = function(seed) { return XNO.addrFromPub(XNO.pubFromPriv(XNO.derivePrivateKey(seed, 0))); }
 XNO.pubFromPriv = function(privateKey) { return byteArrayToHex(derivePublicFromSecret(hexToByteArray(privateKey))); };
 XNO.addrFromPub = function(publicKey) { return 'nano_' + encodeNanoBase32(hexToByteArray(publicKey)) + encodeNanoBase32(blake2b(hexToByteArray(publicKey), null, 5).reverse()); }
 XNO.pubFromAddr = function(address) { return byteArrayToHex(decodeNanoBase32(address.substr(5, 52))); };
 
 XNO.sign = function(message) { return byteArrayToHex(signDetached(enc.encode(message), hexToByteArray(XNO.privateKey))); }
-XNO.verify = function(message, signature, address) {
-	try { return verifyDetached(enc.encode(message), hexToByteArray(signature), hexToByteArray(XNO.pubFromAddr(address))); }
-	catch { return false };
-}
 
 XNO.unpackSeed = function(seed, index) {
 	XNO.seed = seed;
@@ -334,18 +342,19 @@ function twoDigit(str) {
 	return `${parts[0]}.${fraction}`;	
 }
 
+// Higher level crypto methods ///////////////////////////////////////////////////////////////////////
+
 let ccc = {};
-ccc['XNO'] = {shift:30, flashColor:'#def', keyType:'seed', min:0, fee:0, donation:'nano_1gpquwssoy8491ajmxp9cxjb3o38imcxidissob7cxc38o6h6r4d8gg639b7',
-				server:'https://proxy.nanos.cc/proxy',				
-				gettingStarted:'https://nanolinks.info/',
-				
-				faucet: 'https://nanodrop.io/',
-				representative:'nano_1natrium1o3z5519ifou7xii8crpxpk8y65qmkih8e8bpsjri651oza8imdd',
-				repRec:'https://mynano.ninja/api/accounts/verified'};
+ccc['XNO'] = {shift:30, server:'https://rainstorm.city/api', // 'https://proxy.nanos.cc/proxy',	
+						powArray: ['https://rainstorm.city/api', 'https://proxy.nanos.cc/proxy'],
+						representative:'nano_1natrium1o3z5519ifou7xii8crpxpk8y65qmkih8e8bpsjri651oza8imdd',
+						repRec:'https://mynano.ninja/api/accounts/verified'};
+						
 for (let symbol in ccc) { ccc[symbol].queue = new Promise(function(resolve, reject) { resolve(true); }); }
 	
 ccc['XNO'].getPending = function() {return post(ccc['XNO'].server, {action: 'pending', account: XNO.address, source:true}); };
 ccc['XNO'].getBlock = function(hash) { return post(ccc['XNO'].server, {action: 'block_info', json_block: true, hash: hash}); };	
+
 ccc['XNO'].receive = function(hash) { return enqueue('XNO', async function() {
 	let symbol = 'XNO';
 	let blockInfoFetch = ccc['XNO'].getBlock(hash);
@@ -368,10 +377,7 @@ ccc['XNO'].receive = function(hash) { return enqueue('XNO', async function() {
 				data.sort(function(x, y) { return y.score - x.score; });
 				let repAddr = data[0].account;
 				if (!repAddr) repAddr = data[0].address;
-				if (repAddr) {
-					ccc[symbol].representative = repAddr;
-					// inputEvent(D(`${symbol}-new-rep`), repAddr);
-				}
+				if (repAddr) ccc[symbol].representative = repAddr;
 			});
 		}).catch(function() { console.error("Using default rep")});
 		representative = ccc[symbol].representative;
@@ -381,7 +387,8 @@ ccc['XNO'].receive = function(hash) { return enqueue('XNO', async function() {
 		if (!blockInfo) return false;
 		return await postBlock(symbol, 'receive', workInput, previous, representative, (BigInt(oldBalance) + BigInt(blockInfo.amount)).toString(), hash);
 	});
-});};	
+});};
+	
 ccc['XNO'].sendTo = function(destination, amt) { return enqueue('XNO', async function() { 
 	// check frontier
 	let frontierBlock = await fetchFrontier("XNO");
@@ -396,11 +403,11 @@ ccc['XNO'].createBlock = function(secretKey, data) {
 	if (!XNO.checkAddress(data.representative)) throw new Error('Representative is not valid');
 
 	let correctedPrevious = data.previous;
-	if (data.previous === null) correctedPrevious = BLANK_HASH;
+	if (correctedPrevious === null) correctedPrevious = BLANK_HASH;
 
 	let linkIsAddress = false;
 	let correctedLink = data.link;
-	if (data.link === null) correctedLink = BLANK_HASH;
+	if (correctedLink === null) correctedLink = BLANK_HASH;
 	else if (XNO.checkAddress(correctedLink)) linkIsAddress = true;
 	if (correctedPrevious === BLANK_HASH && (linkIsAddress || correctedLink === BLANK_HASH)) throw new Error('Block is impossible');
 
@@ -424,7 +431,6 @@ ccc['XNO'].createBlock = function(secretKey, data) {
 		representative: data.representative,
 		balance: data.balance,
 		link: correctedLink,
-		// eslint-disable-next-line @typescript-eslint/camelcase
 		link_as_account: XNO.addrFromPub(correctedLink),
 		work: data.work,
 		signature: byteArrayToHex(signDetached(hashBytes, hexToByteArray(secretKey))),
@@ -447,95 +453,47 @@ function enqueue(symbol, func) {
 	return ccc[symbol].queue;
 }
 
-function post(url, params) {
-    return new Promise((resolve, reject) => {
-        let xhttp = new XMLHttpRequest();
-        xhttp.timeout = 10*1000; // 10 seconds
-        xhttp.onreadystatechange = function() {
-			if (this.readyState == 4) {
-				if (this.status == 200) {
-					try { resolve(JSON.parse(this.responseText)); } 
-					catch(e) {
-						console.error('Failed to parse response from node');
-						console.error(this.responseText);
-						resolve();
-					}
-				} else {
-					console.log('Failed to connect to '+ url);
-					networkFailMsg();
-					resolve();
-				}
-			}
-        };
-        xhttp.open("POST", url, true);
-        xhttp.setRequestHeader("Content-Type", "application/json");
-        xhttp.send(JSON.stringify(params));
-    });
-}	
-
-
-function setLocalJSON(name, data) { localStorage.setItem(name, JSON.stringify(data)); }
-
-function getLocalJSON(name) {
-	let data = localStorage.getItem(name);
-	if (data) data = JSON.parse(data);
-	return data;
-}
-
 async function findWork(workInput, subtype) {
-	let localWork = getLocalJSON("localWork");
-	if (!localWork) localWork = {};
-
 	if (!workInput) {
 		workInput = XNO.publicKey;
 		let frontierBlock = await fetchFrontier('XNO');
 		if (frontierBlock) workInput = frontierBlock.hash;
 	}
+	
 	let rawWorkThreshold = await post(ccc['XNO'].server, { action: 'active_difficulty' });
 	let difficulty = rawWorkThreshold.network_current;
 	if (subtype == 'receive') difficulty = rawWorkThreshold.network_receive_current;
 	
 	let work = null;
+	let localWork = getLocalJSON("localWork") || {};
 	if (localWork[XNO.address] && localWork[XNO.address].workInput == workInput && localWork[XNO.address].difficulty == difficulty) {
 		work = localWork[XNO.address].work;
-		console.warn("Using local work!!");
+		console.warn("Using local work!!", work);
 	} else {
-		let prework = (await post(ccc['XNO'].server, {action: 'work_generate', hash: workInput, difficulty}));
-		if (prework && prework.work) work = prework.work;
-		console.warn("Using REMOTE work!!");
+		let i = 0;
+		while (!work && ccc['XNO'].powArray[i]) {
+			let prework = (await post(ccc['XNO'].powArray[i], {action: 'work_generate', hash: workInput, difficulty}));
+			work = prework && prework.work;
+			console.warn("Generating REMOTE work:", work, i, ccc['XNO'].powArray[i]);
+			i++;
+		}
+		if (!work) console.warn("All REMOTE work attempts failed...");
 	}
-	if (work) localWork[XNO.address] = {work, workInput, difficulty};	
 	
+	if (work) localWork[XNO.address] = {work, workInput, difficulty};	
 	setLocalJSON("localWork", localWork);
 	return work;
 }
 
 async function postBlock(symbol, subtype, workInput, previous, representative, balance, link) {
 	let work = await findWork(workInput, subtype);
-	
-	let block = ccc[symbol].createBlock(XNO.privateKey, {
-		work: work,
-		previous: previous,
-		representative: representative.replace('ban_', 'nano_'),
-		balance: balance,
-		link: link.replace('ban_', 'nano_')
-	});
-	
-	if (symbol == "BAN") {
-		block.block.representative = block.block.representative.replace('nano_', 'ban_');
-		block.block.representative = block.block.representative.replace('xrb_', 'ban_');
-		block.block.account = block.block.account.replace('nano_', 'ban_');
-		block.block.account = block.block.account.replace('xrb_', 'ban_');
-		delete block.block.link_as_account;
+	if (!work) {	
+		showMsg("Proof-of-work failed. Amount NOT processed; try again later.");
+		return false;
 	}
 	
+	let block = ccc[symbol].createBlock(XNO.privateKey, { work, previous, balance, representative: representative.replace('ban_', 'nano_'), link: link.replace('ban_', 'nano_') });
 	let formData = {action: 'process', json_block: true, subtype: subtype, block: block.block};
-	if (!work) {
-		formData.do_work = true;
-		formData.block.work = undefined;		
-		showMsg("Proof of work failed. Amount NOT processed; try again.");
-		// return false;
-	}
 	post(ccc[symbol].server, formData);
 	
 	return new Promise(async function(resolve, reject) {
@@ -606,73 +564,87 @@ function unitFromRaw(symbol, str) {
 	return whole + '.' + fraction;	
 }
 
-async function sendMoney(elt) {
-	if (D('sponsorInput').validationMessage == "Please enter a number." || D('sponsorInput').value <= 0) {
+async function sendMoney(read) {
+	let but = D('sendButton');
+	let inputElt = D('sponsorInput');
+	let destaddr = D('theirAddress').textContent;
+	let threshold = D('theirThreshold').textContent;
+	let them = D('theirFunName').textContent;
+	if (read) {
+		but = D('postSendButton');
+		inputElt = D('postSponsorInput');
+		destaddr = D('postTheirAddress').textContent;
+		threshold = D('postTheirThreshold').textContent;
+		them = D('postTheirFunName').textContent;
+	}
+	
+	let overRide = (threshold.substring(1, 2) == "-");
+	
+	if (inputElt.validationMessage == "Please enter a number." || inputElt.value <= 0) {
 		showMsg("Enter a positive value.");
-		flash(D('sponsorInput'));
+		flash(inputElt);
 	} else {
 		let symbol = "XNO";
-		let amt = D('sponsorInput').value;
-		let destaddr = D('theirAddress').textContent;
-		let them = D('theirFunName').textContent;
+		let amt = inputElt.value;
 			
-		elt.disabled = true;
+		but.disabled = true;
 		let totalAmt = BigInt(rawFromUnit(symbol, amt));
 		let balance = BigInt(rawFromUnit(symbol, D('balance').textContent));
 		let safetyMax = BigInt(rawFromUnit(symbol, hardMax));
 		if (totalAmt > safetyMax) showMsg("Limit for built-in wallet: " + hardMax + " XNO");
 		else if (totalAmt > balance) showMsg("Insufficient funds.");
 		else {
-			let confirmMessage = "Sponsor less than amount required for premium content?";
-			if (totalAmt > BigInt(rawFromUnit(symbol, D('theirThreshold').textContent))) confirmMessage = "Sponsor more than amount required for premium content?";
-			if (totalAmt == BigInt(rawFromUnit(symbol, D('theirThreshold').textContent)) || confirm(confirmMessage)) {
-				if (totalAmt >= BigInt(rawFromUnit(symbol, D('theirThreshold').textContent))) showMsg("Sponsoring \'" + them + "\'...", null, true);
+			let confirmMessage = "Sponsor less than amount for premium content?";
+			if (!overRide && totalAmt > BigInt(rawFromUnit(symbol, threshold))) confirmMessage = "Sponsor more than amount for premium content?";
+			if ((overRide || totalAmt == BigInt(rawFromUnit(symbol, threshold))) || confirm(confirmMessage)) {
+				if (!overRide && totalAmt >= BigInt(rawFromUnit(symbol, threshold))) showMsg("Sponsoring \'" + them + "\'...", null, true);
 				else showMsg("Tipping \'" + them + "\'...", null, true);
 				let sendResp = await ccc[symbol].sendTo(destaddr, totalAmt.toString());
 				if (sendResp) {
 					console.log(sendResp);
 					flash(D('balance'), unitFromRaw(symbol, BigInt(rawFromUnit(symbol, D('balance').textContent)) - totalAmt));
 					
-					if (totalAmt >= BigInt(rawFromUnit(symbol, D('theirThreshold').textContent))) {
+					if (!overRide && totalAmt >= BigInt(rawFromUnit(symbol, threshold))) {
 						showMsg("Sponsored \'" + them + "\' with " + amt + " " + symbol + "! Premium content now available.");
 						if (ws) ws.emit('sponsor', {userid:destaddr, blockid:sendResp, amt});
 					} else showMsg("Tipped \'" + them + "\' " + amt + " " + symbol + "!");
 					
-					D('sponsorInput').value = "";
-					refreshData(symbol);
+					inputElt.value = "";
+					refreshBalance(symbol);
 				}
 			}
 		}
-		elt.disabled = false;
+		but.disabled = false;
 	}
 }
 
-function refreshData(symbol) {	
+function refreshBalance(symbol) {	
 	if (!symbol) symbol = "XNO";
-	console.log("refreshing");
 	ccc[symbol].getAccountInfo().then(async function(accountInfo) {
-		if (!XNO.address || !accountInfo) return false;
+		if (!XNO.address) return false;
+		
+		if (!accountInfo) {
+			flash(D('balance'), "??");
+			return false;
+		}
 		
 		if (accountInfo.balance !== undefined) flash(D('balance'), unitFromRaw(symbol, accountInfo.balance));
+		else flash(D('balance'), "??");
 		// if (accountInfo.pending !== undefined) flash(D(`${symbol}-balance-pending`), unitFromRaw(symbol, accountInfo.pending));
 		
-		if (XNO.address) {
-			let data = await ccc[symbol].getPending();
-			if (data) {
-				let count = 0;
-				for (const block in data.blocks) {
-					await ccc[symbol].receive(block);
-					count++;
-				}
-				if (count) {
-					refreshData(symbol);
-					return accountInfo;
-				}
+		let data = await ccc[symbol].getPending();
+		if (data) {
+			let count = 0;
+			for (const block in data.blocks) {
+				await ccc[symbol].receive(block);
+				count++;
 			}
-			if (unitFromRaw(symbol, accountInfo.balance) != 0) findWork();
-			else console.log("Empty account");
+			if (count) {
+				refreshBalance(symbol);
+				return accountInfo;
+			}
 		}
-		return accountInfo;
+		if (unitFromRaw(symbol, accountInfo.balance) != 0) findWork();
 	});
 }
 
@@ -705,9 +677,8 @@ const dec = new TextDecoder();
 const imgurl = /src="https:\/\/[a-zA-Z0-9;:=%&/~_:\-\.,\?\(\)\+]+"/;
 const imgurl2 = /src="data:image\/png;base64,[a-zA-Z0-9;:=%&/~_:\-\.,\?\(\)\+]+"/;
 
-let browseHeight = 0;
-let readHeight = 0;
-let postHeight = 0;
+var scrollCache = {browse:0, read:0, write:0};
+var readPanelButtons = [D("subscribe2"), D("sponsor2"), D("comment")];
 
 const adj = ["Disillusioned", "Nihilistic", "Disenchanted", "Embittered", "Worldly", "Embattled", "Cynical", "Skeptical", "Contemplative", 
 				"Introspective", "Meditative", "Pensive", "Philosophical", "Stoic", "Apathetic", "Analytical", "Scholarly", "Erudite", "Composed", "Detached", "Problematic", 
@@ -720,6 +691,7 @@ var url = new URL(window.location);
 var possibleOrigins = ["https://brewri.github.io"];
 
 var serverURL = 'wss://brewri-server-stg.fly.dev';
+//var serverURL = 'wss://impuremaths.herokuapp.com';
 var ws;
 setupWebsocket(true);
 
@@ -727,6 +699,7 @@ let localSeed = localStorage.getItem("localSeed");
 if (localSeed) inputEvent(D("seed"), localSeed);
 
 url.search = new URLSearchParams({postid:"nano_3iqcmnezofaufndmmgiykhoab6f3q45pqx1t9jqoi7g81n7qmh1tbe5pyfq3-1670977572136"});
+
 D('abtLink').href = url;
 D('abtLink').onclick = function() {
 	event.preventDefault();
@@ -744,7 +717,7 @@ function setupWebsocket(fresh) {
 	ws.customEvents = {};
 	ws.on = function(cueName, eventAction) { ws.customEvents[cueName] = eventAction; };
 	ws.emit = function(cueName, payload) { 
-		if (ws.readyState == 1) ws.send(JSON.stringify({cueName:cueName, payload:payload})); 
+		if (ws.readyState == 1) ws.send(JSON.stringify({cueName, payload})); 
 		return (ws.readyState == 1);
 	};
 	
@@ -792,10 +765,9 @@ function setupWebsocket(fresh) {
 		
 		clearDOM(D('notifications'));
 		D('notificationHeading').textContent = "Activity";
-		noteCount = 0;
 		console.log(data);
-		if (data.notifCounter) noteCount = data.notifCounter;
-		setTitle(false, true);
+		noteCount = data.notifCounter || 0;
+		setTabTitle(false, true);
 		if (data.notifications) {
 			data.notifications.sort(function(x, y) { return x.timestamp - y.timestamp; });
 			for (let i = 0; i < data.notifications.length; i++) {
@@ -808,14 +780,14 @@ function setupWebsocket(fresh) {
 			data.library.sort(function(x, y) { return x.pushedts - y.pushedts; });
 			for (let i = 0; i < data.library.length; i++) {
 				cachePost(data.library[i]);
-				makeLibLi(data.library[i].postid, data.library[i].lastaccessedts, data.library[i].pushedts);
+				updateLibLi(data.library[i].postid, data.library[i].lastaccessedts, data.library[i].pushedts);
 			}
 		}
 		requestNames();
 		
 		if (readPostWall) {
 			console.log("Trying to clear a wall");
-			fillPost(readPostid, true);
+			fillPost(readPostid, false, true);
 		}
 	});
 	
@@ -829,7 +801,7 @@ function setupWebsocket(fresh) {
 	ws.on('queryTagCountsResponse', function(data) {
 		clearDOM(D('popularTags'));
 		let tagElt = make('a', 'Recent');
-		tagElt.style = "flex-shrink:0; cursor:pointer; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:250px";
+		tagElt.style = "flex-shrink:0; cursor:pointer; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:250px; font-weight:600; color:#333";
 		tagElt.onclick = function() { queryBrowse(); };
 		D('popularTags').appendChild(tagElt);
 		
@@ -851,11 +823,15 @@ function setupWebsocket(fresh) {
 	ws.on('queryTagResponse', function (data) { fillBrowseList(data); });	
 	ws.on('queryPostsFromUser', function (data) {
 		let update = (!userCache[data.user.userid] || JSON.stringify(userCache[data.user.userid].content) != JSON.stringify(data.user.content));
-		fillBrowseList(data.posts);
+		if (data.user && !data.user.userid) fillBrowseList([]);
+		else if (D('browseHeading').title == data.user.userid) fillBrowseList(data.posts);
 		if (data.user.userid) {
 			userCache[data.user.userid] = data.user;
 			fillBio(data.user.userid, !update);
 			if (D(data.user.userid + "-time")) D(data.user.userid + "-time").style = "font-size:0.85em; color:#888";
+			
+			let readid = readPostid.split("-")[0];
+			if (readid == data.user.userid && userCache[readid].sponsor_price) D('postTheirThreshold').textContent = userCache[readid].sponsor_price;
 		}
 	});
 	
@@ -868,7 +844,7 @@ function setupWebsocket(fresh) {
 			if (editPostid == data[x].postid) hasEditPost = true;
 		}
 		if (hasEditPost && editPostPending) fillEdit(editPostid, true); 
-		else if (readPostid) fillPost(readPostid);
+		else if (readPostid) fillPost(readPostid, true, true);
 		requestNames();
 	});
 	
@@ -879,6 +855,7 @@ function setupWebsocket(fresh) {
 	
 	ws.on('updatePostResponse', function(data) { 
 		cachePost(data);
+		scrollCache.read = 0;
 		fillPost(data.postid);
 		cancelPost(true);
 	});
@@ -891,21 +868,26 @@ function setupWebsocket(fresh) {
 		console.log(data);
 		makeSubLi(data.userid2, data);
 		D(data.userid2).scrollIntoView({behavior: "smooth", block:"nearest"});
+		
+		if (readPostWall && D('read').style.display != 'none') {
+			console.log("Trying to clear a wall");
+			fillPost(readPostid, false, true);
+		}
 	});
 }
 
 
-// Data reception ///////////////////////////////////////////////////////////////////////
+// Server data reception ///////////////////////////////////////////////////////////////////////
 
 function cachePost(metaData, chain) {
-	if (!metaData.postid) metaData.postid = metaData.userid + "-" + metaData.createdts.toString();	
+	metaData.postid = metaData.postid || metaData.userid + "-" + metaData.createdts.toString();	
 	if (!metaData.userid) {
 		let split = metaData.postid.split("-");
 		metaData.userid = split[0];
 		metaData.createdts = parseInt(split[1]);
 	}
 	
-	if (!postCache[metaData.postid]) postCache[metaData.postid] = {};
+	postCache[metaData.postid] = postCache[metaData.postid] || {};
 	let cacheData = postCache[metaData.postid];
 
 	cacheData.title = metaData.title;
@@ -916,8 +898,11 @@ function cachePost(metaData, chain) {
 
 	if (metaData.content) {	
 		if (!cacheData.content || typeof metaData.content === "string" || cacheData.content.length != cacheData.content.length) cacheData.content = metaData.content;
-		else for (let i = 0; i < metaData.content.length; i++) {
-			if (metaData.content[i].content) cacheData.content[i] = metaData.content[i];
+		else {
+			cacheData.content.length = metaData.content.length;
+			for (let i = 0; i < metaData.content.length; i++) {
+				if (metaData.content[i].content) cacheData.content[i] = metaData.content[i];
+			}
 		}
 	}
 	if (metaData.tags) cacheData.tags = metaData.tags;
@@ -937,17 +922,17 @@ function receiveDOMdisplayName(data) {
 	
 	if (DOMdisplayNameQueue[userid]) {
 		for (let j = 0; j < DOMdisplayNameQueue[userid].length; j++) {
-			DOMdisplayNameQueue[userid][j].textContent = funName(userid);
-			if (DOMdisplayNameQueue[userid][j] != D('displayName') && DOMdisplayNameQueue[userid][j] != D('browseHeading')) 
-				DOMdisplayNameQueue[userid][j].style.color = funColor(userid);
+			let elt = DOMdisplayNameQueue[userid][j];
+			elt.textContent = funName(userid);
+			if (elt != D('displayName') && elt != D('browseHeading')) elt.style.color = funColor(userid);
 		}
 	}
 	delete DOMdisplayNameQueue[userid];	
 	
-	if (userid && new URLSearchParams(window.location.search).get('userid') == userid) setTitle(funName(userid));
+	if (userid && new URLSearchParams(window.location.search).get('userid') == userid) setTabTitle(funName(userid));
 	
 	if (userid == XNO.address && D('bioEditor').style.display == "none") {
-		D('firstDiv').style.backgroundColor = "hsl(" + funColor(XNO.address, false, true) + ", 55%, 80%)";
+		D('leftSidebar').style.backgroundColor = "hsl(" + funColor(XNO.address, false, true) + ", 55%, 80%)";
 		setCSS('--hue', funColor(XNO.address, false, true));
 	}
 }
@@ -967,19 +952,15 @@ function requestNames() {
 	if (ws && userids.length) ws.emit('queryUsers', {userids});
 }
 
-// Main panel fill routines ///////////////////////////////////////////////////////////////////////
+// Central window fill routines ///////////////////////////////////////////////////////////////////////
 
 function queryBrowse(label, automatic, passive) {
-	if (!label) label = {};
+	label = label || {};
 	let {userid, tag} = label;
 	browseURL = label;
-	closeBio();
+	closeBioEditor();
 	if (active('sponsor')) sponsorHandler();
-	D('profileBut').style.display = "none";
 	D('toggleBrowse').style.display = "";
-		
-	D('sponsor').disabled = true;
-	D('sendButton').disabled = true;
 	D('bioPreview').style.display = "";
 	
 	D('theirFunName').style.color = "";	
@@ -993,10 +974,13 @@ function queryBrowse(label, automatic, passive) {
 		if (D("tag-" + D('browseHeading').title)) removeActiveBar(D("tag-" + D('browseHeading').title));
 	}
 	
+	D('profileBut').style.display = "none";
+	D('sendButton').disabled = true;
+	D('sponsor').disabled = true;
 	if (userid) {		
-		D('sponsor').disabled = false;
-		if (XNO.address) if (userid != XNO.address) D('sendButton').disabled = false;
 		if (userid == XNO.address) D('profileBut').style.display = "";
+		else if (XNO.address) D('sendButton').disabled = false;
+		D('sponsor').disabled = false;
 		queueDOMdisplayName(userid, D('theirFunName'));
 		D('theirAddress').textContent = userid;
 		if (D(userid)) activeBar(D(userid));
@@ -1018,9 +1002,8 @@ function queryBrowse(label, automatic, passive) {
 		D('bio').textContent = "The trickle of recent posts."
 	}
 	
-	
 	if (browseCache[D('browseHeading').title]) fillBrowseList(browseCache[D('browseHeading').title]);
-	else D('discovery').style.opacity = "0.6";
+	else D('browseList').style.opacity = "0.6";
 	
 	if (!(automatic && browseCache[D('browseHeading').title]) && ws && ws.readyState == 1) {
 		D('loadingMsg').style.display = "";
@@ -1035,14 +1018,19 @@ function queryBrowse(label, automatic, passive) {
 	if (active('toggleBrowse')) D('toggleBrowse').click();
 }
 
-function fillPost(postid, manual) {
+function fillPost(postid, automatic, passive) {
+	let userid = postid.split("-")[0];
+	let createdts = parseInt(postid.split("-")[1]);	
+	
 	if (readPostid != postid) {
 		if (D('commentContent').value.length && !confirm("Clear comment draft?")) return false;
 		D('commentContent').style.display = 'none';
 		D('commentContent').value = "";
 		D("comment").textContent = "Comment";
 		
-		D('readTitle').onclick = function() { ws.emit('queryPostChain', { userid: postid.split("-")[0], createdts: parseInt(postid.split("-")[1]) }); }
+		if (active('sponsor2')) postSponsorHandler();
+		
+		D('readTitle').onclick = function() { ws.emit('queryPostChain', {userid, createdts}); }
 		D('readTitle').textContent = "Loading...";
 		D('readContent').innerHTML = "<i>Loading...</i>";	
 	
@@ -1052,25 +1040,23 @@ function fillPost(postid, manual) {
 		if (D(postid)) activeBar(D(postid));
 		if (D(postid + "-disc")) activeBar(D(postid + "-disc"));
 	}
-	
-	let userid = postid.split("-")[0];
-	let createdts = parseInt(postid.split("-")[1]);
-	
+		
 	queueDOMdisplayName(userid, D('author'));
+	queueDOMdisplayName(userid, D('postTheirFunName'));
+	D('postTheirAddress').textContent = userid;
+	if (userCache[userid] && userCache[userid].sponsor_price) D('postTheirThreshold').textContent = userCache[userid].sponsor_price;
+	else {
+		D('postTheirThreshold').textContent = "\xa0-\xa0";		
+		if (ws && ws.readyState == 1) ws.emit("queryPostsFromUser", {userid});
+	}
+	
 	while (D('tags').children.length > 1) remove(D('tags').lastElementChild);
 	
 	D('creation').textContent = unixToDate(createdts);
 	D('creation').title = unixToTime(createdts);
 	D('modification').textContent = "";
 	D('modification').title = "";
-	D('modification').style.display = "none";	
-	if (readPostid && userid == XNO.address) {
-		D('edit').style.display = "";
-		D('edit2').style.display = "";
-	} else {
-		D('edit').style.display = "none";
-		D('edit2').style.display = "none";
-	}
+	D('modification').style.display = "none";
 	
 	clearDOM(D('readComments'));
 	clearDOM(D('mapul'));	
@@ -1115,23 +1101,16 @@ function fillPost(postid, manual) {
 		}
 	}
 	
-	readPostid = postid;	
-	if (XNO.address) {
-		D("subscribe2").disabled = false;
-		D("sponsor2").disabled = false;
-		D("comment").disabled = false;
-	}
-	// readHeight = 0;
-	if (!postCache[postid] || manual) ws.emit('queryPostChain', {userid, createdts});
-	if (manual) {
-		if (!D(postid)) {
-			let ts = Date.now();
-			if (XNO.address && ws) ws.emit('updateLibrary', { posts: [{ userid, createdts, pushedts:ts, lastaccessedts:ts }] });
-			makeLibLi(postid, ts);
-		} else D(postid).firstElementChild.firstElementChild.style.fontWeight = "";
-	}
+	readPostid = postid;
+	if (XNO.address) buttonLogout(false);
 	
-	loadPanel('read');
+	// scrollCache.read = 0;
+	if (!(automatic && postCache[postid])) ws.emit('queryPostChain', {userid, createdts});
+	let lastaccessedts = (!automatic && Date.now()) || 0;
+	//if (!automatic && !D(postid) && XNO.address && ws) ws.emit('updateLibrary', { posts: [{ userid, createdts, pushedts:lastaccessedts, lastaccessedts }] });
+	if (!automatic || D(postid)) updateLibLi(postid, lastaccessedts);
+	
+	if (!passive) loadPanel('read');
 	if (active('toggleRead')) D('toggleRead').click();	
 }
 
@@ -1145,7 +1124,7 @@ function fillEdit(postid, confirmation) {
 	D('creationEdit').textContent = unixToDate(createdts);
 	D('creationEdit').title = unixToTime(createdts);
 	
-	D('submitButton').textContent = "Publish Update";
+	D('publishButton').textContent = "Update";
 	D('clearButton').textContent = "Cancel";
 	
 	let theNewContent = "";
@@ -1182,7 +1161,7 @@ function fillEdit(postid, confirmation) {
 				editPostContent = theNewContent;
 				if (typeof metaData.content === "string") {
 					clearDOM(D('postEditor'));	
-					appendBlock().firstChild.value = metaData.content;
+					appendBlockEditor().firstChild.value = metaData.content;
 				} else {
 					fillEditorContent(metaData.content, D('postEditor'));		
 					if (metaData.wall) {
@@ -1199,14 +1178,14 @@ function fillEdit(postid, confirmation) {
 	editPostPending = !confirmation;
 	if (!confirmation) {
 		ws.emit('queryPostChain', { userid: postid.split("-")[0], createdts: parseInt(postid.split("-")[1]) });
-		postHeight = 0;
+		scrollCache.write = 0;
 	}
 	
-	loadPanel('post');
+	loadPanel('write');
 	if (active('toggleEdit')) D('toggleEdit').click();
 }
 
-function setTitle(str, reset) {
+function setTabTitle(str, reset) {
 	if (reset) str = currentTitle;
 	else currentTitle = str;
 	let prepend = "";
@@ -1217,19 +1196,14 @@ function setTitle(str, reset) {
 
 function loadPanel(type, useRAM, goingBack) {
 	let prevType = "browse";
-	if (D('browse').style.display != 'none') {
-		browseHeight = Math.ceil(D('secondDivInner').scrollTop);
-		if (type == prevType) browseHeight = 0;
-	}
-	if (D('read').style.display != 'none') {
-		prevType = "read";
-		readHeight = Math.ceil(D('secondDivInner').scrollTop);
-		if (type == prevType) readHeight = 0;
-	}
-	if (D('post').style.display != 'none') {
-		prevType = "post";
-		postHeight = Math.ceil(D('secondDivInner').scrollTop);
-		if (type == prevType) postHeight = 0;
+	for (let panelType in scrollCache) {
+		if (D(panelType).style.display != 'none') {
+			prevType = panelType;
+			scrollCache[panelType] = Math.ceil(D('centralWindowScroller').scrollTop);
+			if (type == prevType) scrollCache[panelType] = 0;
+		}
+		D(panelType).style.display = 'none';
+		D(panelType + 'Button').classList.remove('active');
 	}
 	
 	if (type != prevType) {
@@ -1243,17 +1217,9 @@ function loadPanel(type, useRAM, goingBack) {
 		youtubes = newYoutubes;
 	}
 	
-	D('post').style.display = 'none';
-	D('read').style.display = 'none';
-	D('browse').style.display = 'none';
-	D('postButton').classList.remove('active');
-	D('readButton').classList.remove('active');
-	D('browseButton').classList.remove('active');
-	
 	D(type).style.display = "flex";
 	D(type + "Button").classList.add('active');
 	popularTags.classList.add("desktop");
-	if (type != "browse" && active('sponsor')) sponsorHandler();
 	
 	useRAM = (useRAM && type != prevType);
 	if (useRAM && !goingBack) backList.push(prevType);	
@@ -1267,22 +1233,19 @@ function loadPanel(type, useRAM, goingBack) {
 	}
 	
 	let params = new URLSearchParams(window.location.search);
-	let theHeight = postHeight;
 	if (type == "read") {
 		url.search = new URLSearchParams({postid:readPostid});		
 		if (params.get('postid') != readPostid) changeHistory();
 
-		if (postCache[readPostid]) setTitle(postCache[readPostid].title);
-		else setTitle("Read");
-		theHeight = readHeight;
+		if (postCache[readPostid]) setTabTitle(postCache[readPostid].title);
+		else setTabTitle("Read");
 	} else if (type == "browse") {		
 		url.search = new URLSearchParams(browseURL);
 		if (params.get('userid') != browseURL.userid || params.get('tag') != browseURL.tag || params.get('postid') != null || params.get('editid') != null) changeHistory();
 		
-		if (browseURL.userid) setTitle(funName(browseURL.userid));
-		else if (browseURL.tag) setTitle(browseURL.tag);
-		else setTitle("");
-		theHeight = browseHeight;
+		if (browseURL.userid) setTabTitle(funName(browseURL.userid));
+		else if (browseURL.tag) setTabTitle(browseURL.tag);
+		else setTabTitle("");
 		
 		D(type).style.display = "";
 		popularTags.classList.remove("desktop");
@@ -1290,13 +1253,13 @@ function loadPanel(type, useRAM, goingBack) {
 		url.search = new URLSearchParams({editid:editPostid});	//url = new URL(window.location);
 		if (params.get('editid') != editPostid) changeHistory();
 		
-		if (postCache[editPostid]) setTitle("Updating \'" + postCache[editPostid].title + "\'");
-		else if (editPostid) setTitle("Update");
-		else setTitle("Write");
+		if (postCache[editPostid]) setTabTitle("Updating \'" + postCache[editPostid].title + "\'");
+		else if (editPostid) setTabTitle("Update");
+		else setTabTitle("Write");
 	}
 
-	D('secondDivInner').scrollTo(0, theHeight);	
-	D('secondDiv').scrollIntoView({behavior: "smooth", block:"nearest"});
+	D('centralWindowScroller').scrollTo(0, scrollCache[type]);	
+	D('centralWindow').scrollIntoView({behavior: "smooth", block:"nearest"});
 }
 
 // Fill helpers ///////////////////////////////////////////////////////////////////////
@@ -1304,8 +1267,9 @@ function loadPanel(type, useRAM, goingBack) {
 function fillBrowseList(data) {
 	if (D('browseHeading').title) browseCache[D('browseHeading').title] = data;
 	D('loadingMsg').style.display = "none";
-	clearDOM(D('discovery'));
-	D('discovery').style.opacity = "";
+	clearDOM(D('browseList'));
+	D('browsePlaceholder').style.display = "none";
+	D('browseList').style.opacity = "";
 	
 	if (data) {
 		data.sort(function(x, y) { return y.createdts - x.createdts; });
@@ -1327,11 +1291,11 @@ function fillBrowseList(data) {
 			postli.style.marginBottom = "0.85em";			
 			postli.appendChild(fullLabel(data[i].postid, "browse", mediaBox));			
 			if (readPostid == data[i].postid) activeBar(postli);
-			D('discovery').appendChild(postli);
+			D('browseList').appendChild(postli);
 		}
-	}	
+	} else D('browsePlaceholder').style.display = "";
 	requestNames();
-	// browseHeight = 0;
+	// scrollCache.browse = 0;
 }
 
 function fillBio(userid, block) {
@@ -1339,7 +1303,7 @@ function fillBio(userid, block) {
 	if (!data) D('bio').textContent = "Full of possibilities.";
 	else {
 		if (data.sponsor_price) D('theirThreshold').textContent = data.sponsor_price;
-		else D('theirThreshold').textContent = "1.00";
+		//else D('theirThreshold').textContent = "1.00";
 		if (!block) {
 			if (data.bio && data.bio.length) fillContent(D('bio'), data.bio);
 			else D('bio').textContent = "Full of possibilities."
@@ -1365,22 +1329,20 @@ function fillContent(elt, content, wall, userid) {
 			athlabel.onclick = function() {	
 				event.preventDefault();
 				event.stopPropagation();
-				queryBrowse({userid});
-				sponsorHandler();
+				// queryBrowse({userid});
+				// sponsorHandler();
+				if (!active('sponsor2')) postSponsorHandler();
+				else D('postSponsorInput').scrollIntoView({behavior: "smooth", block:"nearest"});
 			}
 			jsbox.appendChild(athlabel);
 			jsbox.appendChild(make('span', "'s sponsors -"));
 		} else if (content[i].type == "js") {
 			jsbox = make("iframe");
 			iframes.push(jsbox);
-			jsbox.style = "width:100%; height:0px; border-top:0px; border-bottom:0px; border-left:2px solid transparent; border-right:0px";
+			jsbox.style = "width:100%; height:0px; border-top:0px; border-bottom:0px; border-radius:5px; border-left:4px solid transparent; border-right:0px";
 			deselect(jsbox);
-			jsbox.onmouseenter = function() { 
-				if (jsbox != document.activeElement) partialDeselect(jsbox);
-			}
-			jsbox.onmouseleave = function() { 
-				if (jsbox != document.activeElement) deselect(jsbox);
-			}
+			jsbox.onmouseenter = function() { if (jsbox != document.activeElement) partialDeselect(jsbox); }
+			jsbox.onmouseleave = function() { if (jsbox != document.activeElement) deselect(jsbox);	}
 			jsbox.sandbox = "allow-scripts";
 			let str = `<script>window.onload = function() {
 				window.parent.postMessage({height:Math.max( document.body.scrollHeight, document.body.offsetHeight, document.body.clientHeight,
@@ -1429,7 +1391,8 @@ function fillContent(elt, content, wall, userid) {
 				block.style.transitionTimingFunction = "";
 				setTimeout(function() { block.style.opacity = ""; }, 0);
 			} else {			
-				block.style.borderLeft = "2px solid transparent";
+				block.style.borderLeft = "4px solid transparent";
+				block.style.borderRadius = "5px";
 				block.onmouseenter = function() {
 					block.style.opacity = "";
 					block.style.borderColor = "hsl(var(--hue), var(--butsat), 80%)";
@@ -1447,9 +1410,9 @@ function fillEditorContent(data, elt) {
 	clearDOM(elt);	
 	if (data && data.length) {
 		for (let i = 0; i < data.length; i++) {
-			inputEvent(appendBlock(data[i].type, null, elt).firstChild, data[i].content);
+			inputEvent(appendBlockEditor(data[i].type, null, elt).firstChild, data[i].content);
 		}
-	} else appendBlock("text", null, elt);
+	} else appendBlockEditor("text", null, elt);
 }
 					
 function fillMediaBox(mediaURL, preview) {
@@ -1489,7 +1452,7 @@ function fillMediaBox(mediaURL, preview) {
 		mediaBox.style = "display:flex; justify-content:center";
 		
 		let imagediv = make("img");
-		imagediv.style = "font-style:italic; height:fit-content; margin:auto; max-width:100%; max-height:100%";
+		imagediv.style = "font-style:italic; height:fit-content; margin:auto; max-width:100%; max-height:50vh";
 		imagediv.alt = "loading image...";
 		mediaBox.appendChild(imagediv);
 		fileSize(mediaURL).then(function(size) {
@@ -1625,7 +1588,7 @@ function addComment(commentData) {
 		let repButHolder = make('div');
 		repButHolder.style = "display:flex; justify-content:right; margin-bottom:0.85em;";
 		let repLine = make('div');
-		repLine.style = "background-color:#e4e7e7; height:2px; border-radius:20px; margin:auto 0.85em auto 0.85em; flex-grow:1";
+		repLine.classList.add("horizontalLine");
 		repButHolder.appendChild(repLine);
 		repButHolder.appendChild(repBut);
 		
@@ -1643,7 +1606,7 @@ function addComment(commentData) {
 	}
 }
 
-function appendBlock(type, previous, parent) {
+function appendBlockEditor(type, previous, parent) {
 	if (!parent) parent = D('postEditor');
 	let block = make('div');
 	block.tabIndex = "-1";
@@ -1738,6 +1701,8 @@ function appendBlock(type, previous, parent) {
 	let abbrjsText = make('span', "JS");
 	jsText.classList.add("desktop");
 	abbrjsText.classList.add("mobile");
+	abbrjsText.style.position = "initial";
+	abbrjsText.style.fontWeight = "initial";
 	jsBut.appendChild(jsText);
 	jsBut.appendChild(abbrjsText);
 	
@@ -1759,7 +1724,7 @@ function appendBlock(type, previous, parent) {
 	mediaBut.classList.add("right");
 	mediaBut.onclick = function() {
 		textbox.title = "media";
-		textbox.placeholder = "Image, audio, or video link [optional caption]...\n\nSupport: most images; mp3, wav; mp4, ogg, webm, Youtube URL";
+		textbox.placeholder = "URL to image, audio, or video [optional caption]...\n\n(Supports most images; mp3, wav; mp4, ogg, webm, and Youtube URL)";
 		textbox.spellcheck = false;
 		textbox.style.fontFamily = "Segoe UI, Source Sans Pro, Roboto, Helvetica, sans-serif";
 		if (textbox.value == "<div>\n\n</div>\n\n" + "<script>\n\n</" + "script>") textbox.value = "";		
@@ -1787,7 +1752,7 @@ function appendBlock(type, previous, parent) {
 	let addBut = make('button', "＋");
 	addBut.style.marginLeft = "4px";
 	addBut.classList.add("right");
-	addBut.onclick = function() { appendBlock("text", block, parent) };
+	addBut.onclick = function() { appendBlockEditor("text", block, parent) };
 
 	let buttonPanel = make('div');
 	buttonPanel.style = "display:flex; justify-content:right";
@@ -1838,9 +1803,12 @@ function appendBlock(type, previous, parent) {
 // Label routines ///////////////////////////////////////////////////////////////////////
 
 function fullLabel(postid, type, mediaBox) {
-	let data = postCache[postid];
-	let postTitle = make('div', data.title);
-	postTitle.title = data.title;
+	let data = postCache[postid] || {};
+	let userid = postid.split("-")[0];
+	let createdts = parseInt(postid.split("-")[1]);	
+	
+	let postTitle = make('div', data.title || "- missing title -");
+	postTitle.title = data.title || "- missing title -";
 	postTitle.style = "overflow:hidden; text-overflow:ellipsis;"
 	if (type == "browse") postTitle.style.marginBottom = "3px";
 			
@@ -1851,7 +1819,7 @@ function fullLabel(postid, type, mediaBox) {
 		tags.style.display = "-webkit-box; -webkit-line-clamp: 3; line-clamp: 3; -webkit-box-orient: vertical;";
 		postTitle.style.display = "-webkit-box; -webkit-line-clamp: 3; line-clamp: 3; -webkit-box-orient: vertical;";
 	}
-	tags.appendChild(authorLabel(data.userid));	
+	tags.appendChild(authorLabel(userid));	
 	if (data.tags) {
 		for (let i = 0; i < data.tags.length; i++) {			
 			tags.appendChild(tagLabel(data.tags[i]));
@@ -1861,14 +1829,11 @@ function fullLabel(postid, type, mediaBox) {
 	// Meta: dates, edit
 	let postMeta = make('div');
 	postMeta.style = "font-size:0.85em; overflow:hidden; text-overflow:ellipsis; margin:2px 0px;";		
-	postMeta.appendChild(timeLabel(data.createdts, data.modifiedts));
+	postMeta.appendChild(timeLabel(createdts, data.modifiedts));
 	
-	if (data.wall && data.wall.length) {	
-		let premium = make('span', " • Premium");
-		postMeta.appendChild(premium);
-	}
+	if (data.wall && data.wall.length) postMeta.appendChild(make('span', " • Premium"));
 	
-	if (data.userid == XNO.address) {
+	if (userid == XNO.address) {
 		let editBut = make('a', " • Update");			
 		editBut.onclick = function() {
 			event.stopPropagation();
@@ -1904,8 +1869,8 @@ function fullLabel(postid, type, mediaBox) {
 		event.stopPropagation();
 		event.preventDefault();
 		if (!D(postid)) {
-			makeLibLi(postid);
-			if (XNO.address && ws) ws.emit('updateLibrary', { posts: [{ userid:data.userid, createdts:data.createdts, pushedts:Date.now() }] });
+			updateLibLi(postid);
+			if (XNO.address && ws) ws.emit('updateLibrary', { posts: [{ userid, createdts, pushedts:Date.now() }] });
 		}
 		flash(D(postid));
 		D(postid).scrollIntoView({behavior: "smooth", block:"nearest"});
@@ -1944,7 +1909,7 @@ function fullLabel(postid, type, mediaBox) {
 	label.onmouseleave = function() { actions.style.display = "none"; };
 	label.onclick = function() {
 		event.preventDefault();
-		fillPost(postid, true);
+		fillPost(postid);
 		flash(this.parentNode);
 	}
 	return label;
@@ -1994,7 +1959,7 @@ function timeLabel(createdts, modifiedts) {
 	return dateDiv;
 }
 
-// Main panel UI interaction handlers ///////////////////////////////////////////////////////////////////////
+// Main panel minor UI interaction handlers ///////////////////////////////////////////////////////////////////////
 
 function sponsorHandler() {
 	if (active('sponsor')) {
@@ -2011,8 +1976,21 @@ function sponsorHandler() {
 	toggle(D('sponsor'));
 }
 
+function postSponsorHandler() {
+	if (active('sponsor2')) {
+		D('postSponsor').style.display = "none";
+		D('postSponsorInput').value = "";
+	} else {
+		D('postSponsor').style.display = "";
+		// D('sponsorInput').focus();
+		flash(D('postSponsorInput'));
+		D('postSponsorInput').scrollIntoView({behavior: "smooth", block:"nearest"});
+	}
+	toggle(D('sponsor2'));
+}
+
 function subscribeHandler(subscribee) {
-	if (!subscribee) subscribee = D('browseHeading').title;
+	subscribee = subscribee || D('browseHeading').title;
 	
 	if (D("tag-" + subscribee)) flash(D("tag-" + subscribee));
 	else if (D(subscribee)) flash(D(subscribee));
@@ -2058,7 +2036,8 @@ function checkTitle(elt) {
 			buttonElt.classList.add('active');
 			buttonElt.disabled = false;
 		}
-	} else titleElt.textContent = "(none)";
+	} else if (elt.value.length) titleElt.textContent = "(Invalid URL)";
+	else titleElt.textContent = "(none)";
 }
 
 function showEditor() {
@@ -2108,7 +2087,7 @@ function setData() {
 		queueDOMdisplayName(XNO.address, D(XNO.address).lastElementChild);
 		
 		ws.emit('updateUser', {displayname:D('bio-name').value, color:parseInt(D('colorslider').value), bio:parseEditorContent(D('bioBlocks')), sponsor_price: D('inputPrice').value });
-		closeBio();
+		closeBioEditor();
 	}
 }
 
@@ -2132,7 +2111,7 @@ function parseEditorContent(elt) {
 	return content;
 }
 
-function openBio() {
+function openBioEditor() {
 	D('bioPreview').style.display = "none";
 	D('bioEditor').style.display = "";
 	
@@ -2145,12 +2124,12 @@ function openBio() {
 	if (!data) data = {};	
 	fillEditorContent(data.bio, D('bioBlocks'));	
 	if (data.sponsor_price) D('inputPrice').value = data.sponsor_price;
-	else D('inputPrice').textContent = "1.00";
+	//else D('inputPrice').value = "1.00";
 	
 	// D('bio-name').focus();
 }
 
-function closeBio() {
+function closeBioEditor() {
 	D('bioEditor').style.display = "none";
 	if (D('browseHeading').title != "Recent") D('bioPreview').style.display = "";
 	clearDOM(D('bioBlocks'));
@@ -2159,7 +2138,7 @@ function closeBio() {
 	D('bio-name').placeholder = "Public display name...";
 	
 	if (XNO.address) {
-		D('firstDiv').style.backgroundColor = "hsl(" + funColor(XNO.address, false, true) + ", 55%, 80%)";
+		D('leftSidebar').style.backgroundColor = "hsl(" + funColor(XNO.address, false, true) + ", 55%, 80%)";
 		setCSS('--hue', funColor(XNO.address, false, true));
 	}
 }
@@ -2176,7 +2155,7 @@ function cancelPost(override) {
 	D('modificationEdit').title = "";	
 	
 	clearDOM(D('postEditor'));	
-	appendBlock();	
+	appendBlockEditor();	
 	
 	D('postTitle').value = "";	
 	inputEvent(D('set-prev'), "");
@@ -2185,11 +2164,15 @@ function cancelPost(override) {
 	clearDOM(D('editTags'));
 	D('set-tag').value = "";
 	
-	D('submitButton').textContent = "Publish";
+	let readPanelize = (D('clearButton').textContent == "Cancel");
+	
+	D('publishButton').textContent = "Publish";
 	D('clearButton').textContent = "Clear";
 	
 	if (active('toggleEdit')) D('toggleEdit').click();
-	setTitle("Write");
+	setTabTitle("Write");
+	
+	// if (readPanelize) loadPanel('read');
 	return true;
 }
 
@@ -2248,52 +2231,51 @@ function importSeed() {
 			clearSeed();		
 			XNO.unpackSeed(seed, parseInt(index));						
 			queueDOMdisplayName(XNO.address, D('displayName'), true);
-			D('firstDiv').style.backgroundColor = "hsl(" + funColor(XNO.address, false, true) + ", 55%, 80%)";
+			D('leftSidebar').style.backgroundColor = "hsl(" + funColor(XNO.address, false, true) + ", 55%, 80%)";
 			setCSS("--butsat", "50%");
 			setCSS("--hue", funColor(XNO.address, false, true));
 			
-			D("current").disabled = false;
-			D("clear").disabled = false;
-			D("submitButton").disabled = false;
-			D("libraryPlaceholder").textContent = "- empty -";
+			D("libraryPlaceholder").textContent = "- no history -";
 			D("subPanel").style.display = "flex";
 			D("notePanel").style.display = "flex";
 			localStorage.setItem("localSeed", XNO.seed);
 			
-			D('subscribe').disabled = false;
-			if (readPostid) {
-				D("subscribe2").disabled = false;
-				D("sponsor2").disabled = false;
-				D("comment").disabled = false;
-			}
-			
+			buttonLogout(false);			
 			makeSubLi(XNO.address);
-			if (D('browseHeading').title != "Recent") {
-				if (D('browseHeading').title != XNO.address) {
-					if (D('browseHeading').title.substring(0, 5) == "nano_") {
-						D('sponsor').disabled = false;
-						D('sendButton').disabled = false;
-					}
-				} else D('profileBut').style.display = "";
-			}
-			
 			if (ws && ws.readyState == 1) {
 				let ts = Date.now();
 				ws.emit('authenticateUser', {userid: XNO.address, ts, signature:XNO.sign(ts, XNO.address)});			
 			}
 			if (D('browseHeading').title && browseCache[D('browseHeading').title]) fillBrowseList(browseCache[D('browseHeading').title]);
-			
-			if (readPostid && readPostid.split("-")[0] == XNO.address) {
-				D('edit').style.display = "";
-				D('edit2').style.display = "";
-			} else {
-				D('edit').style.display = "none";
-				D('edit2').style.display = "none";
-			}
-			
-			refreshData("XNO");
+			refreshBalance("XNO");
 		}
 		D("seed").value = "";
+	}
+}
+
+function buttonLogout(side) {
+	D("currentLoginButton").disabled = side;	
+	D("logoutButton").disabled = side;
+	D("publishButton").disabled = side;
+	
+	D("subscribe").disabled = side;
+	if (readPostid) for (let i = 0; i < readPanelButtons.length; i++) { readPanelButtons[i].disabled = side; }
+	
+	D('sendButton').disabled = side;
+	D('postSendButton').disabled = side;
+	
+	D('edit').style.display = "none";
+	D('edit2').style.display = "none";
+	D('profileBut').style.display = "none";
+	
+	if (!side) {
+		if (D('browseHeading').title == XNO.address || D('browseHeading').title.substring(0, 5) != "nano_") D('sendButton').disabled = true;
+		if (readPostid.split("-")[0] == XNO.address) {
+			D('postSendButton').disabled = true;
+			D('edit').style.display = "";
+			D('edit2').style.display = "";
+		}
+		if (D('browseHeading').title == XNO.address) D('profileBut').style.display = "";
 	}
 }
 
@@ -2305,27 +2287,18 @@ function clickClearSeed() {
 	XNO.seed = "";
 	XNO.encryptKey = "";	
 	D('displayName').textContent = "Guest";	
-	D('firstDiv').style.backgroundColor = "hsl(0, 0%, 80%)";
+	D('leftSidebar').style.backgroundColor = "hsl(0, 0%, 80%)";
 	setCSS("--butsat", "0%");
 	
-	D("current").disabled = true;	
-	D("clear").disabled = true;
-	D("submitButton").disabled = true;
-	D("libraryPlaceholder").textContent = "- empty (sign in to persist) -";
+	D("libraryPlaceholder").textContent = "- no history (sign in to persist) -";
 	D("subPanel").style.display = "none";	
 	D("notePanel").style.display = "none";	
 	localStorage.removeItem("localSeed");
 	
-	D('subscribe').disabled = true;
-	D('subscribe2').disabled = true;
-	D('sponsor2').disabled = true;
-	D("comment").disabled = true;
+	buttonLogout(true);
 	inputEvent(D("seed"), "");
 	
 	if (D('browseHeading').title && browseCache[D('browseHeading').title]) fillBrowseList(browseCache[D('browseHeading').title]);
-	
-	D('edit').style.display = "none";
-	D('edit2').style.display = "none";
 }
 
 function clearSeed() {
@@ -2335,17 +2308,14 @@ function clearSeed() {
 	clearDOM(D('notifications'));
 	D('notificationHeading').textContent = "Activity";
 	noteCount = 0;
-	setTitle(false, true);
+	setTabTitle(false, true);
 	D('libraryPlaceholder').style.display = "";	
 	D('notificationPlaceholder').style.display = "";	
 	if (D('creationEdit').title) cancelPost(true);
-	D('sendButton').disabled = true;
-	if (active('sponsor')) sponsorHandler();
 	closeAccordion(D('editPanel'));
 	D('balance').textContent = "0.00";
 	
-	closeBio();
-	D('profileBut').style.display = "none";
+	closeBioEditor();
 }
 
 function makeNoteLi(data) {	
@@ -2380,17 +2350,13 @@ function makeNoteLi(data) {
 		
 		link.onclick = function() {
 			event.preventDefault();
-			fillPost(postid, true);
+			fillPost(postid);
 		}
 		
 		text.appendChild(link);
 	}
-	if (data.ntype == "subscribe") {
-		text.textContent = "Subscribed!";
-	}
-	if (data.ntype == "sponsor") {
-		text.textContent = "Sponsored!";
-	}
+	if (data.ntype == "subscribe") text.textContent = "Subscribed!";
+	if (data.ntype == "sponsor") text.textContent = "Sponsored!";
 	theLabel.appendChild(text);
 	
 	if (D('notifications').firstElementChild) {
@@ -2403,7 +2369,7 @@ function makeNoteLi(data) {
 	
 	if (data.notifCounter) noteCount = data.notifCounter;
 	if (noteCount) D('notificationHeading').textContent = "Activity (" + noteCount + ")";
-	setTitle(false, true);
+	setTabTitle(false, true);
 }
 
 function makeSubLi(userid, data) {
@@ -2460,7 +2426,7 @@ function makeSubLi(userid, data) {
 				newDate = 2*Date.now() - data.expiryts;
 				expirySpan = make('span', "Premium sponsorship • " + timeSince(newDate) + " left");
 			} else {			
-				expirySpan = make('a', "Sponsorship ended • " + timeSince(data.expiryts) + " ago");
+				expirySpan = make('a', "Premium sponsorship • ended " + timeSince(data.expiryts) + " ago");
 				//expirySpan.style = "font-style:italic";
 				expirySpan.onclick = function() {			
 					event.preventDefault();
@@ -2492,19 +2458,29 @@ function makeSubLi(userid, data) {
 	}
 }
 
-function makeLibLi(postid, lastaccessedts, pushedts) {
-	let libli = make('li');
-	libli.id = postid;
-	libli.style.whiteSpace = "nowrap";
-	libli.appendChild(fullLabel(postid, "library"));	
-	if (!lastaccessedts) libli.firstElementChild.firstElementChild.style.fontWeight = "bold";	
-	//if (pushedts) libli.appendChild(make('span', timeSince(pushedts)));
-	if (postid == readPostid) activeBar(libli);
-	if (D('library').firstElementChild) D('library').insertBefore(libli, D('library').firstElementChild);
-	else {
-		D('library').appendChild(libli);
-		D('libraryPlaceholder').style.display = "none";
+function updateLibLi(postid, lastaccessedts) {
+	let finalState = "bold";
+	if (lastaccessedts) finalState = "";
+	
+	let libli = D(postid);
+	if (!libli) {
+		libli = make('li');
+		libli.id = postid;
+		libli.style.whiteSpace = "nowrap";
+		//if (pushedts) libli.appendChild(make('span', timeSince(pushedts)));
+		if (D('library').firstElementChild) D('library').insertBefore(libli, D('library').firstElementChild);
+		else {
+			D('library').appendChild(libli);
+			D('libraryPlaceholder').style.display = "none";
+		}
+	} else {
+		if (!lastaccessedts) finalState = libli.firstElementChild.firstElementChild.style.fontWeight;
+		clearDOM(D(postid));
 	}
+	libli.appendChild(fullLabel(postid, "library"));
+	
+	libli.firstElementChild.firstElementChild.style.fontWeight = finalState;
+	if (postid == readPostid) activeBar(libli);
 }
 
 function showCurrent() {
@@ -2526,41 +2502,36 @@ function toggleVisibility() {
 
 // Global event listeners ///////////////////////////////////////////////////////////////////////
 
-window.addEventListener('blur', function() {
+window.addEventListener('blur', function() { iFrameCycle(); });
+window.addEventListener('focus', function() { iFrameCycle(true); });	
+
+function iFrameCycle(focus) {
 	let iframesNew = [];
 	for (let i = 0; i < iframes.length; i++) {
 		if (iframes[i].parentNode) {
 			iframesNew.push(iframes[i]);
-			if (iframes[i].style.borderColor != "transparent") select(iframes[i]);
+			if (iframes[i].style.borderColor != "transparent") {
+				if (focus) deselect(iframes[i]);
+				else select(iframes[i]);
+			}
 		} 
 	}
 	iframes = iframesNew;
-});
-
-window.addEventListener('focus', function() {
-	let iframesNew = [];
-	for (let i = 0; i < iframes.length; i++) {
-		if (iframes[i].parentNode) {
-			iframesNew.push(iframes[i]);
-			if (iframes[i].style.borderColor != "transparent") deselect(iframes[i]);
-		}
-	}
-	iframes = iframesNew;
-});	
+}
 
 function deselect(elt) {
 	elt.style.borderColor = "transparent";
-	elt.style.filter = "saturate(0.3) opacity(0.75)";
+	//elt.style.filter = "saturate(0.5) opacity(0.6)";
 }	
 
 function partialDeselect(elt) {
-	elt.style.borderColor = "hsl(var(--hue), 0%, 80%)"; 
-	elt.style.filter = "saturate(0.5)";
+	elt.style.borderColor = "hsl(var(--hue), 0%, 90%)"; 
+	//elt.style.filter = "opacity(0.6)";
 }
 
 function select(elt) {
 	elt.style.borderColor = "hsl(var(--hue), var(--butsat), 80%)";
-	elt.style.filter = "";
+	//elt.style.filter = "";
 }
 
 			
@@ -2585,7 +2556,7 @@ window.addEventListener('popstate', function() {
 function closeSidebar() {
 	if (D('browse').style.display != 'none' && active('toggleBrowse')) D('toggleBrowse').click();
 	else if (D('read').style.display != 'none' && active('toggleRead')) D('toggleRead').click();
-	else if (D('post').style.display != 'none' && active('toggleEdit')) D('toggleEdit').click();
+	else if (D('write').style.display != 'none' && active('toggleEdit')) D('toggleEdit').click();
 	else return false;	
 	event.preventDefault();
 	return true;
@@ -2598,12 +2569,12 @@ function loadURL(link) {
 	let params = new URLSearchParams(link.search);
 	if (params.get('postid') != null) {
 		if (ws && ws.readyState == 1 && !D('browseHeading').textContent) queryBrowse({}, true, true);
-		if (params.get('postid')) fillPost(params.get('postid'), activeClick);
+		if (params.get('postid')) fillPost(params.get('postid'), !activeClick);
 		else loadPanel("read");
 	} else if (params.get('editid') != null) {
 		if (ws && ws.readyState == 1 && !D('browseHeading').textContent) queryBrowse({}, true, true);
 		if (XNO.address == params.get('editid').split("-")[0] && (editPostPending || editPostid != params.get('editid'))) fillEdit(params.get('editid'));
-		else loadPanel("post");
+		else loadPanel("write");
 	} else if (params.get('userid')) {
 		if (params.get('userid') != browseURL.userid || !browseCache[browseURL.userid]) queryBrowse({userid:params.get('userid')}, !activeClick);
 		else loadPanel("browse");
@@ -2658,15 +2629,15 @@ window.addEventListener('keydown', function(evt) {
 	if (evt.altKey) {
 		if (evt.keyCode == 49) loadPanel('browse', true);
 		else if (evt.keyCode == 50) loadPanel('read', true);
-		else if (evt.keyCode == 51) loadPanel('post', true);		
+		else if (evt.keyCode == 51) loadPanel('write', true);		
 		else if (evt.keyCode == 81) {
 			if (active('readButton') && readPostid && postCache[readPostid].userid == XNO.address) fillEdit();
-			else if (active('postButton') && D('postEditor').style.display == "none") showEditor();
-			if (active('postButton') && document.activeElement.tagName.toLowerCase() != 'input' && document.activeElement.tagName.toLowerCase() != 'textarea') {
+			else if (active('writeButton') && D('postEditor').style.display == "none") showEditor();
+			if (active('writeButton') && document.activeElement.tagName.toLowerCase() != 'input' && document.activeElement.tagName.toLowerCase() != 'textarea') {
 				D('postEditor').firstElementChild.firstElementChild.focus();
 			}
 		} else if (evt.keyCode == 87) {
-			if (active('postButton') && D('postPreview').style.display == "none") {
+			if (active('writeButton') && D('postPreview').style.display == "none") {
 				event.preventDefault();
 				showPreview();
 			}
@@ -2701,14 +2672,14 @@ function funColor(userid, generated, raw) {
 }
 
 function D(string) { 
-if (!string) console.error("Empty dom string");
-return document.getElementById(string); 
+	if (!string) console.error("Empty dom string");
+	return document.getElementById(string); 
 }
 
 function refreshNoteCounter() {
 	ws.emit('updateNotifCounter');
 	noteCount = 0;
-	setTitle(false, true);
+	setTabTitle(false, true);
 	D('notificationHeading').textContent = "Activity";
 }
 
@@ -2769,6 +2740,11 @@ function clickCopy(elt, str) {
 		showMsg("Copied to clipboard.");
 	}
 	flash(elt);
+}
+
+function clickPaste(elt, read) {
+	if (read) inputEvent(D('postSponsorInput'), elt.textContent);
+	else inputEvent(D('sponsorInput'), elt.textContent);
 }
 
 var msgTimer;
@@ -2921,12 +2897,14 @@ function active(elt) {
 }
 
 function activeBar(elt) {
-	elt.firstElementChild.style.borderLeft = "solid 2px hsl(var(--hue), var(--butsat), 80%)";		
+	elt.firstElementChild.style.borderLeft = "solid 4px hsl(var(--hue), var(--butsat), 80%)";
+	elt.firstElementChild.style.borderRadius = "5px";
 	elt.firstElementChild.style.paddingLeft = "10px";
 }
 
 function removeActiveBar(elt) {
 	elt.firstElementChild.style.borderLeft = "";	
+	elt.firstElementChild.style.borderRadius = "";
 	elt.firstElementChild.style.paddingLeft = "5px";
 }
 
@@ -2942,20 +2920,13 @@ function toggleSecondDiv(elt) {
 	toggle(elt);
 }
 
-function networkFailMsg(error) {
-	console.error("XNO network error");
-	if (!error || error.message == "Network Error") showMsg("Unable to connect to XNO network.");
-	else showMsg("Transfer seems to have failed or is delayed.");
-	return false;
-}
-
 function color(elt) {
 	let theColor = elt.value;
-	if (theColor == 0) theColor = funColor(XNO.address, true, true);
+	if (theColor == "0") theColor = funColor(XNO.address, true, true);
 	elt.previousElementSibling.style.color = 'hsl(' + theColor + ', 100%, 27%)';
 	setCSS('--hue', theColor);
 	
-	D('firstDiv').style.backgroundColor = "hsl(" + theColor + ", 55%, 80%)";
+	D('leftSidebar').style.backgroundColor = "hsl(" + theColor + ", 55%, 80%)";
 }
 
 function setCSS(variable, value) { document.documentElement.style.setProperty(variable, value);}
@@ -2975,6 +2946,38 @@ function fileSize(url) {
     });
 }
 
+function setLocalJSON(name, data) { localStorage.setItem(name, JSON.stringify(data)); }
+
+function getLocalJSON(name) {
+	let data = localStorage.getItem(name);
+	if (data) data = JSON.parse(data);
+	return data;
+}
+
+function post(url, params) {
+    return new Promise((resolve, reject) => {
+        let xhttp = new XMLHttpRequest();
+        xhttp.timeout = 15*1000; // 15 seconds
+        xhttp.onreadystatechange = function() {
+			if (this.readyState == 4) {
+				if (this.status == 200) {
+					try { resolve(JSON.parse(this.responseText)); } 
+					catch(e) {
+						console.error('Failed to parse response from node');
+						console.error(this.responseText);
+						resolve();
+					}
+				} else {
+					console.error('Failed to connect to '+ url + ". Parameters:", params);
+					resolve();
+				}
+			}
+        };
+        xhttp.open("POST", url, true);
+        xhttp.setRequestHeader("Content-Type", "application/json");
+        xhttp.send(JSON.stringify(params));
+    });
+}	
 
 </script>
 
